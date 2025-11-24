@@ -1,10 +1,10 @@
 interface FiltersBarProps {
-  tags: string[];
-  selectedTag: string | null;
-  onSelect: (tag: string | null) => void;
+  categories: string[];
+  selectedCategory: string | null;
+  onSelect: (category: string | null) => void;
 }
 
-function FiltersBar({ tags, selectedTag, onSelect }: FiltersBarProps) {
+function FiltersBar({ categories, selectedCategory, onSelect }: FiltersBarProps) {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", margin: "12px 0" }}>
       <button
@@ -13,29 +13,29 @@ function FiltersBar({ tags, selectedTag, onSelect }: FiltersBarProps) {
         style={{
           padding: "8px 12px",
           borderRadius: 999,
-          border: selectedTag ? "1px solid #e2e8f0" : "1px solid #0ea5e9",
-          background: selectedTag ? "#fff" : "#e0f2fe",
-          color: selectedTag ? "#0f172a" : "#0ea5e9",
+          border: selectedCategory ? "1px solid #e2e8f0" : "1px solid #0ea5e9",
+          background: selectedCategory ? "#fff" : "#e0f2fe",
+          color: selectedCategory ? "#0f172a" : "#0ea5e9",
           fontWeight: 600,
         }}
       >
-        All cuts
+        All categories
       </button>
-      {tags.map((tag) => (
+      {categories.map((category) => (
         <button
-          key={tag}
+          key={category}
           type="button"
-          onClick={() => onSelect(tag)}
+          onClick={() => onSelect(category)}
           style={{
             padding: "8px 12px",
             borderRadius: 999,
-            border: selectedTag === tag ? "1px solid #0ea5e9" : "1px solid #e2e8f0",
-            background: selectedTag === tag ? "#e0f2fe" : "#fff",
-            color: selectedTag === tag ? "#0ea5e9" : "#0f172a",
+            border: selectedCategory === category ? "1px solid #0ea5e9" : "1px solid #e2e8f0",
+            background: selectedCategory === category ? "#e0f2fe" : "#fff",
+            color: selectedCategory === category ? "#0ea5e9" : "#0f172a",
             fontWeight: 600,
           }}
         >
-          {tag}
+          {category}
         </button>
       ))}
     </div>

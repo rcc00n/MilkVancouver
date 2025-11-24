@@ -4,7 +4,7 @@ import CartLineItem from "../components/cart/CartLineItem";
 import { useCart } from "../context/CartContext";
 
 function CartPage() {
-  const { items, total } = useCart();
+  const { items, subtotalCents } = useCart();
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -16,7 +16,9 @@ function CartPage() {
       {items.length === 0 ? (
         <div style={{ border: "1px dashed #e2e8f0", padding: 16, borderRadius: 12 }}>
           <p style={{ margin: 0, color: "#475569" }}>Cart is empty. Explore the catalog to add items.</p>
-          <Link to="/" style={{ color: "#2563eb", fontWeight: 600 }}>Back to catalog</Link>
+          <Link to="/" style={{ color: "#2563eb", fontWeight: 600 }}>
+            Back to catalog
+          </Link>
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
@@ -28,7 +30,7 @@ function CartPage() {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ color: "#475569" }}>Subtotal</span>
-        <strong style={{ fontSize: 22 }}>${(total / 100).toFixed(2)}</strong>
+        <strong style={{ fontSize: 22 }}>${(subtotalCents / 100).toFixed(2)}</strong>
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>

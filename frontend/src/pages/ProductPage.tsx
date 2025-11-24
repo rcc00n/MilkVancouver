@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchProduct, fetchProducts } from "../api/client";
+import { getProduct, getProducts } from "../api/products";
 import SimilarProductsRow from "../components/products/SimilarProductsRow";
 import { useCart } from "../context/CartContext";
 import type { Product } from "../types";
+import { getProductImageUrl } from "../utils/products";
 
-interface ProductPageProps {
-  onAddToCart: () => void;
-}
-
-function ProductPage({ onAddToCart }: ProductPageProps) {
+function ProductPage() {
   const { productId } = useParams();
   const { addItem } = useCart();
   const [product, setProduct] = useState<Product | undefined>();
@@ -18,15 +15,23 @@ function ProductPage({ onAddToCart }: ProductPageProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!productId) return;
+    const id = Number(productId);
+    if (!productId || Number.isNaN(id)) return;
     let active = true;
     setLoading(true);
-    fetchProduct(productId).then((result) => {
-      if (!active) return;
-      setProduct(result);
-      setLoading(false);
-    });
-    fetchProducts().then((products) => {
+    getProduct(id)
+      .then((result) => {
+        if (!active) return;
+        setProduct(result);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProduct(undefined);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    getProducts().then((products) => {
       if (!active) return;
       setCatalog(products);
     });
@@ -41,9 +46,14 @@ function ProductPage({ onAddToCart }: ProductPageProps) {
     return catalog.filter(
       (candidate) =>
         candidate.id !== product.id &&
-        candidate.tags?.some((tag) => product.tags?.includes(tag)),
+        product.category &&
+        candidate.category === product.category,
     );
   }, [catalog, product]);
+
+  if (loading) {
+    return <p style={{ color: "#475569" }}>Loading product...</p>;
+  }
 
   if (!product) {
     return (
@@ -56,12 +66,9 @@ function ProductPage({ onAddToCart }: ProductPageProps) {
 
   const handleAddToCart = () => {
     addItem(product, 1);
-    onAddToCart();
   };
 
-  if (loading) {
-    return <p style={{ color: "#475569" }}>Loading product...</p>;
-  }
+  const imageUrl = getProductImageUrl(product);
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
@@ -71,7 +78,7 @@ function ProductPage({ onAddToCart }: ProductPageProps) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 18, alignItems: "start" }}>
         <img
-          src={product.image}
+          src={imageUrl}
           alt={product.name}
           style={{ width: "100%", borderRadius: 18, objectFit: "cover", border: "1px solid #e2e8f0" }}
         />
@@ -80,17 +87,39 @@ function ProductPage({ onAddToCart }: ProductPageProps) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h2 style={{ margin: 0 }}>{product.name}</h2>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {product.tags?.map((tag) => (
-                  <span key={tag} style={{ padding: "4px 10px", borderRadius: 999, background: "#f8fafc", border: "1px solid #e2e8f0", fontSize: 12 }}>
-                    {tag}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                {product.category && (
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
+                      fontSize: 12,
+                    }}
+                  >
+                    {product.category}
                   </span>
-                ))}
+                )}
+                {product.is_popular && (
+                  <span
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: "#fee2e2",
+                      border: "1px solid #fecaca",
+                      color: "#991b1b",
+                      fontSize: 12,
+                    }}
+                  >
+                    Popular pick
+                  </span>
+                )}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#475569", fontSize: 14 }}>Per lb</div>
-              <strong style={{ fontSize: 22 }}>${(product.price / 100).toFixed(2)}</strong>
+              <div style={{ color: "#475569", fontSize: 14 }}>Per unit</div>
+              <strong style={{ fontSize: 22 }}>${(product.price_cents / 100).toFixed(2)}</strong>
             </div>
           </div>
 

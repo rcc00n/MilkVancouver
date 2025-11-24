@@ -1,5 +1,6 @@
 import { useCart } from "../../context/CartContext";
 import type { CartItem } from "../../types";
+import { getProductImageUrl } from "../../utils/products";
 
 interface CartLineItemProps {
   item: CartItem;
@@ -7,6 +8,7 @@ interface CartLineItemProps {
 
 function CartLineItem({ item }: CartLineItemProps) {
   const { updateQuantity, removeItem } = useCart();
+  const imageUrl = getProductImageUrl(item.product);
 
   return (
     <div
@@ -21,15 +23,11 @@ function CartLineItem({ item }: CartLineItemProps) {
         background: "#fff",
       }}
     >
-      <img
-        src={item.product.image}
-        alt={item.product.name}
-        style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10 }}
-      />
+      <img src={imageUrl} alt={item.product.name} style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10 }} />
       <div style={{ display: "grid", gap: 4 }}>
         <strong>{item.product.name}</strong>
         <div style={{ color: "#475569", fontSize: 13 }}>{item.product.description}</div>
-        <div style={{ fontWeight: 700 }}>${(item.product.price / 100).toFixed(2)}</div>
+        <div style={{ fontWeight: 700 }}>${(item.product.price_cents / 100).toFixed(2)}</div>
       </div>
       <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>

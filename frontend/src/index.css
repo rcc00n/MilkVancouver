@@ -35,3 +35,58 @@ img {
 #root {
   min-height: 100vh;
 }
+
+.layout-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-content {
+  flex: 1;
+  width: min(1100px, 95vw);
+  margin: 0 auto;
+  padding: 32px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.layout-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.page-main {
+  width: 100%;
+}
+
+.cart-link-mobile {
+  display: none;
+}
+
+.cart-link-mobile a {
+  width: 100%;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed #e2e8f0;
+  background: #fff;
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .layout-main {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-sidebar {
+    display: none;
+  }
+
+  .cart-link-mobile {
+    display: flex;
+  }
+}

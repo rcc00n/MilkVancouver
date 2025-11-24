@@ -3,18 +3,15 @@ import { Link, NavLink } from "react-router-dom";
 
 import { useCart } from "../../context/CartContext";
 
-interface HeaderProps {
-  onCartClick: () => void;
-}
-
 const navLinkStyle: CSSProperties = {
   padding: "8px 12px",
   borderRadius: "10px",
   fontWeight: 600,
 };
 
-function Header({ onCartClick }: HeaderProps) {
-  const { itemCount } = useCart();
+function Header() {
+  const { items } = useCart();
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <header
@@ -65,26 +62,11 @@ function Header({ onCartClick }: HeaderProps) {
             Home
           </NavLink>
           <NavLink to="/cart" style={navLinkStyle}>
-            Cart
+            Cart ({itemCount})
           </NavLink>
           <NavLink to="/checkout" style={navLinkStyle}>
             Checkout
           </NavLink>
-          <button
-            type="button"
-            onClick={onCartClick}
-            style={{
-              border: "1px solid #fb923c",
-              background: "linear-gradient(135deg, #fdba74, #fb923c)",
-              color: "#7c2d12",
-              padding: "8px 14px",
-              borderRadius: 12,
-              fontWeight: 700,
-              boxShadow: "0 10px 30px -12px rgba(249, 115, 22, 0.7)",
-            }}
-          >
-            Cart ({itemCount})
-          </button>
         </nav>
       </div>
     </header>

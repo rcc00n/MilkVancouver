@@ -1,19 +1,23 @@
-export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  tags?: string[];
-};
+export interface ProductImage {
+  id: number;
+  image_url: string;
+  alt_text: string;
+  sort_order: number;
+}
 
-export type CartItem = {
+export interface Product {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  price_cents: number;
+  main_image_url?: string;
+  category?: string;
+  is_popular: boolean;
+  images: ProductImage[];
+}
+
+export interface CartItem {
   product: Product;
   quantity: number;
-};
-
-export type OrderDetails = {
-  items: CartItem[];
-  email: string;
-  total: number;
-};
+}

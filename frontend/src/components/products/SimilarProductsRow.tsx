@@ -16,7 +16,7 @@ function SimilarProductsRow({ products }: SimilarProductsRowProps) {
     <section style={{ marginTop: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <h4 style={{ margin: 0 }}>Similar picks</h4>
-        <span style={{ color: "#475569", fontSize: 13 }}>Based on tags</span>
+        <span style={{ color: "#475569", fontSize: 13 }}>Same category</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
         {products.map((product) => (
@@ -27,9 +27,10 @@ function SimilarProductsRow({ products }: SimilarProductsRowProps) {
             <Link to={`/products/${product.id}`} style={{ fontWeight: 700 }}>
               {product.name}
             </Link>
+            {product.category && <span style={{ color: "#0f172a", fontSize: 12 }}>{product.category}</span>}
             <div style={{ color: "#475569", fontSize: 14 }}>{product.description}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong>${(product.price / 100).toFixed(2)}</strong>
+              <strong>${(product.price_cents / 100).toFixed(2)}</strong>
               <button
                 type="button"
                 onClick={() => addItem(product, 1)}
