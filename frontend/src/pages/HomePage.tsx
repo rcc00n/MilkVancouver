@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { getLatestBlogPosts } from "../api/blog";
 import { getProducts } from "../api/products";
+import BlogCard from "../components/blog/BlogCard";
 import FiltersBar from "../components/products/FiltersBar";
 import ProductGrid from "../components/products/ProductGrid";
 import SearchBar from "../components/products/SearchBar";
@@ -353,21 +354,7 @@ function HomePage() {
               <div className="alert alert--muted">No blog posts yet—check back soon.</div>
             )}
             {blogPosts.map((post) => (
-              <Link key={post.id} to={`/blog/${post.slug}`} className="blog-card">
-                {post.hero_image_url ? (
-                  <img src={post.hero_image_url} alt={post.title} className="blog-card__image" />
-                ) : (
-                  <div className="blog-card__placeholder">Story</div>
-                )}
-                <div className="blog-card__body">
-                  <h3>{post.title}</h3>
-                  {post.excerpt && <p>{post.excerpt}</p>}
-                  <div className="blog-card__meta">
-                    <span>{post.published_at ? new Date(post.published_at).toLocaleDateString() : "Fresh"}</span>
-                    <span>Read post →</span>
-                  </div>
-                </div>
-              </Link>
+              <BlogCard key={post.id} post={post} />
             ))}
           </div>
         </div>

@@ -10,6 +10,8 @@ import SuccessPage from "./pages/SuccessPage";
 import AboutPage from "./pages/AboutPage";
 import PricingPage from "./pages/PricingPage";
 import GalleryPage from "./pages/GalleryPage";
+import BlogListPage from "./pages/BlogListPage";
+import BlogPostPage from "./pages/BlogPostPage";
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/shop" element={<MenuPage />} />
         <Route path="/products/:slug" element={<ProductPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/success" element={<SuccessPage />} />

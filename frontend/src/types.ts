@@ -26,7 +26,19 @@ export interface BlogPost {
   id: number;
   title: string;
   slug: string;
+  author?: string;
   excerpt?: string;
+  cover_image_url?: string;
   published_at?: string;
-  hero_image_url?: string;
+}
+
+export interface BlogPostDetail extends BlogPost {
+  content: string;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }

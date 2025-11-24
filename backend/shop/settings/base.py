@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "orders",
     "payments",
     "contacts",
+    "blog",
 ]
 
 MIDDLEWARE = [
