@@ -209,34 +209,28 @@ class OrderAdmin(admin.ModelAdmin):
         self.message_user(request, f"{updated} order(s) marked Cancelled.")
 
     def status_shortcuts(self, obj):
-        buttons = [
+        # Render a compact dropdown for changing status instead of multiple tiny buttons
+        options = [
+            format_html('<option value="">{}</option>', "Change status…"),
+        ]
+        for status_value, label, _, _ in [
             (Order.Status.IN_PROGRESS, "In Progress", "#ede9fe", "#6b21a8"),
             (Order.Status.READY, "Ready", "#fff7ed", "#c2410c"),
             (Order.Status.COMPLETED, "Completed", "#ecfdf3", "#15803d"),
             (Order.Status.CANCELLED, "Cancelled", "#fef2f2", "#b91c1c"),
-        ]
-        links = []
-        for status_value, label, bg, color in buttons:
+        ]:
             if obj.status == status_value:
                 continue
-            url = reverse(
-                "admin:orders_order_set_status",
-                args=[obj.pk, status_value],
-            )
-            links.append(
-                format_html(
-                    '<a href="{}" style="display:inline-flex;align-items:center;'
-                    "gap:4px;padding:4px 8px;border-radius:10px;"
-                    "background:{};color:{};font-weight:700;"
-                    'text-decoration:none;border:1px solid rgba(0,0,0,0.05);">'
-                    "{}</a>",
-                    url,
-                    bg,
-                    color,
-                    label,
-                )
-            )
-        return format_html_join("", "{}", ((link,) for link in links)) or "—"
+            url = reverse("admin:orders_order_set_status", args=[obj.pk, status_value])
+            options.append(format_html('<option value="{}">{}</option>', url, label))
+
+        return format_html(
+            '<select style="min-width:150px;padding:4px 8px;border-radius:8px;'
+            'border:1px solid #d1d5db;background:#0f172a;color:#e5e7eb;" '
+            'onchange="if(this.value){{window.location.href=this.value;this.selectedIndex=0;}}">'
+            "{}</select>",
+            format_html_join("", "{}", ((option,) for option in options)),
+        )
 
     status_shortcuts.short_description = "Quick Status"
 
