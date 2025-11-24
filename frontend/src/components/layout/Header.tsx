@@ -12,9 +12,9 @@ function Header({ onCartClick }: HeaderProps) {
   const subtotal = (subtotalCents / 100).toFixed(2);
   const navLinks = [
     { label: "Home", to: "/" },
+    { label: "Menu", to: "/menu" },
     { label: "About Us", to: "/about-us" },
     { label: "Pricing", to: "/pricing" },
-    { label: "Shop/Menu", to: "/menu" },
     { label: "Gallery", to: "/gallery" },
     { label: "Blog", to: "/blog" },
     { label: "Contact", to: "/contact" },

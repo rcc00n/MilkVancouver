@@ -70,7 +70,9 @@ function HomePage() {
     setLoading(true);
     setError(null);
 
-    getProducts(debouncedSearch || undefined, controller.signal)
+    const params = debouncedSearch ? { search: debouncedSearch } : undefined;
+
+    getProducts(params, controller.signal)
       .then((result) => setProducts(result))
       .catch((fetchError) => {
         if (controller.signal.aborted) return;
