@@ -6,3 +6,8 @@ gunicorn
 whitenoise
 django-cors-headers
 reportlab
+django-anymail[sendgrid]
+django-storages
+boto3
+Pillow
+python-dotenv

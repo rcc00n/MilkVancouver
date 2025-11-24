@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { CardElement } from "@stripe/react-stripe-js";
 
 import type { OrderType } from "../../api/orders";
 
@@ -17,12 +18,14 @@ export interface CheckoutFormValues {
 }
 
 interface CheckoutFormProps {
-  total: number;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
   submitting?: boolean;
-  onSubmit: (values: CheckoutFormValues) => void;
+  onSubmit: (values: CheckoutFormValues) => void | Promise<void>;
 }
 
-function CheckoutForm({ total, submitting = false, onSubmit }: CheckoutFormProps) {
+function CheckoutForm({ subtotalCents, taxCents, totalCents, submitting = false, onSubmit }: CheckoutFormProps) {
   const [values, setValues] = useState<CheckoutFormValues>({
     order_type: "pickup",
     full_name: "",
@@ -212,12 +215,35 @@ function CheckoutForm({ total, submitting = false, onSubmit }: CheckoutFormProps
         />
       </div>
 
+      <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>Payment</div>
+        <div
+          style={{
+            padding: 12,
+            borderRadius: 12,
+            border: "1px solid #e2e8f0",
+            background: "#f8fafc",
+          }}
+        >
+          <CardElement
+            options={{
+              hidePostalCode: true,
+            }}
+          />
+        </div>
+        <p style={{ marginTop: 8, fontSize: 12, color: "#64748b" }}>
+          For testing, use card <strong>4242 4242 4242 4242</strong> with any future expiry and any CVC.
+        </p>
+      </div>
+
       {formError && <p style={{ color: "#b91c1c", margin: 0 }}>{formError}</p>}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <div>
+        <div style={{ display: "grid", gap: 4 }}>
           <div style={{ color: "#475569", fontSize: 14 }}>Due today</div>
-          <strong style={{ fontSize: 22 }}>${(total / 100).toFixed(2)}</strong>
+          <div style={{ color: "#475569", fontSize: 14 }}>Subtotal: ${(subtotalCents / 100).toFixed(2)}</div>
+          <div style={{ color: "#475569", fontSize: 14 }}>GST (5%): ${(taxCents / 100).toFixed(2)}</div>
+          <strong style={{ fontSize: 22 }}>Total: ${(totalCents / 100).toFixed(2)}</strong>
         </div>
         <button
           type="submit"

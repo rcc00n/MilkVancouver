@@ -25,6 +25,9 @@ export interface OrderPayload {
   pickup_location?: string;
   pickup_instructions?: string;
   items: OrderItemPayload[];
+  subtotal_cents?: number;
+  tax_cents?: number;
+  total_cents?: number;
 }
 
 export interface OrderResponse {

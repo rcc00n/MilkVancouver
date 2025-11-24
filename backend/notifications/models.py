@@ -19,6 +19,12 @@ class EmailNotification(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default="pending"
     )
+    receipt_pdf = models.FileField(
+        upload_to="receipts/",
+        blank=True,
+        null=True,
+        help_text="Stored order receipt PDF",
+    )
     message_id = models.CharField(max_length=255, blank=True)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -6,6 +6,12 @@ class Product(models.Model):
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
     price_cents = models.PositiveIntegerField()
+    image = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+        help_text="Main product image (stored in S3 or local MEDIA_ROOT).",
+    )
     main_image_url = models.URLField(blank=True)
     category = models.CharField(max_length=100, blank=True)
     is_popular = models.BooleanField(default=False)

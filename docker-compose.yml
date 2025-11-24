@@ -14,17 +14,18 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    command: gunicorn shop.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn shop.wsgi:application --bind 0.0.0.0:8000 --access-logfile - --error-logfile -
     ports:
       - "8000:8000"
     volumes:
       - ./backend/db.sqlite3:/app/db.sqlite3
+    env_file:
+      - ./backend/.env
     environment:
       DJANGO_SETTINGS_MODULE: shop.settings.prod
       DJANGO_SECRET_KEY: dev-secret-key
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
       DJANGO_CORS_ALLOWED_ORIGINS: http://localhost:4173,http://localhost:5173
-      STRIPE_SECRET_KEY: sk_test_placeholder
     depends_on:
       - db
 

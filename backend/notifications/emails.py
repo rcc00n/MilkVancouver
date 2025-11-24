@@ -1,6 +1,7 @@
 from typing import Optional
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -74,6 +75,13 @@ def send_order_receipt_email(order: Order) -> EmailNotification:
             error=error,
             sent_at=sent_at,
         )
+        if pdf_bytes and status == "sent":
+            filename = f"order_{order.id}_receipt.pdf"
+            notification.receipt_pdf.save(
+                filename,
+                ContentFile(pdf_bytes),
+                save=True,
+            )
         return notification
     except Exception as exc:
         return EmailNotification.objects.create(

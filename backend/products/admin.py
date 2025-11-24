@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import Product, ProductImage
 
@@ -11,8 +12,30 @@ class ProductImageInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "price_cents", "is_popular")
+    list_display = ("name", "category", "price_cents", "is_popular", "image_preview")
     list_filter = ("category", "is_popular")
     search_fields = ("name", "slug", "category")
     prepopulated_fields = {"slug": ("name",)}
+    readonly_fields = ("image_preview",)
+    fields = (
+        "name",
+        "slug",
+        "description",
+        "price_cents",
+        "image",
+        "main_image_url",
+        "category",
+        "is_popular",
+        "image_preview",
+    )
     inlines = [ProductImageInline]
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height: 150px; border-radius: 8px;" />',
+                obj.image.url,
+            )
+        return "No image"
+
+    image_preview.short_description = "Preview"

@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.html import format_html_join
 
+from notifications.models import EmailNotification
+
 from .models import Order, OrderItem
 
 STATUS_COLORS = {
@@ -43,6 +45,7 @@ class OrderAdmin(admin.ModelAdmin):
         "status_shortcuts",
         "display_total",
         "created_at",
+        "latest_receipt_link",
     )
     list_display_links = ("id", "full_name")
     list_filter = (
@@ -60,6 +63,7 @@ class OrderAdmin(admin.ModelAdmin):
         "stripe_payment_intent_id",
         "created_at",
         "updated_at",
+        "latest_receipt_link",
     )
     fieldsets = (
         (
@@ -263,6 +267,29 @@ class OrderAdmin(admin.ModelAdmin):
         if referer:
             return redirect(referer)
         return redirect("admin:orders_order_changelist")
+
+    def latest_receipt_link(self, obj):
+        notification = (
+            EmailNotification.objects.filter(
+                order=obj, kind="order_receipt"
+            )
+            .order_by("-sent_at", "-created_at")
+            .first()
+        )
+        if not notification:
+            return "—"
+        if notification.receipt_pdf:
+            return format_html(
+                '<a href="{}" target="_blank" rel="noopener">Receipt PDF</a>',
+                notification.receipt_pdf.url,
+            )
+        url = reverse(
+            "admin:notifications_emailnotification_change",
+            args=[notification.pk],
+        )
+        return format_html('<a href="{}">Notification</a>', url)
+
+    latest_receipt_link.short_description = "Latest Receipt"
 
 
 def orders_dashboard(request):
