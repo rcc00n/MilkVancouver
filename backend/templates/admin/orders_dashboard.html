@@ -1,0 +1,100 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Orders Dashboard{% endblock %}
+
+{% block content %}
+<div class="orders-dashboard">
+  <h1>Orders Dashboard</h1>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Total orders today</div>
+      <div class="metric-value">{{ total_orders_today }}</div>
+    </div>
+    <div class="metric-card metric-yellow">
+      <div class="metric-label">Pending</div>
+      <div class="metric-value">{{ pending_orders }}</div>
+    </div>
+    <div class="metric-card metric-purple">
+      <div class="metric-label">In Progress</div>
+      <div class="metric-value">{{ in_progress_orders }}</div>
+    </div>
+    <div class="metric-card metric-orange">
+      <div class="metric-label">Ready</div>
+      <div class="metric-value">{{ ready_orders }}</div>
+    </div>
+    <div class="metric-card metric-green">
+      <div class="metric-label">Completed today</div>
+      <div class="metric-value">{{ completed_orders_today }}</div>
+    </div>
+    <div class="metric-card metric-blue">
+      <div class="metric-label">Revenue today</div>
+      <div class="metric-value">${{ revenue_today_display|floatformat:2 }}</div>
+      <div class="metric-sub">({{ revenue_today }}¢)</div>
+    </div>
+  </div>
+
+  <div class="dashboard-actions">
+    <a href="{{ pending_url }}" class="action-btn action-yellow">View all pending</a>
+    <a href="{{ ready_url }}" class="action-btn action-orange">Ready for pickup</a>
+    <a href="{{ add_order_url }}" class="action-btn action-green">Create manual order</a>
+  </div>
+</div>
+
+<style>
+  .orders-dashboard h1 {
+    margin-bottom: 16px;
+  }
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .metric-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  }
+  .metric-label {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 6px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .metric-sub {
+    font-size: 12px;
+    color: #475569;
+  }
+  .metric-yellow { background: #fef9c3; border-color: #fcd34d; }
+  .metric-purple { background: #ede9fe; border-color: #c4b5fd; }
+  .metric-orange { background: #fff7ed; border-color: #fdba74; }
+  .metric-green { background: #ecfdf3; border-color: #86efac; }
+  .metric-blue { background: #e0f2fe; border-color: #93c5fd; }
+  .dashboard-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #0f172a;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid #e5e7eb;
+  }
+  .action-yellow { background: #fef9c3; border-color: #fcd34d; }
+  .action-orange { background: #fff7ed; border-color: #fb923c; }
+  .action-green { background: #ecfdf3; border-color: #86efac; }
+  .action-btn:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
+</style>
+{% endblock %}

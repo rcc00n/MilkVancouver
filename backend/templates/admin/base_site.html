@@ -1,0 +1,36 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | MeatDirect Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">MeatDirect Admin</a></h1>
+<a class="orders-dashboard-pill" href="{% url 'admin:orders-dashboard' %}">Orders Dashboard</a>
+{% endblock %}
+
+{% block nav-global %}
+<a class="orders-dashboard-pill" href="{% url 'admin:orders-dashboard' %}">Orders Dashboard</a>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  .orders-dashboard-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-left: 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+  }
+  .orders-dashboard-pill:hover {
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(16, 185, 129, 0.45);
+  }
+</style>
+{% endblock %}

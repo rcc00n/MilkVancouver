@@ -1,31 +1,39 @@
 import api from "./client";
-import type { CartItem } from "../types";
 
-export interface OrderPayload {
-  items: CartItem[];
-  email: string;
-  name?: string;
-  address?: string;
+export type OrderType = "pickup" | "delivery";
+
+export interface OrderItemPayload {
+  product_id: number;
+  quantity: number;
+}
+
+export interface AddressPayload {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  postal_code?: string;
   notes?: string;
 }
 
+export interface OrderPayload {
+  full_name: string;
+  email: string;
+  phone: string;
+  order_type: OrderType;
+  address?: AddressPayload;
+  notes?: string;
+  pickup_location?: string;
+  pickup_instructions?: string;
+  items: OrderItemPayload[];
+}
+
 export interface OrderResponse {
-  id: string;
+  id: number;
+  status: string;
   total_cents: number;
 }
 
 export async function createOrder(payload: OrderPayload): Promise<OrderResponse> {
-  try {
-    const response = await api.post<OrderResponse>("/orders/", payload);
-    return response.data;
-  } catch (error) {
-    // Backend endpoint is still a placeholder; return a mock order id so checkout can proceed.
-    return {
-      id: `ord_${Date.now()}`,
-      total_cents: payload.items.reduce(
-        (sum, item) => sum + item.product.price_cents * item.quantity,
-        0,
-      ),
-    };
-  }
+  const response = await api.post<OrderResponse>("/orders/", payload);
+  return response.data;
 }
