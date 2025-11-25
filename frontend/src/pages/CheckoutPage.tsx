@@ -120,10 +120,37 @@ function CheckoutPageInner() {
 }
 
 function CheckoutPage() {
+  const insecureHostFallback =
+    import.meta.env.VITE_SECURE_CHECKOUT_ORIGIN?.trim() || "https://api.meatdirect.duckdns.org";
   const envStripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [loadingStripe, setLoadingStripe] = useState(true);
   const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hostname = window.location.hostname;
+    const isLocal = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (window.isSecureContext || isLocal) {
+      return;
+    }
+
+    try {
+      const cartSnapshot = localStorage.getItem("md_cart");
+      const target = new URL(
+        `${insecureHostFallback}${window.location.pathname}${window.location.search}${window.location.hash}`
+      );
+      if (cartSnapshot) {
+        target.searchParams.set("cart", btoa(cartSnapshot));
+      }
+      setStripeError("Redirecting you to our secure checkout…");
+      window.location.replace(target.toString());
+    } catch (error) {
+      console.error("Secure checkout redirect failed", error);
+      setStripeError("Payments require a secure connection. Please switch to HTTPS and try again.");
+    }
+  }, [insecureHostFallback]);
 
   useEffect(() => {
     let cancelled = false;

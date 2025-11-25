@@ -13,13 +13,47 @@ type CartContextValue = {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 const STORAGE_KEY = "md_cart";
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+function decodeCartFromQuery(): CartItem[] | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get("cart");
+  if (!encoded) return null;
+  try {
+    const json = atob(encoded);
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) {
+      // Clean up the URL so the param doesn't linger in history / sharing.
+      params.delete("cart");
+      const url = new URL(window.location.href);
+      url.search = params.toString();
+      window.history.replaceState({}, "", url.toString());
+      return parsed;
+    }
+  } catch (error) {
+    console.error("Failed to decode cart from query", error);
+  }
+  return null;
+}
 
-  useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) setItems(JSON.parse(raw));
-  }, []);
+function getInitialCart(): CartItem[] {
+  if (typeof window === "undefined") return [];
+
+  // Prefer a cart passed via query string (used when redirecting from an insecure origin).
+  const cartFromQuery = decodeCartFromQuery();
+  if (cartFromQuery) return cartFromQuery;
+
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [items, setItems] = useState<CartItem[]>(getInitialCart);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
