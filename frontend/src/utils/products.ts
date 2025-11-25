@@ -9,7 +9,7 @@ const resolveAbsoluteUrl = (raw?: string | null) => {
 
   // Handle relative media paths by prefixing with the current origin (works for SSR and browser).
   if (typeof window !== "undefined" && window.location?.origin) {
-    return `${window.location.origin}/${url.replace(/^\\//, "")}`;
+    return `${window.location.origin}/${url.replace(/^\/+/, "")}`;
   }
 
   return url;
