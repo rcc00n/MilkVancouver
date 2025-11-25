@@ -4,7 +4,7 @@ import axios, { AxiosHeaders } from "axios";
 const resolvedBaseUrl =
   (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim() ||
   (typeof window !== "undefined"
-    ? `${window.location.origin}/api`
+    ? `api.${window.location.origin}/api`
     : "http://localhost:8000/api");
 
 const api = axios.create({
