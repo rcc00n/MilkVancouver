@@ -1,14 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
 import CheckoutForm, { type CheckoutFormValues } from "../components/checkout/CheckoutForm";
 import { type OrderPayload } from "../api/orders";
-import { createCheckout } from "../api/payments";
+import { createCheckout, fetchStripeConfig } from "../api/payments";
 import { useCart } from "../context/CartContext";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
 
 function CheckoutPageInner() {
   const navigate = useNavigate();
@@ -122,6 +120,81 @@ function CheckoutPageInner() {
 }
 
 function CheckoutPage() {
+  const envStripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim();
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [loadingStripe, setLoadingStripe] = useState(true);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function prepareStripe() {
+      setLoadingStripe(true);
+      try {
+        const publishableKey =
+          envStripeKey ||
+          (await fetchStripeConfig()).publishable_key?.trim();
+
+        if (!publishableKey) {
+          throw new Error("Stripe publishable key is missing on the server.");
+        }
+
+        const promise = loadStripe(publishableKey);
+        const stripeInstance = await promise;
+
+        if (!stripeInstance) {
+          throw new Error("Stripe failed to initialize with the provided key.");
+        }
+
+        if (!cancelled) {
+          setStripePromise(promise);
+          setStripeError(null);
+        }
+      } catch (error) {
+        console.error("Failed to initialize Stripe", error);
+        if (!cancelled) {
+          setStripeError(
+            "Payments are unavailable right now. Please try again soon or contact support."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingStripe(false);
+        }
+      }
+    }
+
+    prepareStripe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [envStripeKey]);
+
+  if (stripeError) {
+    return (
+      <div style={{ display: "grid", gap: 16 }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Checkout</h2>
+          <p style={{ color: "#475569" }}>Finalize your details and pay securely.</p>
+        </div>
+        <p style={{ color: "#b91c1c" }}>{stripeError}</p>
+      </div>
+    );
+  }
+
+  if (loadingStripe || !stripePromise) {
+    return (
+      <div style={{ display: "grid", gap: 16 }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Checkout</h2>
+          <p style={{ color: "#475569" }}>Preparing a secure payment form...</p>
+        </div>
+        <p style={{ color: "#475569" }}>Loading payments...</p>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <CheckoutPageInner />

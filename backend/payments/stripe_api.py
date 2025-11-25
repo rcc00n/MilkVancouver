@@ -11,6 +11,30 @@ from products.models import Product
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_placeholder")
 
 
+@api_view(["GET"])
+def stripe_config(_request):
+    """
+    Expose the publishable key to the frontend at runtime so the payment form
+    can initialize even if the static bundle was built without env baked in.
+    """
+    publishable_key = os.environ.get("STRIPE_PUBLISHABLE_KEY") or os.environ.get(
+        "VITE_STRIPE_PUBLISHABLE_KEY"
+    )
+
+    if not publishable_key:
+        return Response(
+            {"detail": "Stripe publishable key is not configured."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    return Response(
+        {
+            "publishable_key": publishable_key,
+            "livemode": publishable_key.startswith("pk_live_"),
+        }
+    )
+
+
 @api_view(["POST"])
 def create_checkout(request):
     data = request.data or {}

@@ -7,7 +7,17 @@ export interface CheckoutResponse {
   amount: number;
 }
 
+export interface StripeConfigResponse {
+  publishable_key: string;
+  livemode: boolean;
+}
+
 export async function createCheckout(payload: OrderPayload): Promise<CheckoutResponse> {
   const response = await api.post<CheckoutResponse>("/checkout/", payload);
+  return response.data;
+}
+
+export async function fetchStripeConfig(): Promise<StripeConfigResponse> {
+  const response = await api.get<StripeConfigResponse>("/payments/config/");
   return response.data;
 }

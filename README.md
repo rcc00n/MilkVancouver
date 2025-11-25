@@ -47,6 +47,7 @@ The frontend ships with basic catalog, product detail, cart, checkout, and succe
   dokku config:set meatdirect $(sed '/^#/d;/^$/d' backend/.env.production | xargs)
   ```
 - Rebuild once config is in place: `dokku ps:rebuild meatdirect`
+- Stripe: set both `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` on the backend. The frontend fetches the publishable key at runtime via `/api/payments/config/` (you can still set `VITE_STRIPE_PUBLISHABLE_KEY` when building locally).
 
 ## Repo structure
 
