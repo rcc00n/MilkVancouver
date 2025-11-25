@@ -2,7 +2,7 @@ import axios, { AxiosHeaders } from "axios";
 
 const resolvedBaseUrl =
   (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim() ||
-  "http://api.meatshop.duckdns.org/api";
+  "https://api.meatshop.duckdns.org/api";
 
 const api = axios.create({
   baseURL: resolvedBaseUrl,
