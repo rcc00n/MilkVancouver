@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 
 const resolvedBaseUrl =
   (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim() ||
@@ -39,10 +39,9 @@ api.interceptors.request.use(async (config) => {
   }
 
   if (csrfToken) {
-    config.headers = {
-      ...config.headers,
-      "X-CSRFToken": csrfToken,
-    };
+    const headers = AxiosHeaders.from(config.headers ?? {});
+    headers.set("X-CSRFToken", csrfToken);
+    config.headers = headers;
   }
 
   return config;

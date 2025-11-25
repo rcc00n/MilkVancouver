@@ -11,6 +11,7 @@ function Layout() {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const location = useLocation();
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const isHome = location.pathname === "/";
 
   useEffect(() => {
     setIsCartOpen(false);
@@ -26,7 +27,7 @@ function Layout() {
   return (
     <div className="layout-shell">
       <Header onCartClick={handleOpenCart} />
-      <div className="layout-content">
+      <div className={`layout-content ${isHome ? "layout-content--home" : ""}`}>
         <div className="cart-link-mobile">
           <button type="button" onClick={handleOpenCart}>
             Open cart ({itemCount})
