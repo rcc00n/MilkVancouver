@@ -1,7 +1,14 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
+
+// Resolve API host from Vite env when present, otherwise fall back to the current origin.
+const resolvedBaseUrl =
+  (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim() ||
+  (typeof window !== "undefined"
+    ? `${window.location.origin}/api`
+    : "http://localhost:8000/api");
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api",
+  baseURL: resolvedBaseUrl,
   withCredentials: true,
   xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
@@ -49,7 +56,9 @@ api.interceptors.request.use(async (config) => {
 
   const csrfToken = getCsrfToken();
   if (csrfToken) {
-    config.headers = { ...config.headers, "X-CSRFToken": csrfToken };
+    const headers = AxiosHeaders.from(config.headers || {});
+    headers.set("X-CSRFToken", csrfToken);
+    config.headers = headers;
   }
 
   return config;
