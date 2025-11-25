@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -63,12 +64,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "shop.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Prefer DATABASE_URL (Postgres on Dokku) and fall back to sqlite for local dev.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    parsed = urllib.parse.urlparse(DATABASE_URL)
+    if parsed.scheme not in ("postgres", "postgresql"):
+        raise ValueError("Unsupported database scheme in DATABASE_URL")
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path.lstrip("/"),
+            "USER": parsed.username,
+            "PASSWORD": parsed.password,
+            "HOST": parsed.hostname,
+            "PORT": parsed.port or 5432,
+        }
     }
-}
+else:
+    db_path = os.environ.get("DJANGO_DB_PATH")
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": db_path if db_path else BASE_DIR / "db.sqlite3",
+        }
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
