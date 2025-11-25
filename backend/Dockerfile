@@ -27,6 +27,11 @@ COPY backend/. .
 COPY --from=frontend-build /frontend/dist /app/static
 COPY --from=frontend-build /frontend/dist/index.html /app/templates/index.html
 
+# Provide a placeholder DATABASE_URL at build time so prod settings can load; Dokku
+# will override this env at runtime with the real Postgres URL.
+ARG DATABASE_URL=postgres://placeholder:placeholder@localhost:5432/placeholder
+ENV DATABASE_URL=${DATABASE_URL}
+
 RUN DJANGO_SETTINGS_MODULE=shop.settings.prod DJANGO_SECRET_KEY=dev-secret-key DJANGO_ALLOWED_HOSTS=localhost python manage.py collectstatic --noinput
 
 EXPOSE 8000
