@@ -9,10 +9,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # regardless of how Django is started (manage.py, gunicorn, or other entrypoints).
 load_dotenv(BASE_DIR / ".env")
 
+
+def env_list(var_name: str, fallback=None):
+    raw_value = os.environ.get(var_name)
+    if raw_value:
+        return [item.strip().rstrip("/") for item in raw_value.split(",") if item.strip()]
+    return fallback or []
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if os.environ.get("DJANGO_ALLOWED_HOSTS") else []
+BACKEND_HOST = os.environ.get("DJANGO_BACKEND_HOST", "api.milkvanq.duckdns.org")
+DEFAULT_ALLOWED_HOSTS = [BACKEND_HOST, "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", DEFAULT_ALLOWED_HOSTS)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -158,21 +167,24 @@ else:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
-CORS_ALLOWED_ORIGINS = (
-    os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS", "").split(",")
-    if os.environ.get("DJANGO_CORS_ALLOWED_ORIGINS")
-    else []
+# Default origins for the Dokku deployment; override via env vars if needed.
+FRONTEND_ORIGINS = env_list(
+    "DJANGO_FRONTEND_ORIGINS",
+    ["http://milkvanq.duckdns.org", "https://milkvanq.duckdns.org"],
 )
+CORS_ALLOWED_ORIGINS = env_list("DJANGO_CORS_ALLOWED_ORIGINS", FRONTEND_ORIGINS)
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = (
-    os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
-    if os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS")
-    else []
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    FRONTEND_ORIGINS + [f"http://{BACKEND_HOST}", f"https://{BACKEND_HOST}"],
 )
 
 # Allow overriding cookie settings for cross-site frontend/backend setups.
 COOKIE_DOMAIN = os.environ.get("DJANGO_COOKIE_DOMAIN")
+# Fall back to the Dokku domain in production so cookies work across subdomains.
+if not COOKIE_DOMAIN and not DEBUG and BACKEND_HOST.endswith("milkvanq.duckdns.org"):
+    COOKIE_DOMAIN = ".milkvanq.duckdns.org"
 CSRF_COOKIE_DOMAIN = COOKIE_DOMAIN or None
 SESSION_COOKIE_DOMAIN = COOKIE_DOMAIN or None
 CSRF_COOKIE_SAMESITE = os.environ.get("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")

@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: meatdirect
-      POSTGRES_USER: meatdirect
-      POSTGRES_PASSWORD: meatdirect
+      POSTGRES_DB: milkvanq
+      POSTGRES_USER: milkvanq
+      POSTGRES_PASSWORD: milkvanq
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
