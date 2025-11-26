@@ -172,8 +172,9 @@ CSRF_TRUSTED_ORIGINS = (
 )
 
 # Allow overriding cookie settings for cross-site frontend/backend setups.
-CSRF_COOKIE_DOMAIN = ".meatdirect.duckdns.org"
-SESSION_COOKIE_DOMAIN = ".meatdirect.duckdns.org"
+COOKIE_DOMAIN = os.environ.get("DJANGO_COOKIE_DOMAIN")
+CSRF_COOKIE_DOMAIN = COOKIE_DOMAIN or None
+SESSION_COOKIE_DOMAIN = COOKIE_DOMAIN or None
 CSRF_COOKIE_SAMESITE = os.environ.get("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")
 CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "False") == "True"
 SESSION_COOKIE_SAMESITE = os.environ.get("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
