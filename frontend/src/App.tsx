@@ -28,7 +28,8 @@ function App() {
           <Route path="/products/:slug" element={<ProductPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/good-to-know" element={<GoodToKnowPage />} />
-          <Route path="/meat-education" element={<GoodToKnowPage />} />
+          <Route path="/milk-education" element={<GoodToKnowPage />} />
+          <Route path="/dairy-education" element={<GoodToKnowPage />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/contact" element={<ContactPage />} />

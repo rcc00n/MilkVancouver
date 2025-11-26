@@ -89,6 +89,12 @@ const productHighlights = [
   },
 ];
 
+const heroStats = [
+  { label: "Milking → bottle", value: "24 hrs" },
+  { label: "Delivery windows", value: "3x weekly" },
+  { label: "Bottle returns", value: "Included" },
+];
+
 function HomePage() {
   const { addItem } = useCart();
   const navigate = useNavigate();
@@ -131,52 +137,79 @@ function HomePage() {
 
   return (
     <div className="landing-page space-y-0 text-slate-900">
-      <section className="landing-section bg-gradient-to-br from-[#0b1f3a] via-[#0f2745] to-[#1d4ed8] py-16 text-white border-b border-sky-200/30">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-4">
-            <p className="text-sky-200 uppercase tracking-[0.2em] text-xs">
-              Grass-fed BC dairy • Pasteurized same day
-            </p>
-            <h1 className="text-4xl md:text-5xl font-semibold leading-tight">
+      <section className="landing-section relative overflow-hidden py-16 text-slate-900 bg-gradient-to-br from-[#eaf5ff] via-[#f6fbff] to-white border-b border-sky-100">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -left-10 -top-16 h-64 w-64 rounded-full bg-sky-200/40 blur-3xl" />
+          <div className="absolute right-4 top-10 h-72 w-72 rounded-full bg-blue-300/30 blur-3xl" />
+          <div className="absolute left-12 bottom-0 h-60 w-60 rounded-full bg-amber-100/50 blur-3xl" />
+        </div>
+        <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 grid md:grid-cols-2 gap-12 items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/80 backdrop-blur border border-sky-100 shadow-sm">
+              <span className="text-sky-800 text-xs font-semibold tracking-[0.2em] uppercase">
+                Grass-fed BC dairy
+              </span>
+              <span className="text-slate-500 text-sm">Bottled in Vancouver · Cold chain 0–4°C</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-slate-900">
               Vancouver&apos;s milk, yogurt, and cream bottled at dawn.
             </h1>
-            <p className="text-slate-100/90 max-w-xl">
+            <p className="text-slate-700 max-w-2xl">
               {brand.name} partners with Fraser Valley dairies, fills reusable glass bottles, and delivers across
               Vancouver and the North Shore with cold-chain tracking.
             </p>
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap gap-3 pt-1">
               <button
                 type="button"
                 onClick={scrollToShop}
-                className="bg-white text-slate-900 px-6 py-3 rounded-lg hover:bg-sky-100 transition-colors font-semibold"
+                className="bg-[#0b4f88] text-white px-6 py-3 rounded-lg shadow-md hover:bg-sky-800 transition-colors font-semibold"
               >
                 Shop dairy
               </button>
               <Link
                 to="/contact"
-                className="border-2 border-white text-white px-6 py-3 rounded-lg hover:bg-white hover:text-slate-900 transition-colors"
+                className="border-2 border-slate-900 text-slate-900 px-6 py-3 rounded-lg bg-white/70 hover:bg-white transition-colors"
               >
                 See delivery map
               </Link>
             </div>
             <div className="flex flex-wrap gap-2">
               {categoryShowcase.slice(0, 3).map((item) => (
-                <span key={item.title} className="border border-white/30 px-4 py-2 rounded-full text-sm">
+                <span
+                  key={item.title}
+                  className="border border-sky-100 bg-white/80 px-4 py-2 rounded-full text-sm text-slate-800 shadow-sm"
+                >
                   {item.title}
                 </span>
               ))}
               <button
                 type="button"
                 onClick={scrollToShop}
-                className="bg-white/10 border border-white/30 px-4 py-2 rounded-full text-sm hover:bg-white/20 transition-colors"
+                className="bg-white/80 border border-sky-100 px-4 py-2 rounded-full text-sm hover:bg-white transition-colors text-slate-800 shadow-sm"
               >
                 How it works →
               </button>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              {heroStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="bg-white/80 border border-sky-100 rounded-xl px-4 py-3 shadow-sm backdrop-blur"
+                >
+                  <div className="text-xs uppercase tracking-[0.15em] text-sky-800 font-semibold">{stat.label}</div>
+                  <div className="text-2xl font-semibold text-slate-900">{stat.value}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-white text-slate-900 p-8 rounded-xl shadow-2xl">
-            <p className="text-sky-700 uppercase tracking-wider mb-2 text-sm">Popular right now</p>
+          <div className="bg-white/90 backdrop-blur text-slate-900 p-8 rounded-2xl shadow-2xl border border-sky-100">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sky-700 uppercase tracking-wider text-sm">Popular right now</p>
+              <span className="rounded-full bg-sky-50 text-sky-700 text-xs font-semibold px-3 py-1 border border-sky-100">
+                Updated live
+              </span>
+            </div>
             <h3 className="text-2xl font-semibold mb-4">What neighbors are adding</h3>
             <div className="space-y-3">
               {popularProducts.length ? (
@@ -201,7 +234,7 @@ function HomePage() {
             {error && <p className="text-amber-600 text-sm mt-3">{error}</p>}
             <button
               type="button"
-              className="bg-sky-900 text-white px-6 py-3 rounded-lg hover:bg-sky-800 transition-colors w-full mt-6"
+              className="bg-sky-900 text-white px-6 py-3 rounded-lg hover:bg-sky-800 transition-colors w-full mt-6 shadow-md"
               onClick={scrollToShop}
             >
               Shop the lineup

@@ -34,12 +34,32 @@ function Header({ onCartClick }: HeaderProps) {
 
   return (
     <header className="site-header">
+      <div className="header-ribbon">
+        <div className="container header-ribbon__content">
+          <div className="header-ribbon__left">
+            <span className="header-ribbon__badge">Vancouver · BC dairy</span>
+            <span className="header-ribbon__note">Bottled at dawn • Cold chain 0–4°C</span>
+          </div>
+          <div className="header-ribbon__right">
+            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`} className="header-ribbon__link">
+              Call {brand.phone}
+            </a>
+            <span className="header-ribbon__divider" aria-hidden="true">
+              ·
+            </span>
+            <a href={`mailto:${brand.email}`} className="header-ribbon__link">
+              {brand.email}
+            </a>
+            <span className="header-ribbon__pill">{brand.supportHours}</span>
+          </div>
+        </div>
+      </div>
       <div className="container nav-shell">
         <Link to="/" className="brand">
           <img src={logo} alt={`${brand.name} logo`} className="brand__logo" />
           <div>
             <div className="brand__name">{brand.name}</div>
-            <div className="brand__tagline">Fresh BC dairy delivered</div>
+            <div className="brand__tagline">Fresh BC dairy bottled in Vancouver</div>
           </div>
         </Link>
 

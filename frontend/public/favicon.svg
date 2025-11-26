@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Vancouver Milk Co. favicon</title>
+  <defs>
+    <linearGradient id="milkDrop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c8e9ff"/>
+      <stop offset="100%" stop-color="#67b7f7"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#0d1f38"/>
+  <path
+    d="M32 56c-8.5 0-15-6.6-15-15.2C17 29 32 10 32 10s15 19 15 30.8C47 49.4 40.5 56 32 56Z"
+    fill="url(#milkDrop)"/>
+  <path
+    d="M32 48c-5.2 0-9.5-4.3-9.5-9.6C22.5 31.8 32 21 32 21s9.5 10.8 9.5 17.4C41.5 43.7 37.2 48 32 48Z"
+    fill="url(#shine)"/>
+</svg>

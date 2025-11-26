@@ -9,7 +9,7 @@ function Footer() {
         <div className="footer-brand">
           <div>
             <div className="brand__name">{brand.name}</div>
-            <p className="muted">Coastal dairy bottled at dawn and delivered cold.</p>
+            <p className="muted">Vancouver, BC dairy bottled at dawn and delivered cold.</p>
           </div>
         </div>
         <div>
@@ -20,11 +20,13 @@ function Footer() {
             <a href={`mailto:${brand.email}`}>{brand.email}</a>
             <br />
             <Link to="/contact">Contact page</Link>
+            <br />
+            <span>{brand.location}</span>
           </div>
         </div>
         <div>
           <h4 className="footer__heading">Hours</h4>
-          <div className="footer__text">Open 24/7 online</div>
+          <div className="footer__text">{brand.supportHours}</div>
           <div className="footer__text">Shop anytime</div>
         </div>
         <div>
