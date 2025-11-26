@@ -38,4 +38,8 @@ RUN DJANGO_SETTINGS_MODULE=shop.settings.prod DJANGO_SECRET_KEY=dev-secret-key D
 
 EXPOSE 8000
 
-CMD ["gunicorn", "shop.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENV DJANGO_SETTINGS_MODULE=shop.settings.prod
+
+# Run migrations on container start to ensure Postgres has required tables,
+# then launch the app.
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn shop.wsgi:application --bind 0.0.0.0:8000"]
