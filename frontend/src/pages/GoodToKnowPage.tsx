@@ -2,74 +2,74 @@ import { Link } from "react-router-dom";
 
 const inspectionQuestions = [
   {
-    question: "Provincial vs. federal—what is the difference?",
+    question: "How fresh is the milk when it arrives?",
     answer:
-      "Provincial inspection lets us sell retail within Alberta. Federal inspection adds CFIA oversight so we can ship interprovincially without changing our standards or labels.",
+      "Milking and pasteurization happen the same day. Bottles are sealed between 0–4°C and timestamped so you know the exact window.",
   },
   {
-    question: "How often is an inspector on site?",
+    question: "Do you pasteurize and homogenize?",
     answer:
-      "Every production day. Humane handling, sanitation, paperwork, and temperature logs are verified before we start and while we work.",
+      "We low-temp pasteurize and offer both cream-top (non-homogenized) and homogenized options. Each label lists the process so you can choose.",
   },
   {
-    question: "How do you track every order?",
+    question: "How do bottle deposits and returns work?",
     answer:
-      "Lot codes, pack dates, and farm groups ride on each label. Cold-chain temps are logged from harvest to delivery so you can trace every box.",
+      "Pay the deposit on your first order, rinse bottles after use, and leave them out on delivery day. Drivers scan returns and apply the credit to your next order.",
   },
   {
-    question: "What happens during an audit or recall?",
+    question: "Where do you deliver?",
     answer:
-      "We run mock recalls quarterly. Documentation, lot mapping, and delivery routes mean we can trace and notify quickly if something ever needs attention.",
+      "Vancouver, Burnaby, and the North Shore twice weekly with insulated shipping for surrounding areas. SMS updates include cold-chain timestamps.",
   },
 ];
 
 const grassHighlights = [
-  "Pasture-first diet with hay in winter—leaner, brighter flavor.",
-  "Naturally higher in omega-3s, conjugated linoleic acid (CLA), and antioxidants.",
-  "Nutrient-dense: more Vitamin A and E, plus beta-carotene that shows up as a buttery hue in the fat.",
-  "Great for meal prep and athletes looking for clean protein with minimal additives.",
+  "Grass-fed herds create naturally sweeter milk with balanced proteins.",
+  "Seasonal beta-carotene shows up as a golden cream line in non-homogenized bottles.",
+  "Low-temp pasteurization preserves flavor and keeps milk steaming-friendly for coffee.",
+  "Higher omega-3s and CLA make it a great choice for families and baristas alike.",
 ];
 
 const grainNotes = [
-  "We’re transparent when a herd finishes on grain—usually to boost marbling and a buttery texture.",
-  "Grain finish mellows mineral notes and can cook faster because of the extra fat cover.",
-  "We still keep feed sheets on file and stick to our hormone-free promise regardless of finish.",
+  "Non-homogenized (cream-top) bottles keep the fat intact—shake to blend or skim for coffee.",
+  "Homogenized options stay uniform for kids, smoothies, and quick pours.",
+  "We list the style on every label so you can pick what fits your fridge habits.",
 ];
 
 const hormonePoints = [
-  "No added growth hormones or routine stimulants in our beef, bison, pork, or poultry programs.",
-  "Predictable cooking: clean, honest fat cover that renders without a heavy aftertaste.",
-  "Better-for-family choice if you’re cooking for kids, weekly meal prep, or recovering athletes.",
-  "Supplier affidavits and random lot checks back the promise instead of just marketing copy.",
+  "BC Dairy-inspected plants with batch tracking on every bottle.",
+  "Cold-chain readings logged from fill to doorstep; flagged if outside 0–4°C.",
+  "Reusable glass sanitized and pressure-tested before refilling.",
+  "No antibiotics in the milk supply—batches are held and discarded if a herd is treated.",
 ];
 
 const microFaq = [
   {
-    question: "How do you source your animals?",
+    question: "Where do you bottle?",
     answer:
-      "Direct relationships with prairie and foothill ranchers—no blind auctions. We walk herds, confirm feed plans, and keep signed affidavits on file.",
-    linkLabel: "See sourcing stories",
-    linkTo: "/blog",
+      "Fraser Valley and Vancouver partners handle milking, pasteurization, and bottling. Labels list the dairy, batch, and pasteurization window.",
+    linkLabel: "Meet our partner dairies",
+    linkTo: "/about-us",
   },
   {
-    question: "Is all your meat inspected?",
+    question: "Do you offer lactose-free or alt milks?",
     answer:
-      "Yes. Retail orders run under provincial inspection and anything we ship out-of-province runs under our federal license with the same paperwork and traceability.",
-    linkLabel: "Inspection breakdown",
-    linkTo: "#inspection",
+      "We focus on dairy first, with lactose-free milk and occasional oat options for cafes. Coffee bar items are listed in the shop.",
+    linkLabel: "See the menu",
+    linkTo: "/menu",
   },
   {
-    question: "Can I order in bulk?",
+    question: "How do deposits and returns work?",
     answer:
-      "Absolutely. Half/whole beef, family freezer bundles, and wholesale cuts are cut to spec. We help you choose wrap sizes so nothing goes to waste.",
-    linkLabel: "Bulk pricing",
-    linkTo: "/pricing",
+      "Each glass bottle carries a small deposit. Leave rinsed bottles out on your next delivery; we scan and credit them automatically.",
+    linkLabel: "Return policy",
+    linkTo: "/contact",
   },
   {
-    question: "Do you deliver or ship?",
+    question: "Can I pause or skip deliveries?",
     answer:
-      "Local delivery routes run twice weekly and insulated shipping covers the rest of Canada. Cold-chain stays between 0–4°C with gel packs and liners.",
-    linkLabel: "Delivery FAQ",
+      "Yes. Email or message us before your route day to pause, skip, or switch your crate. No fees for quick changes.",
+    linkLabel: "Contact support",
     linkTo: "/contact",
   },
 ];
@@ -81,15 +81,15 @@ function GoodToKnowPage() {
         <div className="education-hero__grid">
           <div className="education-hero__copy">
             <div className="eyebrow">Good to Know</div>
-            <h1>Inspection, sourcing, and meat education—condensed in one page.</h1>
+            <h1>Pasteurization, cold-chain, and bottle returns—condensed in one page.</h1>
             <p className="muted">
-              Start here for the essentials: how provincial and federal inspection works, why we champion grass-fed and
-              hormone-free programs, and quick answers to the questions we hear most.
+              Start here for the essentials: how we bottle grass-fed milk, what pasteurization and homogenization mean
+              for taste, how deposits work, and quick answers for Vancouver delivery.
             </p>
             <div className="education-hero__tags">
-              <span className="pill pill--strong">Provincial + Federal inspected</span>
-              <span className="pill">Grass-fed focus</span>
-              <span className="pill">Hormone-free promise</span>
+              <span className="pill pill--strong">BC Dairy inspected</span>
+              <span className="pill">Grass-fed milk</span>
+              <span className="pill">Glass bottle returns</span>
             </div>
             <div className="education-hero__actions">
               <a className="btn btn--primary" href="#faq">
@@ -108,14 +108,14 @@ function GoodToKnowPage() {
             </div>
             <h3>Everything you want to know before filling the cart.</h3>
             <ul className="education-hero__list">
-              <li>How inspection works day-to-day and why traceability matters.</li>
-              <li>When grass-fed shines vs. when a grain finish makes sense.</li>
-              <li>What hormone-free means for flavor, texture, and your family.</li>
-              <li>Quick answers on sourcing, bulk orders, and delivery.</li>
+              <li>How fresh each bottle is and why we low-temp pasteurize.</li>
+              <li>When to pick cream-top vs. homogenized for coffee and cooking.</li>
+              <li>How deposits and reusable glass keep things sustainable.</li>
+              <li>Quick answers on routes, pauses, and cold-chain safeguards.</li>
             </ul>
             <div className="education-hero__foot">
-              <span className="pill">Transparent sourcing</span>
-              <span className="pill pill--accent">Label-first culture</span>
+              <span className="pill">Transparent labels</span>
+              <span className="pill pill--accent">Cold-chain first</span>
             </div>
           </div>
         </div>
@@ -124,11 +124,11 @@ function GoodToKnowPage() {
       <section className="container education-section" id="inspection">
         <div className="section-heading">
           <div>
-            <div className="eyebrow">Inspection</div>
-            <h2>What it means to be provincially and federally inspected.</h2>
-            <p className="muted">Q&A style so you can skim how oversight shows up in your box.</p>
+            <div className="eyebrow">Production & delivery</div>
+            <h2>Pasteurization, bottling, and cold-chain at a glance.</h2>
+            <p className="muted">Q&A style so you can skim how freshness and safety show up on your label.</p>
           </div>
-          <span className="pill pill--accent">Traceability & paperwork</span>
+          <span className="pill pill--accent">Traceability & timestamps</span>
         </div>
 
         <div className="education-qa-grid">
@@ -144,20 +144,20 @@ function GoodToKnowPage() {
           <div className="education-qa__card">
             <div className="education-qa__card-head">
               <div className="education-qa__badge">Daily oversight</div>
-              <div className="education-qa__status">CFIA-ready</div>
+              <div className="education-qa__status">BC Dairy</div>
             </div>
-            <h3>Paperwork follows the meat, not the other way around.</h3>
+            <h3>Labels follow the milk, not the other way around.</h3>
             <p>
-              Lot codes, cut sheets, sanitation checks, and cold-chain temps are logged alongside each production run.
-              That makes wholesale accounts, households, and gyms easy to serve with the same standard.
+              Batch codes, pasteurization windows, sanitation checks, and cold-chain temps are logged alongside each
+              production run. Homes, cafes, and shops all get the same data.
             </p>
             <ul className="education-qa__card-list">
-              <li>Labels include pack date, lot number, and farm group.</li>
-              <li>Temperature checks at receiving, processing, loading, and delivery.</li>
-              <li>Documentation is shareable if you need it for your own records.</li>
+              <li>Labels include batch code, dairy, pasteurization window, and style (cream-top or homogenized).</li>
+              <li>Temperature checks at fill, storage, route loading, and drop-off.</li>
+              <li>Documentation is shareable if you need it for your own records or cafe logs.</li>
             </ul>
             <Link className="link-button" to="/about-us">
-              See how we run inspection →
+              See how we bottle →
             </Link>
           </div>
         </div>
@@ -166,34 +166,35 @@ function GoodToKnowPage() {
       <section className="container education-section" id="grass-fed">
         <div className="section-heading">
           <div>
-            <div className="eyebrow">Grass-fed vs grain-fed</div>
-            <h2>Choosing the right finish for your kitchen.</h2>
+            <div className="eyebrow">Grass-fed milk + style</div>
+            <h2>Choosing between cream-top and homogenized.</h2>
             <p className="muted">
-              We prioritize grass-fed herds and stay transparent when a herd finishes on grain for added marbling.
+              We champion grass-fed herds and give you the choice between non-homogenized (cream-top) and homogenized
+              bottles for different uses.
             </p>
           </div>
-          <span className="pill pill--accent">Nutrition highlights</span>
+          <span className="pill pill--accent">Flavor & nutrition</span>
         </div>
 
         <div className="education-compare">
           <div className="education-compare__card education-compare__card--grass">
             <div className="education-compare__eyebrow">Grass-fed focus</div>
-            <h3>Why we lean grass-first.</h3>
+            <h3>Why it matters for taste.</h3>
             <ul className="education-compare__list">
               {grassHighlights.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
             <div className="education-compare__tags">
-              <span className="pill pill--small">Vitamin A & E</span>
-              <span className="pill pill--small">Higher CLA</span>
-              <span className="pill pill--small">Antioxidants</span>
+              <span className="pill pill--small">Omega-3s</span>
+              <span className="pill pill--small">Beta-carotene</span>
+              <span className="pill pill--small">Low-temp pasteurized</span>
             </div>
           </div>
 
           <div className="education-compare__card education-compare__card--grain">
-            <div className="education-compare__eyebrow">Grain finish perspective</div>
-            <h3>When grain-finished makes sense.</h3>
+            <div className="education-compare__eyebrow">Style choices</div>
+            <h3>Cream-top vs. homogenized.</h3>
             <ul className="education-compare__list">
               {grainNotes.map((item) => (
                 <li key={item}>{item}</li>
@@ -201,11 +202,11 @@ function GoodToKnowPage() {
             </ul>
             <div className="education-compare__note">
               <p className="muted">
-                Whether you choose grass-fed or a grain finish, we keep the same traceability and hormone-free standards
-                and list finishing details on request.
+                Both styles stay on the same cold-chain and inspection standards. Labels clearly mark which one you are
+                getting.
               </p>
               <Link className="link-button" to="/blog">
-                Read the grass-fed vs. grain-fed guide →
+                Read the cream-top vs. homogenized guide →
               </Link>
             </div>
           </div>
@@ -215,26 +216,26 @@ function GoodToKnowPage() {
       <section className="container education-section" id="hormone-free">
         <div className="education-highlight">
           <div>
-            <div className="eyebrow">Hormone-free meat</div>
-            <h2>Why it matters for taste and health.</h2>
+            <div className="eyebrow">Quality & safety</div>
+            <h2>How we keep every bottle safe and consistent.</h2>
             <p className="muted">
-              No added growth hormones or routine stimulants—just clean, honest meat you can feed to family, athletes,
-              and restaurant guests with confidence.
+              Pasteurization logs, batch tracking, and glass sanitation keep flavor and safety aligned for families and
+              cafes alike.
             </p>
           </div>
           <div className="education-highlight__grid">
             <div className="education-highlight__card">
               <div className="education-highlight__label">Taste & texture</div>
               <p>
-                Balanced marbling without heavy finishes means steadier cooking, less flare-ups, and flavor that tastes
-                like the pasture it came from.
+                Low-temp pasteurization keeps proteins intact for creamy texture, better steaming, and naturally sweet
+                flavor without heavy additives.
               </p>
             </div>
             <div className="education-highlight__card">
               <div className="education-highlight__label">Health-forward</div>
               <p>
-                Clean fat cover and nutrient density without added hormones support weekly meal prep, kid-friendly
-                lunches, and performance diets.
+                Grass-fed milk with clear batch codes supports weekly breakfasts, coffee bars, and kids who need clean,
+                familiar staples.
               </p>
             </div>
             <div className="education-highlight__card">

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { useCart } from "../../context/CartContext";
-import logo from "../../assets/logo.png";
+import { brand } from "../../config/brand";
+import logo from "../../assets/logo.svg";
 
 type HeaderProps = {
   onCartClick?: () => void;
@@ -35,10 +36,10 @@ function Header({ onCartClick }: HeaderProps) {
     <header className="site-header">
       <div className="container nav-shell">
         <Link to="/" className="brand">
-          <img src={logo} alt="MeatDirect logo" className="brand__logo" />
+          <img src={logo} alt={`${brand.name} logo`} className="brand__logo" />
           <div>
-            <div className="brand__name">MeatDirect</div>
-            <div className="brand__tagline">Quality local meat delivered</div>
+            <div className="brand__name">{brand.name}</div>
+            <div className="brand__tagline">Fresh BC dairy delivered</div>
           </div>
         </Link>
 
@@ -99,8 +100,8 @@ function Header({ onCartClick }: HeaderProps) {
             Cart · ${subtotal}
           </button>
           <div className="nav-drawer__contact">
-            <a href="tel:555-123-4567">(555) 123-4567</a>
-            <a href="mailto:hello@meatdirect.com">hello@meatdirect.com</a>
+            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`}>{brand.phone}</a>
+            <a href={`mailto:${brand.email}`}>{brand.email}</a>
           </div>
         </div>
       </div>

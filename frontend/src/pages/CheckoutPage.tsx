@@ -121,7 +121,8 @@ function CheckoutPageInner() {
 
 function CheckoutPage() {
   const insecureHostFallback =
-    import.meta.env.VITE_SECURE_CHECKOUT_ORIGIN?.trim() || "https://api.meatdirect.duckdns.org";
+    import.meta.env.VITE_SECURE_CHECKOUT_ORIGIN?.trim() ||
+    (typeof window !== "undefined" ? window.location.origin.replace(/^http:/, "https:") : "");
   const envStripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.trim();
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [loadingStripe, setLoadingStripe] = useState(true);

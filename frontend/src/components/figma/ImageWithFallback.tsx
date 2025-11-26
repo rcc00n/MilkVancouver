@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { brand } from "../../config/brand";
+
 type ImageWithFallbackProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   fallbackSrc?: string;
 };
@@ -19,7 +21,7 @@ export function ImageWithFallback({
     <img
       {...rest}
       src={currentSrc}
-      alt={alt ?? "MeatDirect image"}
+      alt={alt ?? `${brand.shortName} image`}
       onError={() => {
         if (currentSrc !== fallbackSrc) {
           setCurrentSrc(fallbackSrc);

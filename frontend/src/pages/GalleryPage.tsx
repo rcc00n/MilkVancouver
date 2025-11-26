@@ -16,7 +16,7 @@ const galleryItems: GalleryItem[] = [
   {
     id: 1,
     title: "Front counter at golden hour",
-    caption: "Neighbors sampling weekly cuts at the counter while we pack deliveries.",
+    caption: "Neighbors sampling chocolate milk and kefir while we pack deliveries.",
     imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
     tag: "Store interior",
     sortOrder: 1,
@@ -24,57 +24,57 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: 2,
-    title: "Service line in action",
-    caption: "Open-kitchen feel—wrapping boxes, labeling lots, and calling out ready pickups.",
-    imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
-    tag: "Store interior",
+    title: "Bottling line",
+    caption: "Glass bottles getting rinsed, sanitized, and filled within 24 hours of milking.",
+    imageUrl: "https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b?auto=format&fit=crop&w=1200&q=80",
+    tag: "Products",
     sortOrder: 2,
   },
   {
     id: 3,
-    title: "Charcuterie spread for a gym night",
-    caption: "Grazing table with house-cured kielbasa, summer sausage, and bison sticks.",
-    imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+    title: "Latte art station",
+    caption: "Barista milk steaming glossy for a weekend pop-up with local roasters.",
+    imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
     tag: "Events",
     sortOrder: 3,
     imageHeight: 300,
   },
   {
     id: 4,
-    title: "Cast iron ribeyes",
-    caption: "Grass-fed ribeyes basted with rosemary and butter—still our most requested cut.",
-    imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80",
-    tag: "Products",
+    title: "Yogurt & berry bar",
+    caption: "Greek yogurt and kefir laid out for a community breakfast tasting.",
+    imageUrl: "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=1200&q=80",
+    tag: "Events",
     sortOrder: 4,
   },
   {
     id: 5,
-    title: "Sausage grind prep",
-    caption: "Breakfast links mixed with our spice pack—no fillers, just shoulder and seasoning.",
-    imageUrl: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
+    title: "Cheese & butter board",
+    caption: "Cultured butter, soft cheese, and cheddar ready for pickup and hosting nights.",
+    imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     tag: "Products",
     sortOrder: 5,
   },
   {
     id: 6,
-    title: "BBQ demo at the market",
-    caption: "Sampling smoked kielbasa with market-goers and chatting delivery routes.",
+    title: "Delivery crates",
+    caption: "Cold-packed bottles queued for Vancouver and North Shore routes with ice liners.",
     imageUrl: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1200&q=80",
-    tag: "Events",
+    tag: "Store interior",
     sortOrder: 6,
   },
   {
     id: 7,
     title: "Pasture partners",
-    caption: "Cow-calf pairs on grass rotations—why the flavor stays clean and mineral-rich.",
+    caption: "Dairy cows on grass rotations—why the flavor stays clean and naturally sweet.",
     imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
     tag: "Farm",
     sortOrder: 7,
   },
   {
     id: 8,
-    title: "Sheep program pasture walk",
-    caption: "Lambs grazing mixed pasture near the creek—a favorite for holiday roasts.",
+    title: "Morning herd check",
+    caption: "Walking the herd before milking—calm animals make better milk.",
     imageUrl: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
     tag: "Farm",
     sortOrder: 8,
@@ -90,28 +90,11 @@ const galleryItems: GalleryItem[] = [
   },
   {
     id: 10,
-    title: "Cover crops & grain rows",
-    caption: "Field walks with partner farms to balance pasture grasses and grain finishing.",
-    imageUrl: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=1200&q=80",
-    tag: "Farm",
+    title: "Route planning wall",
+    caption: "Delivery windows mapped for Vancouver, Burnaby, and North Shore customers.",
+    imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
+    tag: "Store interior",
     sortOrder: 10,
-  },
-  {
-    id: 11,
-    title: "Smoked sirloin share",
-    caption: "Sliced, labeled, and ready for cold-packed subscriptions and gym drop-offs.",
-    imageUrl: "https://images.unsplash.com/photo-1488900128323-21503983a07e?auto=format&fit=crop&w=1200&q=80",
-    tag: "Products",
-    sortOrder: 11,
-  },
-  {
-    id: 12,
-    title: "Pasture check before pickup",
-    caption: "Walking cattle before transport—stress-free handling keeps quality high.",
-    imageUrl: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
-    tag: "Farm",
-    sortOrder: 12,
-    imageHeight: 300,
   },
 ];
 
@@ -150,12 +133,12 @@ function GalleryPage() {
             <div className="eyebrow">Our Gallery</div>
             <h1>Scenes from the shop, farms, and weekend events.</h1>
             <p>
-              Social-proof snapshots of the butcher counter, the cuts that sell out first, and the pastures our partners
-              care for. Tap any tile to open a lightbox and see the detail.
+              Social-proof snapshots of the bottle room, the dairy staples that sell out first, and the pastures our
+              partners care for. Tap any tile to open a lightbox and see the detail.
             </p>
             <div className="gallery-hero__chips">
-              <span className="pill pill--strong">Federally inspected line</span>
-              <span className="pill">Local pickup & delivery ready</span>
+              <span className="pill pill--strong">BC Dairy inspected</span>
+              <span className="pill">Bottle returns & delivery ready</span>
               <span className="pill pill--accent">Farm-direct partners</span>
             </div>
             <div className="gallery-hero__legend">

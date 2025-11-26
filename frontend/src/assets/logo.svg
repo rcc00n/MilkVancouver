@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 52" role="img" aria-labelledby="title">
+  <title>Vancouver Milk Co.</title>
+  <defs>
+    <linearGradient id="milkGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#d9f2ff"/>
+      <stop offset="100%" stop-color="#9dd7ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="180" height="52" rx="14" fill="url(#milkGradient)" />
+  <path d="M26 40c-6 0-11-5.1-11-11.4C15 18.7 26 7 26 7s11 11.7 11 21.6C37 35 32 40 26 40Z" fill="#0f172a"/>
+  <path d="M26 33c-3.6 0-6.6-3.1-6.6-6.9 0-5.6 6.6-12.5 6.6-12.5s6.6 6.9 6.6 12.5C32.6 29.9 29.6 33 26 33Z" fill="#f8fbff"/>
+  <text x="52" y="32" font-family="Manrope, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#0f172a">
+    VanMilk
+  </text>
+  <text x="52" y="44" font-family="Manrope, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#0f172a" opacity="0.72">
+    Vancouver Milk Co.
+  </text>
+</svg>

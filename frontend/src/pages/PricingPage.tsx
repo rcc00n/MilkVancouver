@@ -6,33 +6,23 @@ import { getProducts } from "../api/products";
 import type { Product } from "../types";
 
 const summaryItems = [
-  "Steaks (ribeye, striploin, sirloin, tenderloin medallions)",
-  "Roasts (sirloin tip, cross rib, blade, round)",
-  "Large cuts for smoking (brisket, back ribs, short ribs)",
-  "Ground beef—lean blend for burgers, chili, and meal prep",
-  "Optional: bones, organs, and fat if you want the whole animal value",
+  "Milk: whole, 2%, skim, chocolate, and barista protein-rich milk.",
+  "Cream: half & half, whipping cream, and non-homogenized cream-top options.",
+  "Yogurt & kefir: Greek, plain, drinkable, and cultured kefir.",
+  "Cheese & butter: cultured butter, soft cheese, cheddar, and paneer.",
+  "Optional: lactose-free rotations and seasonal cafe specials.",
 ];
-
-const steakCuts = ["Ribeye", "Striploin", "Sirloin", "Tenderloin medallions", "Flank / Skirt (by request)"];
-const roastCuts = ["Sirloin tip roast", "Cross rib", "Blade roast", "Inside / Outside round", "Eye of round"];
-const largeCuts = ["Full brisket (flat + point)", "Back ribs or short ribs", "Tri-tip or picanha", "Chuck roast"];
-const groundNotes = [
-  "Ground from trim plus lean muscle for consistent fat ratio.",
-  "Great for burgers, tacos, chili, and kid-friendly meals.",
-  "We can bag in 1 lb or 1.5 lb packs—tell us your meal size.",
-];
-const optionalItems = [
-  "Marrow and soup bones for broth",
-  "Beef fat for rendering tallow",
-  "Organs (liver, heart, kidney) if you want everything included",
-];
+const milkOptions = ["Whole milk", "2% milk", "Skim milk", "Chocolate milk", "Barista milk (extra protein)"];
+const creamOptions = ["Half & half", "Heavy whipping cream", "Table cream", "Non-homogenized cream-top"];
+const yogurtOptions = ["Greek yogurt", "Plain yogurt", "Drinkable yogurt", "Kefir"];
+const butterCheese = ["Cultured butter", "Salted butter", "Soft cheese (cream/feta style)", "Aged cheddar or gouda"];
+const optionalItems = ["Lactose-free milk rotations", "Cafe oat option (limited)", "Seasonal ice cream mix"];
 
 const weightBreakdown = [
-  { label: "Steaks", amount: "45–55 lb", note: "Ribeye, striploin, sirloin, medallions" },
-  { label: "Roasts", amount: "45–60 lb", note: "Blade, sirloin tip, rounds" },
-  { label: "Ribs & Brisket", amount: "35–45 lb", note: "Full brisket, back ribs, short ribs" },
-  { label: "Ground", amount: "120–140 lb", note: "Lean blend, bagged to your preference" },
-  { label: "Bones & Trim", amount: "35–50 lb", note: "Soup bones, fat, organs if kept" },
+  { label: "Milk & Cream", amount: "6–10 bottles", note: "Mix of whole, 2%, barista, cream" },
+  { label: "Yogurt & Kefir", amount: "3–5 tubs/bottles", note: "Plain, Greek, drinkable" },
+  { label: "Cheese & Butter", amount: "2–4 items", note: "Soft cheese + cultured butter" },
+  { label: "Add-ons", amount: "Optional", note: "Chocolate milk, lactose-free, seasonal" },
 ];
 
 type HighlightItem = {
@@ -50,33 +40,33 @@ type HighlightGroup = {
 
 const highlightGroups: HighlightGroup[] = [
   {
-    title: "South African Classics",
+    title: "Barista Bar",
     tone: "amber",
-    description: "Air-dried and spiced favorites for road trips, hikes, and rugby weekends.",
+    description: "Milk and cream that steam glossy for home espresso and cafes.",
     items: [
-      { name: "Biltong", fallback: "$9.50 /100g", unit: "100g" },
-      { name: "DryWors", fallback: "$8.50 /100g", unit: "100g" },
-      { name: "Boerewors", fallback: "$11.50 /lb" },
+      { name: "Barista Milk", fallback: "$7.50 /2L", unit: "2L" },
+      { name: "Half & Half", fallback: "$5.50 /1L", unit: "1L" },
+      { name: "Whipping Cream", fallback: "$6.50 /500ml", unit: "500ml" },
     ],
   },
   {
-    title: "Premium Bison Cuts",
+    title: "Yogurt & Kefir",
     tone: "emerald",
-    description: "Lean, naturally sweet protein—great for high-performance meal prep.",
+    description: "Live cultures for breakfasts, smoothies, and gut health.",
     items: [
-      { name: "Bison Striploin", fallback: "$26.00 /lb" },
-      { name: "Bison Ribeye", fallback: "$28.00 /lb" },
-      { name: "Ground Bison", fallback: "$12.50 /lb" },
+      { name: "Greek Yogurt", fallback: "$6.00 /950g", unit: "950g" },
+      { name: "Plain Yogurt", fallback: "$4.50 /650g", unit: "650g" },
+      { name: "Kefir", fallback: "$5.75 /1L", unit: "1L" },
     ],
   },
   {
-    title: "Traditional European Sausages",
+    title: "Cheese & Butter",
     tone: "slate",
-    description: "Old-world spice blends for grilling boards and family dinners.",
+    description: "Cultured butter and cheese for boards and weeknight cooking.",
     items: [
-      { name: "Kielbasa", fallback: "$9.50 /lb" },
-      { name: "Kabanos", fallback: "$12.00 /lb" },
-      { name: "Hunter's Sausage", fallback: "$10.00 /lb" },
+      { name: "Cultured Butter", fallback: "$7.50 /250g", unit: "250g" },
+      { name: "Soft Cheese", fallback: "$6.25 /250g", unit: "250g" },
+      { name: "Aged Cheddar", fallback: "$9.50 /300g", unit: "300g" },
     ],
   },
 ];
@@ -174,22 +164,22 @@ function PricingPage() {
         <div className="pricing-hero__grid">
           <div className="pricing-hero__copy">
             <div className="eyebrow">Pricing</div>
-            <h1>Bulk beef pricing built for families filling the freezer.</h1>
+            <h1>Weekly dairy subscriptions for Vancouver fridges and cafes.</h1>
             <p className="muted">
-              Buy a half cow with clear expectations: transparent weight ranges, clean trim, and the option to keep
-              bones, organs, and fat. We cut for weeknight grilling, slow roasts, and plenty of ground beef.
+              Choose a crate and swap items anytime: grass-fed milk, barista-ready cream, yogurt, kefir, and cheese. We
+              timestamp every bottle and handle deposits automatically.
             </p>
             <div className="pricing-hero__tags">
-              <span className="pill pill--strong">Half cow · $7.50/lb</span>
-              <span className="pill">Avg hanging weight 360–420 lb</span>
-              <span className="pill">Custom wrap + delivery options</span>
+              <span className="pill pill--strong">From $28 / week</span>
+              <span className="pill">Glass bottle deposit loop</span>
+              <span className="pill">0–4°C cold-chain</span>
             </div>
             <div className="pricing-hero__actions">
               <a className="btn btn--primary" href="#quote">
-                Request a quote
+                Request a fridge plan
               </a>
               <Link to="/menu" className="btn btn--ghost">
-                Shop individual cuts
+                Shop the dairy case
               </Link>
             </div>
           </div>
@@ -197,22 +187,22 @@ function PricingPage() {
           <div className="pricing-main-card">
             <div className="pricing-main-card__header">
               <div>
-                <div className="eyebrow eyebrow--green">Bulk buy</div>
-                <h3>1/2 Cow to Buy – $7.50/lb</h3>
-                <p className="muted">Transparent cut list, vacuum sealing option, and delivery windows that work.</p>
+                <div className="eyebrow eyebrow--green">Subscription</div>
+                <h3>Dairy crate – from $28 / week</h3>
+                <p className="muted">Mix and match milk, cream, yogurt, kefir, and cheese with doorstep delivery.</p>
               </div>
               <div className="pricing-main-card__price">
-                <div className="pricing-main-card__price-value">$7.50</div>
-                <div className="pricing-main-card__price-note">per lb hanging weight</div>
+                <div className="pricing-main-card__price-value">$28</div>
+                <div className="pricing-main-card__price-note">starting weekly</div>
               </div>
             </div>
             <div className="pricing-main-card__body">
               <div className="pricing-main-card__summary">
-                <div className="pricing-chip">Steaks</div>
-                <div className="pricing-chip">Roasts</div>
-                <div className="pricing-chip">Large cuts</div>
-                <div className="pricing-chip">Ground beef</div>
-                <div className="pricing-chip pricing-chip--muted">Optional items</div>
+                <div className="pricing-chip">Milk</div>
+                <div className="pricing-chip">Cream</div>
+                <div className="pricing-chip">Yogurt & kefir</div>
+                <div className="pricing-chip">Cheese & butter</div>
+                <div className="pricing-chip pricing-chip--muted">Add-ons</div>
               </div>
               <ul className="pricing-main-card__list">
                 {summaryItems.map((item) => (
@@ -221,13 +211,13 @@ function PricingPage() {
               </ul>
               <div className="pricing-main-card__footer">
                 <div>
-                  <div className="pill pill--small">Grass-fed · Hormone-free</div>
+                  <div className="pill pill--small">Grass-fed · Glass bottles</div>
                   <div className="pricing-main-card__note">
-                    Typical yield is 210–250 lb take-home meat from a 1/2 share. We confirm exact weights before cutting.
+                    Bottles include deposit; returns are credited automatically. Swap items weekly and pause anytime.
                   </div>
                 </div>
                 <a className="link-button" href="#quote">
-                  Lock in a spot →
+                  Save a route spot →
                 </a>
               </div>
             </div>
@@ -238,41 +228,41 @@ function PricingPage() {
       <section className="container pricing-breakdown">
         <div className="pricing-section-header">
           <div>
-            <div className="eyebrow">Cut sheet</div>
-            <h2>Detailed breakdown—no surprises when you pick up.</h2>
+            <div className="eyebrow">What&apos;s inside</div>
+            <h2>Detailed breakdown—no surprises when you open the fridge.</h2>
           </div>
-          <span className="pill pill--accent">Custom tweaks welcome</span>
+          <span className="pill pill--accent">Swap items anytime</span>
         </div>
         <div className="pricing-breakdown__grid">
           <div className="pricing-breakdown__card">
-            <div className="pricing-breakdown__label">Steaks</div>
+            <div className="pricing-breakdown__label">Milk</div>
             <ul>
-              {steakCuts.map((cut) => (
-                <li key={cut}>{cut}</li>
+              {milkOptions.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
           <div className="pricing-breakdown__card">
-            <div className="pricing-breakdown__label">Roasts</div>
+            <div className="pricing-breakdown__label">Cream</div>
             <ul>
-              {roastCuts.map((cut) => (
-                <li key={cut}>{cut}</li>
+              {creamOptions.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
           <div className="pricing-breakdown__card">
-            <div className="pricing-breakdown__label">Large Cuts</div>
+            <div className="pricing-breakdown__label">Yogurt & Kefir</div>
             <ul>
-              {largeCuts.map((cut) => (
-                <li key={cut}>{cut}</li>
+              {yogurtOptions.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
           <div className="pricing-breakdown__card">
-            <div className="pricing-breakdown__label">Ground Beef</div>
+            <div className="pricing-breakdown__label">Cheese & Butter</div>
             <ul>
-              {groundNotes.map((note) => (
-                <li key={note}>{note}</li>
+              {butterCheese.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>
@@ -283,7 +273,7 @@ function PricingPage() {
                 <li key={item}>{item}</li>
               ))}
             </ul>
-            <p className="muted">Let us know at booking—otherwise we trim like a typical family freezer package.</p>
+            <p className="muted">Let us know at booking—otherwise we send a balanced weekly fridge lineup.</p>
           </div>
         </div>
       </section>
@@ -292,8 +282,11 @@ function PricingPage() {
         <div className="pricing-section-header">
           <div>
             <div className="eyebrow">Weight breakdown</div>
-            <h2>What a typical 1/2 beef yields by category.</h2>
-            <p className="muted">Ranges shift by animal. We confirm before cutting, and you choose which items to keep.</p>
+            <h2>What a typical weekly crate looks like.</h2>
+            <p className="muted">
+              Swap items anytime. Quantities adjust if you pause or add-on barista items, lactose-free, or seasonal
+              specials.
+            </p>
           </div>
         </div>
         <div className="pricing-weights__grid">
@@ -307,16 +300,16 @@ function PricingPage() {
         </div>
         <div className="vacuum-card">
           <div>
-            <div className="eyebrow eyebrow--green">Vacuum sealing</div>
-            <h3>Vacuum sealing $0.10/lb</h3>
+            <div className="eyebrow eyebrow--green">Bottle program</div>
+            <h3>Glass bottle deposit & returns</h3>
             <p>
-              Heavy-duty vacuum seal adds freezer life and keeps labels readable. Paper wrap is still available at no
-              extra cost—tell us your preference when you book.
+              Bottles carry a small deposit. Leave rinsed bottles out on delivery day and we credit deposits
+              automatically—no forms, no hassle.
             </p>
           </div>
           <div className="vacuum-card__meta">
-            <span className="pill pill--accent">Longer freezer life</span>
-            <span className="pill">Great for meal prep</span>
+            <span className="pill pill--accent">Less waste</span>
+            <span className="pill">Deposit credited fast</span>
           </div>
         </div>
       </section>
@@ -325,9 +318,13 @@ function PricingPage() {
         <div className="pricing-section-header">
           <div>
             <div className="eyebrow">Highlighted products</div>
-            <h2>Favorites alongside your beef order.</h2>
+            <h2>Favorites alongside your weekly crate.</h2>
           </div>
-          {productError ? <span className="pill pill--small">{productError}</span> : <span className="pill">Live shop pricing when available</span>}
+          {productError ? (
+            <span className="pill pill--small">{productError}</span>
+          ) : (
+            <span className="pill">Live shop pricing when available</span>
+          )}
         </div>
         <div className="pricing-highlight__grid">
           {highlightGroups.map((group) => (
@@ -351,11 +348,11 @@ function PricingPage() {
         <div className="pricing-specialties">
           <div className="pricing-specialties__label">Other specialties</div>
           <div className="pricing-specialties__items">
-            <span className="pill pill--small">Cerevita</span>
-            <span className="pill pill--small">Kasi favorites</span>
-            <span className="pill pill--small">Zimbabwean tea</span>
-            <span className="pill pill--small">Georgian Satsebeli</span>
-            <span className="pill pill--small">Spice kits</span>
+            <span className="pill pill--small">Chocolate milk</span>
+            <span className="pill pill--small">Lactose-free</span>
+            <span className="pill pill--small">Seasonal ice cream base</span>
+            <span className="pill pill--small">Coffee syrups</span>
+            <span className="pill pill--small">Extra bottle returns</span>
           </div>
           <Link to="/menu" className="link-button">
             See the shop →
@@ -367,15 +364,15 @@ function PricingPage() {
         <div className="quote-card">
           <div className="quote-card__intro">
             <div className="eyebrow eyebrow--green">Quote / Inquiry</div>
-            <h2>Tell us how you want your beef packed.</h2>
+            <h2>Tell us what your fridge needs.</h2>
             <p className="muted">
-              We confirm hanging weight, cut sheet, and pickup/delivery options, then send a simple email confirmation.
-              No online payment is collected here.
+              We confirm routes, crate size, and bottle deposit details, then send a simple email confirmation. No online
+              payment is collected here.
             </p>
             <ul className="checklist">
-              <li>We reply with weight confirmation and total.</li>
-              <li>Pickup from the shop or route delivery windows available.</li>
-              <li>Ask about adding bison, sausages, or specialties to the same order.</li>
+              <li>We reply with crate options and total, including deposits.</li>
+              <li>Local delivery windows available; insulated shipping by request.</li>
+              <li>Ask about lactose-free, cafe rotations, or pauses anytime.</li>
             </ul>
           </div>
 

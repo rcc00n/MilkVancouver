@@ -24,13 +24,12 @@ const toneColors: Record<CategoryTone, string> = {
 };
 
 const CATEGORY_TABS: CategoryTab[] = [
-  { label: "All items", value: null, note: "Full catalog of meats & imports", tone: "pine" },
-  { label: "Meat", value: "meat", note: "Beef, pork, bison, lamb", tone: "amber" },
-  { label: "Poultry", value: "poultry", note: "Chicken, turkey, duck", tone: "emerald" },
-  { label: "Sausages", value: "sausages", note: "House-made links and patties", tone: "rose" },
-  { label: "Smoked Fish", value: "smoked fish", note: "Salmon, whitefish, spreads", tone: "blue" },
-  { label: "European Products", value: "european products", note: "Kielbasa, pierogi, pantry", tone: "slate" },
-  { label: "South African", value: "south african", note: "Boerewors, biltong, spices", tone: "amber" },
+  { label: "All items", value: null, note: "Full dairy case", tone: "pine" },
+  { label: "Milk & Cream", value: "milk", note: "Whole, 2%, skim, cream", tone: "amber" },
+  { label: "Yogurt & Kefir", value: "yogurt", note: "Greek, plain, cultured kefir", tone: "emerald" },
+  { label: "Cheese & Butter", value: "cheese", note: "Soft cheese, cheddar, cultured butter", tone: "rose" },
+  { label: "Coffee Bar", value: "coffee", note: "Barista milk, half & half, whipping cream", tone: "blue" },
+  { label: "Lactose-free & Alt", value: "lactose-free", note: "Lactose-free and cafe alt options", tone: "slate" },
 ];
 
 function MenuPage() {
@@ -89,7 +88,7 @@ function MenuPage() {
     scrollToCatalog();
   };
 
-  const resultLabel = selectedCategory ? `${activeTab.label} ready to ship` : "All categories available";
+  const resultLabel = selectedCategory ? `${activeTab.label} ready to deliver` : "All categories available";
 
   return (
     <div className="menu-page">
@@ -97,15 +96,15 @@ function MenuPage() {
         <div className="container menu-hero__grid">
           <div className="menu-hero__copy">
             <div className="eyebrow">Shop</div>
-            <h1>Menu of butcher-cut meats, sausages, and imports.</h1>
+            <h1>Menu of bottled milk, yogurt, cream, and cafe staples.</h1>
             <p className="muted">
-              Scan prices, browse by category, and add to cart when you are ready. Everything leaves our cold room
-              trimmed, packed, and labelled.
+              Scan prices, browse by category, and add to cart when you are ready. Everything is low-temp pasteurized,
+              timestamped, and delivered with cold-chain protection.
             </p>
             <div className="menu-hero__chips">
-              <span className="pill pill--strong">Grass-fed & hormone-free</span>
-              <span className="pill pill--accent">Add to cart ready</span>
-              <span className="pill">Local delivery & nationwide shipping</span>
+              <span className="pill pill--strong">Grass-fed dairy</span>
+              <span className="pill pill--accent">Glass bottle deposits</span>
+              <span className="pill">Vancouver delivery & insulated shipping</span>
             </div>
           </div>
 
@@ -113,7 +112,7 @@ function MenuPage() {
             <div className="menu-hero__panel-header">
               <div>
                 <div className="eyebrow eyebrow--green">Featured</div>
-                <h3>Butcher specials this week</h3>
+                <h3>Fresh this week</h3>
               </div>
               <span className="pill pill--small">Updated weekly</span>
             </div>
@@ -136,21 +135,17 @@ function MenuPage() {
             )}
             <div className="menu-hero__foot">
               <div>
-                <div className="menu-hero__foot-title">Cold-packed bundles & weekly kits</div>
+                <div className="menu-hero__foot-title">Cold-packed crates & cafe sets</div>
                 <p className="menu-hero__foot-text">
-                  Ready-to-cook boxes, labelled and trimmed for grill nights, prep days, and family dinners.
+                  Weekly milk, cream, yogurt, and butter with bottle returns handled on your next delivery.
                 </p>
               </div>
               <div className="menu-hero__foot-actions">
-                <button type="button" className="btn btn--ghost" onClick={() => handleCategorySelect("sausages")}>
-                  Shop sausages
+                <button type="button" className="btn btn--ghost" onClick={() => handleCategorySelect("milk")}>
+                  Shop milk
                 </button>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  onClick={() => handleCategorySelect("european products")}
-                >
-                  European imports
+                <button type="button" className="btn btn--primary" onClick={() => handleCategorySelect("coffee")}>
+                  Coffee bar
                 </button>
               </div>
             </div>
@@ -162,39 +157,40 @@ function MenuPage() {
         <div className="container menu-featured__grid">
           <div className="menu-featured__card">
             <div className="eyebrow">Featured bundle</div>
-            <h3>Family grill kit - mix & match meats</h3>
+            <h3>Family fridge crate</h3>
             <p className="muted">
-              Choose steaks, chops, or burgers, add sausages, and we will vacuum seal, label, and pack cold with ice
-              liners.
+              Choose milk style, cream, yogurt, and butter; we bottle, timestamp, and pack with ice liners and bottle
+              deposits already handled.
             </p>
             <div className="menu-featured__tags">
-              <span className="pill pill--strong">Pick 4+ cuts</span>
-              <span className="pill">Save on delivery</span>
-              <span className="pill">Cook or freeze-ready</span>
+              <span className="pill pill--strong">Pick 4+ items</span>
+              <span className="pill">Swap weekly</span>
+              <span className="pill">Cold-chain ready</span>
             </div>
             <div className="menu-featured__actions">
-              <button type="button" className="link-button" onClick={() => handleCategorySelect("meat")}>
-                Browse meats
+              <button type="button" className="link-button" onClick={() => handleCategorySelect("milk")}>
+                Browse milk
               </button>
             </div>
           </div>
           <div className="menu-featured__card menu-featured__card--accent">
-            <div className="eyebrow">Imported & smoked</div>
-            <h3>European delicacies & South African classics.</h3>
+            <div className="eyebrow">Cafe-ready</div>
+            <h3>Barista milk, cream, and syrup add-ons.</h3>
             <p>
-              Kielbasa, smoked fish, pierogi, boerewors, and biltong - all curated for authentic comfort food nights.
+              Higher protein milk for silky microfoam, half & half, whipping cream, and seasonal syrups for home or cafe
+              espresso bars.
             </p>
             <div className="menu-featured__tags">
-              <span className="pill pill--accent">Kielbasa</span>
-              <span className="pill">Smoked fish</span>
-              <span className="pill">Boerewors</span>
+              <span className="pill pill--accent">Barista milk</span>
+              <span className="pill">Half & half</span>
+              <span className="pill">Whipping cream</span>
             </div>
             <div className="menu-featured__actions">
-              <button type="button" className="btn btn--ghost" onClick={() => handleCategorySelect("smoked fish")}>
-                Smoked fish
+              <button type="button" className="btn btn--ghost" onClick={() => handleCategorySelect("coffee")}>
+                Coffee bar
               </button>
-              <button type="button" className="btn btn--primary" onClick={() => handleCategorySelect("south african")}>
-                South African
+              <button type="button" className="btn btn--primary" onClick={() => handleCategorySelect("lactose-free")}>
+                Lactose-free
               </button>
             </div>
           </div>

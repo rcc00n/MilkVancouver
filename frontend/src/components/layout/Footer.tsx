@@ -1,21 +1,23 @@
 import { Link } from "react-router-dom";
 
+import { brand } from "../../config/brand";
+
 function Footer() {
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
         <div className="footer-brand">
           <div>
-            <div className="brand__name">MeatDirect</div>
-            <p className="muted">Quality local meat delivered to your door.</p>
+            <div className="brand__name">{brand.name}</div>
+            <p className="muted">Coastal dairy bottled at dawn and delivered cold.</p>
           </div>
         </div>
         <div>
           <h4 className="footer__heading">Contact</h4>
           <div className="footer__text">
-            <a href="tel:555-123-4567">(555) 123-4567</a>
+            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`}>{brand.phone}</a>
             <br />
-            <a href="mailto:hello@meatdirect.com">hello@meatdirect.com</a>
+            <a href={`mailto:${brand.email}`}>{brand.email}</a>
             <br />
             <Link to="/contact">Contact page</Link>
           </div>
@@ -32,8 +34,8 @@ function Footer() {
       </div>
       <div className="footer__bottom">
         <div className="container footer__bottom-row">
-          <span>Farm-direct sourcing · Hormone-free · Transparent partners</span>
-          <span>© {new Date().getFullYear()} MeatDirect</span>
+          <span>Grass-fed milk · Pasteurized & cold-held · Vancouver made</span>
+          <span>© {new Date().getFullYear()} {brand.name}</span>
         </div>
       </div>
     </footer>

@@ -61,7 +61,7 @@ function BlogPostPage() {
     return () => controller.abort();
   }, [slug]);
 
-  const authorLabel = post?.author?.trim() || "MeatDirect Team";
+  const authorLabel = post?.author?.trim() || "Vancouver Milk Co. Team";
 
   const renderContent = () => {
     if (!post?.content) return null;
@@ -127,7 +127,7 @@ function BlogPostPage() {
             <div className="section-heading">
               <div>
                 <div className="eyebrow">Related posts</div>
-                <h3>Keep reading from the butcher block</h3>
+                <h3>Keep reading from the milk bar</h3>
               </div>
               <Link to="/blog" className="link-button">
                 All posts →

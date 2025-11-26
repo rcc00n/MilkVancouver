@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 
 import { submitContactMessage } from "../api/contact";
+import { brand } from "../config/brand";
 
 type ContactFormState = {
   name: string;
@@ -29,6 +30,9 @@ function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formStatus, setFormStatus] = useState<"idle" | "success" | "error">("idle");
   const [formError, setFormError] = useState<string | null>(null);
+  const phoneHref = `tel:${brand.phone.replace(/[^\d+]/g, "")}`;
+  const emailHref = `mailto:${brand.email}`;
+  const address = "128 West 6th Ave, Vancouver, BC";
 
   const handleChange = (key: keyof ContactFormState, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
@@ -83,7 +87,7 @@ function ContactPage() {
               <a className="btn btn--primary" href="#contact-form">
                 Send a message
               </a>
-              <a className="btn btn--ghost" href="tel:555-123-4567">
+              <a className="btn btn--ghost" href={phoneHref}>
                 Call the shop
               </a>
             </div>
@@ -93,8 +97,8 @@ function ContactPage() {
             <div className="contact-hero__card-row">
               <div>
                 <div className="eyebrow eyebrow--green">Call or text</div>
-                <a className="contact-hero__link" href="tel:555-123-4567">
-                  (555) 123-4567
+                <a className="contact-hero__link" href={phoneHref}>
+                  {brand.phone}
                 </a>
               </div>
               <span className="pill pill--accent">Live help</span>
@@ -102,8 +106,8 @@ function ContactPage() {
             <div className="contact-hero__card-row">
               <div>
                 <div className="contact-hero__label">Email</div>
-                <a className="contact-hero__link" href="mailto:hello@meatdirect.com">
-                  hello@meatdirect.com
+                <a className="contact-hero__link" href={emailHref}>
+                  {brand.email}
                 </a>
               </div>
               <span className="pill pill--small">Paperwork requests</span>
@@ -111,9 +115,8 @@ function ContactPage() {
             <div className="contact-hero__card-row contact-hero__address">
               <div className="contact-hero__label">Visit</div>
               <div>
-                <div>1420 Meadow Lane, Suite B</div>
-                <div>Cleveland, OH 44113</div>
-                <div className="muted">Pickup parking on the east side door.</div>
+                <div>{address}</div>
+                <div className="muted">Pickup and bottle returns from the main bay door.</div>
               </div>
             </div>
           </div>
@@ -126,21 +129,21 @@ function ContactPage() {
             <div className="eyebrow eyebrow--green">Store info</div>
             <h2>Where to find us</h2>
             <p className="muted">
-              Stop in for counter cuts, pick up a web order, or talk through a freezer bundle. Call ahead for special
-              trims and we will have them ready.
+              Stop in for bottle returns, pick up a web order, or talk through a weekly crate. Call ahead for special
+              requests and we will have them ready.
             </p>
             <div className="contact-info-card__rows">
               <div className="contact-info-card__row">
                 <div className="contact-info-card__label">Address</div>
-                <div>1420 Meadow Lane, Suite B<br />Cleveland, OH 44113</div>
+                <div>{address}</div>
               </div>
               <div className="contact-info-card__row">
                 <div className="contact-info-card__label">Phone</div>
-                <a href="tel:555-123-4567">(555) 123-4567</a>
+                <a href={phoneHref}>{brand.phone}</a>
               </div>
               <div className="contact-info-card__row">
                 <div className="contact-info-card__label">Email</div>
-                <a href="mailto:hello@meatdirect.com">hello@meatdirect.com</a>
+                <a href={emailHref}>{brand.email}</a>
               </div>
               <div className="contact-info-card__row contact-info-card__row--hours">
                 <div className="contact-info-card__label">Hours</div>
@@ -162,14 +165,14 @@ function ContactPage() {
               <div className="eyebrow">Map</div>
               <h3>Plan your visit</h3>
               <p className="muted">
-                Located just off Meadow Lane with easy loading for bulk orders. Call when you pull up and we will bring
-                boxes to your vehicle.
+                Located near Olympic Village with easy loading for returns and pickups. Call when you pull up and we will
+                bring crates to your vehicle.
               </p>
             </div>
             <div className="contact-map-card__frame">
               <iframe
-                title="Meat Direct location"
-                src="https://www.google.com/maps?q=1420+Meadow+Lane,+Cleveland,+OH+44113&output=embed"
+                title={`${brand.name} location`}
+                src="https://www.google.com/maps?q=128+West+6th+Ave,+Vancouver,+BC&output=embed"
                 allowFullScreen
                 loading="lazy"
               />
@@ -194,9 +197,9 @@ function ContactPage() {
                 log every message and reply with next steps.
               </p>
               <ul className="checklist">
-                <li>Common cuts: steaks, roasts, ground, sausages.</li>
-                <li>Special orders: freezer bundles, custom trim, bulk beef.</li>
-                <li>Delivery: route windows and insulated packaging.</li>
+                <li>Common requests: milk/cream swaps, lactose-free, cafe rotation.</li>
+                <li>Special orders: extra bottles, yogurt/kefir cases, cheese and butter.</li>
+                <li>Delivery: route windows, bottle returns, insulated shipping.</li>
               </ul>
             </div>
             <form className="quote-form contact-form" onSubmit={handleSubmit}>

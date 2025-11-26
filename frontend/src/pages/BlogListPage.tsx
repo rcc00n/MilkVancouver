@@ -57,27 +57,27 @@ function BlogListPage() {
         <div className="container page-hero__grid">
           <div className="page-hero__intro">
             <div className="eyebrow">Blog</div>
-            <h1>Stories, sourcing notes, and cooking guides from MeatDirect.</h1>
+            <h1>Stories, dairy tips, and coffee bar notes from Vancouver Milk Co.</h1>
             <p className="muted">
-              Educate customers about grass-fed benefits, hormone-free sourcing, and cooking methods that make the most
-              of every cut—while boosting SEO with helpful, evergreen guides.
+              Learn how we bottle grass-fed milk, steam silky lattes, and use cultured butter and yogurt in weeknight
+              cooking—plus updates from our Vancouver delivery routes.
             </p>
             <div className="page-hero__chips">
-              <span className="pill pill--accent">Grass-fed 101</span>
-              <span className="pill">Butcher tips</span>
-              <span className="pill">Cook temps</span>
-              <span className="pill">Meal prep</span>
+              <span className="pill pill--accent">Grass-fed dairy</span>
+              <span className="pill">Barista guides</span>
+              <span className="pill">Recipes</span>
+              <span className="pill">Fridge hacks</span>
             </div>
           </div>
           <div className="page-hero__card">
             <h3>What you will learn</h3>
             <ul className="checklist">
-              <li>How to cook grass-fed beef, bison, and heritage pork without drying them out.</li>
-              <li>Which cuts to choose for grilling, low-and-slow smoking, or weeknight sears.</li>
-              <li>Why hormone-free sourcing matters for families and restaurants alike.</li>
+              <li>How to steam and pour barista milk for glossy microfoam.</li>
+              <li>When to pick whole milk vs. low-fat for baking and sauces.</li>
+              <li>Why pasteurization windows and cold-chain matter for flavor.</li>
             </ul>
             <Link to="/menu" className="link-button">
-              Shop the cuts →
+              Shop the dairy case →
             </Link>
           </div>
         </div>

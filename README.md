@@ -1,6 +1,6 @@
-# MeatDirect
+# Vancouver Milk Co (forked from MeatDirect)
 
-Early scaffolding for MeatDirect's monorepo. Includes a Django REST backend and a Vite + React frontend.
+Early scaffolding for the new Vancouver Milk Co monorepo, built from the original MeatDirect project. Includes a Django REST backend and a Vite + React frontend re-skinned for a Vancouver dairy brand.
 
 ## Backend (Django + DRF)
 

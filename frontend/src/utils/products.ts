@@ -1,6 +1,7 @@
 import type { Product } from "../types";
+import { brand } from "../config/brand";
 
-const FALLBACK_IMAGE = "https://placehold.co/600x400?text=MeatDirect";
+const FALLBACK_IMAGE = `https://placehold.co/600x400?text=${encodeURIComponent(brand.shortName)}`;
 
 const resolveAbsoluteUrl = (raw?: string | null) => {
   const url = (raw || "").trim();

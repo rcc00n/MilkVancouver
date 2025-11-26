@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import type { BlogPost } from "../../types";
+import { brand } from "../../config/brand";
 
 type BlogCardProps = {
   post: BlogPost;
@@ -14,7 +15,7 @@ function formatPublishedDate(date?: string) {
 }
 
 function BlogCard({ post }: BlogCardProps) {
-  const authorLabel = post.author?.trim() || "MeatDirect Team";
+  const authorLabel = post.author?.trim() || `${brand.shortName} Team`;
 
   return (
     <Link to={`/blog/${post.slug}`} className="blog-card">
