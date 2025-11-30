@@ -2,6 +2,7 @@ import os
 import urllib.parse
 from pathlib import Path
 from dotenv import load_dotenv
+from kombu import Queue
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -191,5 +192,22 @@ CSRF_COOKIE_SAMESITE = os.environ.get("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")
 CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "False") == "True"
 SESSION_COOKIE_SAMESITE = os.environ.get("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
 SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "False") == "True"
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_QUEUES = (
+    Queue("default"),
+    Queue("emails"),
+    Queue("sms"),
+    Queue("logistics"),
+)
+CELERY_BEAT_SCHEDULE = {}
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
