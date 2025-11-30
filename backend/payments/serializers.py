@@ -1,6 +1,83 @@
+from typing import Dict
+
 from rest_framework import serializers
 
+from orders.models import Order
+from products.models import Product
 from .models import Payment
+
+
+class OrderItemInputSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class AddressSerializer(serializers.Serializer):
+    line1 = serializers.CharField(required=False, allow_blank=True, default="")
+    line2 = serializers.CharField(required=False, allow_blank=True, default="")
+    city = serializers.CharField(required=False, allow_blank=True, default="")
+    postal_code = serializers.CharField(required=False, allow_blank=True, default="")
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class CheckoutCreateSerializer(serializers.Serializer):
+    items = OrderItemInputSerializer(many=True)
+    full_name = serializers.CharField(max_length=255)
+    email = serializers.EmailField()
+    phone = serializers.CharField(max_length=50)
+    order_type = serializers.ChoiceField(choices=Order.OrderType.choices)
+    address = AddressSerializer(required=False, allow_null=True, default=dict)
+    pickup_location = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
+    pickup_instructions = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
+    notes = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
+
+    def validate_items(self, items):
+        if not items:
+            raise serializers.ValidationError("At least one item is required.")
+        return items
+
+    def validate(self, attrs: Dict):
+        items = attrs.get("items") or []
+        product_ids = [item["product_id"] for item in items]
+        products_map = Product.objects.in_bulk(product_ids)
+
+        missing_ids = sorted({pid for pid in product_ids if pid not in products_map})
+        if missing_ids:
+            raise serializers.ValidationError(
+                {"items": f"Products not found: {', '.join(map(str, missing_ids))}."}
+            )
+
+        order_type = attrs.get("order_type")
+        address = attrs.get("address") or {}
+        errors: Dict[str, Dict[str, str]] = {}
+
+        if order_type == Order.OrderType.DELIVERY:
+            required_fields = ("line1", "city", "postal_code")
+            missing_fields = [
+                field for field in required_fields if not (address.get(field) or "").strip()
+            ]
+            if missing_fields:
+                errors["address"] = {
+                    field: "This field is required for delivery."
+                    for field in missing_fields
+                }
+
+        if order_type == Order.OrderType.PICKUP and not (
+            attrs.get("pickup_location") or ""
+        ).strip():
+            errors["pickup_location"] = "This field is required for pickup."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        attrs["products_map"] = products_map
+        return attrs
 
 
 class PaymentSerializer(serializers.ModelSerializer):

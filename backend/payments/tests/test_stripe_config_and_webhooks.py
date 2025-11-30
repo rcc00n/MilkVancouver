@@ -57,8 +57,8 @@ class StripeWebhookTests(APITestCase):
         with patch("payments.webhooks.STRIPE_WEBHOOK_SECRET", "whsec_test"), patch(
             "payments.webhooks.stripe.Webhook.construct_event", return_value=event_payload
         ), patch("payments.webhooks.record_stripe_payment_from_intent") as mock_record, patch(
-            "payments.webhooks.send_order_receipt_email_once"
-        ) as mock_send_email:
+            "payments.webhooks.send_order_receipt_email_task"
+        ) as mock_task:
             response = self.client.post(
                 reverse("stripe-webhook"),
                 data=event_payload,
@@ -79,7 +79,7 @@ class StripeWebhookTests(APITestCase):
         self.assertEqual(intent_dict["currency"], "cad")
         self.assertEqual(intent_dict["status"], "succeeded")
 
-        mock_send_email.assert_called_once_with(order)
+        mock_task.delay.assert_called_once_with(order.id)
 
     def test_missing_order_id_no_updates(self):
         order = self._create_order()
@@ -99,8 +99,8 @@ class StripeWebhookTests(APITestCase):
         with patch("payments.webhooks.STRIPE_WEBHOOK_SECRET", "whsec_test"), patch(
             "payments.webhooks.stripe.Webhook.construct_event", return_value=event_payload
         ), patch("payments.webhooks.record_stripe_payment_from_intent") as mock_record, patch(
-            "payments.webhooks.send_order_receipt_email_once"
-        ) as mock_send_email:
+            "payments.webhooks.send_order_receipt_email_task"
+        ) as mock_task:
             response = self.client.post(
                 reverse("stripe-webhook"),
                 data=event_payload,
@@ -113,4 +113,4 @@ class StripeWebhookTests(APITestCase):
         self.assertEqual(order.status, Order.Status.PENDING)
         self.assertEqual(order.stripe_payment_intent_id, "")
         mock_record.assert_not_called()
-        mock_send_email.assert_not_called()
+        mock_task.delay.assert_not_called()

@@ -1,0 +1,50 @@
+{% load notification_extras %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Order #{{ order.id }} receipt</title>
+</head>
+<body>
+    <h1>Order #{{ order.id }} receipt</h1>
+    <p>Created: {{ order.created_at|date:"Y-m-d H:i" }}</p>
+    <p>Customer: {{ order.full_name }} ({{ order.email }})</p>
+    <p>Fulfillment: {{ order.get_order_type_display }}</p>
+
+    {% if order.order_type == "delivery" %}
+        <p>Address: {{ order.address_line1 }}{% if order.address_line2 %}, {{ order.address_line2 }}{% endif %}</p>
+        <p>{{ order.city }} {{ order.postal_code }}</p>
+        {% if order.delivery_notes %}<p>Delivery notes: {{ order.delivery_notes }}</p>{% endif %}
+    {% else %}
+        {% if order.pickup_location %}<p>Pickup location: {{ order.pickup_location }}</p>{% endif %}
+        {% if order.pickup_instructions %}<p>Pickup instructions: {{ order.pickup_instructions }}</p>{% endif %}
+    {% endif %}
+
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th align="left">Item</th>
+                <th align="right">Qty</th>
+                <th align="right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td align="right">{{ item.quantity }}</td>
+                    <td align="right">${{ item.total_cents|cents_to_dollars }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No items</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>Subtotal: ${{ order.subtotal_cents|cents_to_dollars }}</p>
+    <p>Tax: ${{ order.tax_cents|cents_to_dollars }}</p>
+    <p><strong>Total: ${{ order.total_cents|cents_to_dollars }}</strong></p>
+</body>
+</html>

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
@@ -14,11 +12,16 @@ from .services import generate_order_receipt_pdf
 ORDER_RECEIPT_KIND = "order_receipt"
 
 
+def _render_receipt_bodies(order: Order) -> tuple[str, str]:
+    context = {"order": order, "items": order.items.all()}
+    text_body = render_to_string("emails/order_receipt.txt", context)
+    html_body = render_to_string("emails/order_receipt.html", context)
+    return text_body, html_body
+
+
 def send_order_receipt_email(order: Order) -> EmailNotification:
     """
-    Send an order receipt email with a PDF attachment to order.email.
-    Create an EmailNotification row recording the attempt and result.
-    If order.email is empty, do nothing and return a Notification with status='failed'.
+    Low-level send that always records an EmailNotification attempt (pending -> sent/failed).
     """
     subject = f"Your Meat Direct order #{order.id} receipt"
 
@@ -28,21 +31,33 @@ def send_order_receipt_email(order: Order) -> EmailNotification:
             kind=ORDER_RECEIPT_KIND,
             to_email="",
             subject=subject,
-            status="failed",
+            body_text="",
+            body_html="",
+            status=EmailNotification.STATUS_FAILED,
             error="Order has no email address; receipt not sent.",
         )
 
-    context = {"order": order, "items": order.items.all()}
-    text_body = render_to_string(
-        "notifications/order_receipt_plain.txt", context
-    )
-    html_body = render_to_string(
-        "notifications/order_receipt.html", context
+    text_body, html_body = _render_receipt_bodies(order)
+    notification = EmailNotification.objects.create(
+        order=order,
+        kind=ORDER_RECEIPT_KIND,
+        to_email=order.email,
+        subject=subject,
+        body_text=text_body,
+        body_html=html_body,
+        status=EmailNotification.STATUS_PENDING,
     )
 
     from_email = settings.DEFAULT_FROM_EMAIL
-
+    pdf_bytes = None
+    pdf_error = ""
     try:
+        try:
+            pdf_bytes = generate_order_receipt_pdf(order)
+        except Exception as exc:  # pragma: no cover - defensive
+            pdf_bytes = None
+            pdf_error = f"PDF generation failed: {exc}"
+
         msg = EmailMultiAlternatives(
             subject,
             text_body,
@@ -50,58 +65,64 @@ def send_order_receipt_email(order: Order) -> EmailNotification:
             [order.email],
         )
         msg.attach_alternative(html_body, "text/html")
+        if pdf_bytes:
+            msg.attach(
+                f"order-{order.id}-receipt.pdf",
+                pdf_bytes,
+                "application/pdf",
+            )
 
-        pdf_bytes = generate_order_receipt_pdf(order)
-        msg.attach("order_receipt.pdf", pdf_bytes, "application/pdf")
-
-        message_id: Optional[str] = None
         try:
-            message_id = msg.message().get("Message-ID")
+            notification.message_id = msg.message().get("Message-ID", "")
         except Exception:
-            message_id = None
+            notification.message_id = ""
 
         sent_count = msg.send()
-        status = "sent" if sent_count else "failed"
-        sent_at = timezone.now() if sent_count else None
-        error = "" if sent_count else "Email backend did not send message"
-
-        notification = EmailNotification.objects.create(
-            order=order,
-            kind=ORDER_RECEIPT_KIND,
-            to_email=order.email,
-            subject=subject,
-            status=status,
-            message_id=message_id or "",
-            error=error,
-            sent_at=sent_at,
+        notification.status = (
+            EmailNotification.STATUS_SENT if sent_count else EmailNotification.STATUS_FAILED
         )
-        if pdf_bytes and status == "sent":
-            filename = f"order_{order.id}_receipt.pdf"
-            notification.receipt_pdf.save(
-                filename,
-                ContentFile(pdf_bytes),
-                save=True,
+        notification.sent_at = timezone.now() if sent_count else None
+        if not sent_count:
+            notification.error = "Email backend did not send message"
+        if pdf_error:
+            notification.error = (
+                f"{notification.error}\n{pdf_error}".strip()
+                if notification.error
+                else pdf_error
             )
-        return notification
-    except Exception as exc:
-        return EmailNotification.objects.create(
-            order=order,
-            kind=ORDER_RECEIPT_KIND,
-            to_email=order.email,
-            subject=subject,
-            status="failed",
-            error=str(exc),
+        if pdf_bytes:
+            notification.receipt_pdf.save(
+                f"order-{order.id}-receipt.pdf",
+                ContentFile(pdf_bytes),
+                save=False,
+            )
+        notification.save(
+            update_fields=[
+                "status",
+                "sent_at",
+                "message_id",
+                "error",
+                "receipt_pdf",
+                "updated_at",
+            ]
         )
+        return notification
+    except Exception as exc:  # pragma: no cover - defensive
+        notification.status = EmailNotification.STATUS_FAILED
+        notification.error = str(exc)
+        notification.save(update_fields=["status", "error", "updated_at"])
+        return notification
 
 
 def send_order_receipt_email_once(order: Order) -> EmailNotification:
     """
-    Send the order receipt email only if one hasn't been successfully sent before
-    for this order (kind='order_receipt' and status='sent').
+    Idempotent wrapper: return existing pending/sent notification, otherwise send.
     """
     existing = (
         EmailNotification.objects.filter(
-            order=order, kind=ORDER_RECEIPT_KIND, status="sent"
+            order=order,
+            kind=ORDER_RECEIPT_KIND,
+            status__in=[EmailNotification.STATUS_PENDING, EmailNotification.STATUS_SENT],
         )
         .order_by("-sent_at", "-created_at")
         .first()

@@ -25,6 +25,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_url",
             "category",
             "is_popular",
+            "is_active",
             "images",
         ]
 

@@ -1,6 +1,7 @@
 import os
 
 import stripe
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -8,7 +9,20 @@ from rest_framework.response import Response
 from orders.models import Order, OrderItem
 from products.models import Product
 
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_placeholder")
+stripe.api_key = getattr(
+    settings, "STRIPE_SECRET_KEY", os.environ.get("STRIPE_SECRET_KEY", "sk_test_placeholder")
+)
+
+
+def create_payment_intent(
+    amount_cents: int, currency: str, receipt_email: str, metadata=None
+):
+    return stripe.PaymentIntent.create(
+        amount=amount_cents,
+        currency=currency,
+        receipt_email=receipt_email,
+        metadata=metadata or {},
+    )
 
 
 @api_view(["GET"])

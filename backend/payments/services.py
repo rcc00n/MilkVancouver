@@ -9,55 +9,50 @@ def record_stripe_payment_from_intent(
     order: Order, intent_data: Dict[str, Any]
 ) -> Payment:
     """
-    Create (or update) a Payment record for the given Order based on a Stripe PaymentIntent payload.
-    Use:
-      - provider='stripe'
-      - kind='charge'
-      - amount_cents=intent_data['amount']
-      - currency=intent_data.get('currency', 'cad')
-      - status=intent_data.get('status', 'succeeded')
-      - stripe_payment_intent_id=intent_data['id']
-      - raw_payload=intent_data
-    If a Payment with this stripe_payment_intent_id already exists, update its status,
-    raw_payload and amount fields instead of creating a new row.
-    Return the Payment instance.
+    Create or update a Payment for the given order from a Stripe PaymentIntent payload.
     """
-    amount_cents = intent_data["amount"]
-    currency = intent_data.get("currency", "cad")
-    status = intent_data.get("status", "succeeded")
-    stripe_payment_intent_id = intent_data["id"]
+    intent_id = intent_data["id"]
+    amount_cents: int = intent_data["amount"]
+    currency: str = intent_data.get("currency", "cad")
+    status: str = intent_data.get("status", "")
 
-    existing = Payment.objects.filter(
-        stripe_payment_intent_id=stripe_payment_intent_id
-    ).first()
-    if existing:
-        existing.order = order
-        existing.amount_cents = amount_cents
-        existing.currency = currency
-        existing.status = status
-        existing.raw_payload = intent_data
-        if not existing.stripe_payment_intent_id:
-            existing.stripe_payment_intent_id = stripe_payment_intent_id
-        existing.save(
+    charges = intent_data.get("charges", {}) or {}
+    charges_data = charges.get("data", []) if isinstance(charges, dict) else []
+    stripe_charge_id = ""
+    if charges_data:
+        first_charge = charges_data[0]
+        if isinstance(first_charge, dict):
+            stripe_charge_id = first_charge.get("id", "") or ""
+
+    payment, created = Payment.objects.get_or_create(
+        order=order,
+        stripe_payment_intent_id=intent_id,
+        defaults={
+            "provider": Payment.Provider.STRIPE,
+            "kind": Payment.Kind.CHARGE,
+            "amount_cents": amount_cents,
+            "currency": currency,
+            "status": status,
+            "stripe_charge_id": stripe_charge_id,
+            "raw_payload": intent_data,
+        },
+    )
+
+    if not created:
+        payment.amount_cents = amount_cents
+        payment.currency = currency
+        payment.status = status
+        payment.stripe_charge_id = stripe_charge_id
+        payment.raw_payload = intent_data
+        payment.save(
             update_fields=[
-                "order",
                 "amount_cents",
                 "currency",
                 "status",
+                "stripe_charge_id",
                 "raw_payload",
-                "stripe_payment_intent_id",
                 "updated_at",
             ]
         )
-        return existing
 
-    return Payment.objects.create(
-        order=order,
-        provider=Payment.Provider.STRIPE,
-        kind=Payment.Kind.CHARGE,
-        amount_cents=amount_cents,
-        currency=currency,
-        status=status,
-        stripe_payment_intent_id=stripe_payment_intent_id,
-        raw_payload=intent_data,
-    )
+    return payment

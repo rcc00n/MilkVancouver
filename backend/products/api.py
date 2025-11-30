@@ -5,7 +5,7 @@ from .serializers import ProductSerializer
 
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", "category"]

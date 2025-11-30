@@ -12,12 +12,10 @@ class Payment(models.Model):
         REFUND = "refund", "Refund"
 
     class Status(models.TextChoices):
-        REQUIRES_PAYMENT_METHOD = (
-            "requires_payment_method",
-            "Requires Payment Method",
-        )
+        REQUIRES_PAYMENT_METHOD = "requires_payment_method", "Requires Payment Method"
         REQUIRES_CONFIRMATION = "requires_confirmation", "Requires Confirmation"
         REQUIRES_ACTION = "requires_action", "Requires Action"
+        REQUIRES_CAPTURE = "requires_capture", "Requires Capture"
         PROCESSING = "processing", "Processing"
         SUCCEEDED = "succeeded", "Succeeded"
         CANCELED = "canceled", "Canceled"
@@ -33,11 +31,11 @@ class Payment(models.Model):
     )
     amount_cents = models.PositiveIntegerField()
     currency = models.CharField(max_length=10, default="cad")
-    status = models.CharField(
-        max_length=50, choices=Status.choices, default=Status.REQUIRES_PAYMENT_METHOD
+    status = models.CharField(max_length=64, default=Status.REQUIRES_PAYMENT_METHOD)
+    stripe_payment_intent_id = models.CharField(
+        max_length=255, blank=True, default=""
     )
-    stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
-    stripe_charge_id = models.CharField(max_length=255, blank=True)
+    stripe_charge_id = models.CharField(max_length=255, blank=True, default="")
     raw_payload = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -50,7 +48,4 @@ class Payment(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"Payment #{self.id} - order #{self.order_id} - "
-            f"{self.amount_cents/100:.2f} {self.currency.upper()} ({self.status})"
-        )
+        return f"Payment {self.id} for order {self.order_id} ({self.provider} {self.status})"

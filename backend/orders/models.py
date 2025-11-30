@@ -41,6 +41,8 @@ class Order(models.Model):
     pickup_location = models.CharField(max_length=255, blank=True)
     pickup_instructions = models.TextField(blank=True)
     stripe_payment_intent_id = models.CharField(max_length=255, blank=True)
+    estimated_delivery_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

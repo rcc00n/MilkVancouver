@@ -86,9 +86,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             # For pickup we only require contact details which are already validated by fields.
             pass
         else:
-            raise serializers.ValidationError(
-                {"order_type": "Invalid order type."}
-            )
+            raise serializers.ValidationError("Invalid order type.")
 
         return attrs
 
@@ -164,6 +162,9 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "delivery_notes",
             "pickup_location",
             "pickup_instructions",
+            "stripe_payment_intent_id",
+            "estimated_delivery_at",
+            "delivered_at",
             "items",
             "created_at",
         ]

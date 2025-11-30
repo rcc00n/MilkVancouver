@@ -7,7 +7,6 @@ from .models import EmailNotification
 @admin.register(EmailNotification)
 class EmailNotificationAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
         "order",
         "kind",
         "to_email",
@@ -16,7 +15,8 @@ class EmailNotificationAdmin(admin.ModelAdmin):
         "sent_at",
         "receipt_link",
     )
-    readonly_fields = ("receipt_link",)
+    list_filter = ("kind", "status")
+    readonly_fields = ("receipt_link", "created_at", "updated_at", "sent_at", "receipt_pdf")
 
     def receipt_link(self, obj):
         if obj.receipt_pdf:

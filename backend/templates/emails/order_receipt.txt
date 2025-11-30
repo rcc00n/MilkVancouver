@@ -1,0 +1,24 @@
+{% load notification_extras %}
+Order #{{ order.id }} receipt
+Created: {{ order.created_at|date:"Y-m-d H:i" }}
+Customer: {{ order.full_name }} ({{ order.email }})
+Fulfillment: {{ order.get_order_type_display }}
+{% if order.order_type == "delivery" %}
+Address: {{ order.address_line1 }}{% if order.address_line2 %}, {{ order.address_line2 }}{% endif %}
+City/Postal: {{ order.city }} {{ order.postal_code }}
+{% if order.delivery_notes %}Delivery notes: {{ order.delivery_notes }}{% endif %}
+{% else %}
+{% if order.pickup_location %}Pickup location: {{ order.pickup_location }}{% endif %}
+{% if order.pickup_instructions %}Pickup instructions: {{ order.pickup_instructions }}{% endif %}
+{% endif %}
+
+Items:
+{% for item in items %}
+- {{ item.product_name }} x{{ item.quantity }} - ${{ item.total_cents|cents_to_dollars }}
+{% empty %}
+- No items
+{% endfor %}
+
+Subtotal: ${{ order.subtotal_cents|cents_to_dollars }}
+Tax: ${{ order.tax_cents|cents_to_dollars }}
+Total: ${{ order.total_cents|cents_to_dollars }}

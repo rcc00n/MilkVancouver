@@ -61,7 +61,7 @@ class SendOrderReceiptEmailTests(TestCase):
         self.assertTrue(message.attachments)
 
         filename, content, mimetype = message.attachments[0]
-        self.assertEqual(filename, "order_receipt.pdf")
+        self.assertEqual(filename, f"order-{self.order.id}-receipt.pdf")
         self.assertEqual(mimetype, "application/pdf")
         self.assertTrue(content)
 

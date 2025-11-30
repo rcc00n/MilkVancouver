@@ -12,11 +12,19 @@ class ProductImageInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "category", "price_cents", "is_popular", "image_preview")
-    list_filter = ("category", "is_popular")
+    list_display = (
+        "name",
+        "category",
+        "price_cents",
+        "is_popular",
+        "is_active",
+        "image_preview",
+    )
+    list_filter = ("category", "is_popular", "is_active")
     search_fields = ("name", "slug", "category")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("image_preview",)
+    list_editable = ("is_popular", "is_active")
     fields = (
         "name",
         "slug",
@@ -26,6 +34,7 @@ class ProductAdmin(admin.ModelAdmin):
         "main_image_url",
         "category",
         "is_popular",
+        "is_active",
         "image_preview",
     )
     inlines = [ProductImageInline]

@@ -15,6 +15,7 @@ class Product(models.Model):
     main_image_url = models.URLField(blank=True)
     category = models.CharField(max_length=100, blank=True)
     is_popular = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True, db_index=True)
 
     def __str__(self):
         return self.name

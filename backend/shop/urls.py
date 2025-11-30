@@ -15,6 +15,7 @@ def health_check(_request):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/csrf/", csrf_view, name="api-csrf"),
+    path("api/", include("accounts.urls")),
     path("api/", include("products.urls")),
     path("api/", include("orders.urls")),
     path("api/", include("payments.urls")),

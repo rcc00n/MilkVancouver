@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -47,7 +49,7 @@ class StripeWebhookReceiptEmailTests(TestCase):
             total_cents=self.product.price_cents,
         )
 
-    def test_payment_intent_succeeded_records_payment_and_sends_receipt(self):
+    def test_payment_intent_succeeded_records_payment_and_enqueues_receipt_email(self):
         payload = {
             "type": "payment_intent.succeeded",
             "data": {
@@ -60,10 +62,10 @@ class StripeWebhookReceiptEmailTests(TestCase):
                 }
             },
         }
-
-        response = self.client.post(
-            reverse("stripe-webhook"), payload, format="json"
-        )
+        with patch("payments.webhooks.send_order_receipt_email_task") as mock_task:
+            response = self.client.post(
+                reverse("stripe-webhook"), payload, format="json"
+            )
 
         self.assertEqual(response.status_code, 200)
         self.order.refresh_from_db()
@@ -80,17 +82,10 @@ class StripeWebhookReceiptEmailTests(TestCase):
         self.assertEqual(payment.currency, payload["data"]["object"]["currency"])
         self.assertEqual(payment.status, payload["data"]["object"]["status"])
 
-        notifications = EmailNotification.objects.filter(
-            order=self.order, kind="order_receipt"
-        )
-        self.assertEqual(notifications.count(), 1)
-        self.assertEqual(notifications.first().status, "sent")
+        mock_task.delay.assert_called_once_with(self.order.id)
 
-        self.assertEqual(len(mail.outbox), 1)
-        message = mail.outbox[0]
-        self.assertEqual(message.to, [self.order.email])
-        self.assertTrue(message.attachments)
-        filename, content, mimetype = message.attachments[0]
-        self.assertEqual(filename, "order_receipt.pdf")
-        self.assertEqual(mimetype, "application/pdf")
-        self.assertTrue(content)
+        self.assertEqual(
+            EmailNotification.objects.filter(order=self.order, kind="order_receipt").count(),
+            0,
+        )
+        self.assertEqual(len(mail.outbox), 0)
