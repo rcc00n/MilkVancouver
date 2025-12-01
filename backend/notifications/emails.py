@@ -10,6 +10,7 @@ from .models import EmailNotification
 from .services import generate_order_receipt_pdf
 
 ORDER_RECEIPT_KIND = "order_receipt"
+DELIVERY_ETA_KIND = "delivery_eta"
 
 
 def build_email_verification_url(token: str) -> str:
@@ -161,3 +162,95 @@ def send_order_receipt_email_once(order: Order) -> EmailNotification:
         return existing
 
     return send_order_receipt_email(order)
+
+
+def send_delivery_eta_email(order: Order) -> EmailNotification:
+    """
+    Send a delivery ETA email for the given order and record EmailNotification.
+    """
+    subject = f"Delivery ETA for your order #{order.id}"
+
+    if not order.email:
+        return EmailNotification.objects.create(
+            order=order,
+            kind=DELIVERY_ETA_KIND,
+            to_email="",
+            subject=subject,
+            body_text="",
+            body_html="",
+            status=EmailNotification.STATUS_FAILED,
+            error="Order has no email address; ETA not sent.",
+        )
+
+    greeting = f"Hi {order.full_name}," if order.full_name else "Hi there,"
+    if order.estimated_delivery_at:
+        local_eta = timezone.localtime(order.estimated_delivery_at)
+        formatted_eta = local_eta.strftime("%Y-%m-%d around %H:%M")
+        eta_line = f"Your order is scheduled for delivery on {formatted_eta}."
+    else:
+        eta_line = (
+            "Your order has been scheduled for delivery. "
+            "We will share a precise delivery window soon."
+        )
+
+    text_body = "\n".join(
+        [
+            greeting,
+            "",
+            f"Order #{order.id}",
+            eta_line,
+            "",
+            "Thanks for shopping with us!",
+            "MilkVanq Team",
+        ]
+    )
+    html_body = (
+        f"<p>{greeting}</p>"
+        f"<p>Order #{order.id}</p>"
+        f"<p>{eta_line}</p>"
+        "<p>Thanks for shopping with us!</p>"
+        "<p>MilkVanq Team</p>"
+    )
+
+    notification = EmailNotification.objects.create(
+        order=order,
+        kind=DELIVERY_ETA_KIND,
+        to_email=order.email,
+        subject=subject,
+        body_text=text_body,
+        body_html=html_body,
+        status=EmailNotification.STATUS_PENDING,
+    )
+
+    from_email = settings.DEFAULT_FROM_EMAIL
+    try:
+        msg = EmailMultiAlternatives(
+            subject,
+            text_body,
+            from_email,
+            [order.email],
+        )
+        msg.attach_alternative(html_body, "text/html")
+
+        try:
+            notification.message_id = msg.message().get("Message-ID", "")
+        except Exception:
+            notification.message_id = ""
+
+        sent_count = msg.send()
+        notification.status = (
+            EmailNotification.STATUS_SENT if sent_count else EmailNotification.STATUS_FAILED
+        )
+        notification.sent_at = timezone.now() if sent_count else None
+        if not sent_count:
+            notification.error = "Email backend did not send message"
+
+        notification.save(
+            update_fields=["status", "sent_at", "message_id", "error", "updated_at"]
+        )
+        return notification
+    except Exception as exc:  # pragma: no cover - defensive
+        notification.status = EmailNotification.STATUS_FAILED
+        notification.error = str(exc)
+        notification.save(update_fields=["status", "error", "updated_at"])
+        return notification

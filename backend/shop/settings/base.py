@@ -220,6 +220,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounts.tasks.cleanup_expired_phone_verifications",
         "schedule": crontab(hour=3, minute=0),
     },
+    "generate_delivery_routes_weekly": {
+        "task": "delivery.tasks.generate_delivery_routes",
+        "schedule": crontab(hour=2, minute=0, day_of_week="sun"),  # Sunday night
+        "options": {"queue": "logistics"},
+    },
+    "generate_delivery_routes_nightly": {
+        "task": "delivery.tasks.generate_delivery_routes",
+        "schedule": crontab(hour=2, minute=0),  # every night at 02:00
+        "options": {"queue": "logistics"},
+    },
 }
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")

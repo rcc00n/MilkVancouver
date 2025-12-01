@@ -6,7 +6,11 @@ from celery import shared_task
 
 from accounts.models import EmailVerificationToken
 from orders.models import Order
-from .emails import send_email_verification_email, send_order_receipt_email_once
+from .emails import (
+    send_delivery_eta_email,
+    send_email_verification_email,
+    send_order_receipt_email_once,
+)
 from .models import EmailNotification
 
 
@@ -21,6 +25,20 @@ def send_order_receipt_email_task(order_id: int) -> int | None:
         return None
 
     notification: EmailNotification = send_order_receipt_email_once(order)
+    return notification.id
+
+
+@shared_task(name="notifications.send_delivery_eta_email", queue="emails")
+def send_delivery_eta_email_task(order_id: int) -> int | None:
+    """
+    Enqueueable task to send a delivery ETA email for a given order.
+    Returns the EmailNotification id or None if the order does not exist.
+    """
+    order = Order.objects.filter(id=order_id).first()
+    if not order:
+        return None
+
+    notification: EmailNotification = send_delivery_eta_email(order)
     return notification.id
 
 
