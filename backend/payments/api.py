@@ -47,6 +47,7 @@ class CheckoutView(APIView):
         data = serializer.validated_data
         products_map: Dict[int, object] = data["products_map"]
         items_data: List[Dict] = data["items"]
+        region = data.get("region")
 
         raw_allow_unverified = request.data.get("allow_unverified")
         allow_unverified = bool(raw_allow_unverified) and request.user.is_staff
@@ -112,6 +113,7 @@ class CheckoutView(APIView):
             subtotal_cents=subtotal_cents,
             tax_cents=tax_cents,
             total_cents=total_cents,
+            region=region,
         )
 
         order_items = [
@@ -154,6 +156,11 @@ class CheckoutView(APIView):
 
         order.stripe_payment_intent_id = intent_id
         order.save(update_fields=["stripe_payment_intent_id"])
+
+        if region and (profile.region_id != region.id or profile.region_code != region.code):
+            profile.region = region
+            profile.region_code = region.code
+            profile.save(update_fields=["region", "region_code", "updated_at"])
 
         return Response(
             {

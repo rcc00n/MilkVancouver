@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import CustomerProfile
-from orders.models import Order
+from orders.models import Order, Region
 from products.models import Product
 
 User = get_user_model()
@@ -24,6 +24,9 @@ class OrderAPITests(APITestCase):
         self.profile.phone_verified_at = timezone.now()
         self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
         self.client.login(username=self.user.username, password="password123")
+        self.region = Region.objects.first() or Region.objects.create(
+            code="north", name="North", delivery_weekday=1, min_orders=5
+        )
 
     def test_create_pickup_order_success(self):
         product1 = Product.objects.create(
@@ -102,6 +105,7 @@ class OrderAPITests(APITestCase):
                 "postal_code": "12345",
             },
             "delivery_notes": "Leave at door",
+            "region_code": self.region.code,
         }
 
         response = self.client.post(
@@ -132,6 +136,7 @@ class OrderAPITests(APITestCase):
             "order_type": "delivery",
             "items": [{"product_id": product.id, "quantity": 1}],
             "address": {"line1": "", "city": "", "postal_code": ""},
+            "region_code": self.region.code,
         }
 
         response = self.client.post(

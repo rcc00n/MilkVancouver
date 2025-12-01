@@ -10,7 +10,7 @@ from django.utils.html import format_html_join
 
 from notifications.models import EmailNotification
 
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Region
 
 STATUS_COLORS = {
     Order.Status.PENDING: ("#fef9c3", "#854d0e"),  # yellow
@@ -35,12 +35,20 @@ class OrderItemInline(admin.TabularInline):
     show_change_link = False
 
 
+@admin.register(Region)
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "delivery_weekday", "min_orders")
+    list_editable = ("delivery_weekday", "min_orders")
+    list_filter = ("delivery_weekday",)
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "full_name",
         "order_type_badge",
+        "region_code_display",
         "colored_status",
         "status_shortcuts",
         "display_total",
@@ -52,6 +60,7 @@ class OrderAdmin(admin.ModelAdmin):
         "status",
         "order_type",
         ("created_at", admin.DateFieldListFilter),
+        "region",
     )
     search_fields = ("full_name", "email", "id")
     readonly_fields = (
@@ -100,6 +109,16 @@ class OrderAdmin(admin.ModelAdmin):
                 "fields": (
                     "pickup_location",
                     "pickup_instructions",
+                )
+            },
+        ),
+        (
+            "Logistics",
+            {
+                "fields": (
+                    "region",
+                    "estimated_delivery_at",
+                    "delivered_at",
                 )
             },
         ),
@@ -155,6 +174,11 @@ class OrderAdmin(admin.ModelAdmin):
 
     display_total.short_description = "Total"
     display_total.admin_order_field = "total_cents"
+
+    def region_code_display(self, obj):
+        return obj.region.code if obj.region else "—"
+
+    region_code_display.short_description = "Region"
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)

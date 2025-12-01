@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import CustomerProfile
-from orders.models import Order
+from orders.models import Order, Region
 from products.models import Product
 
 User = get_user_model()
@@ -32,6 +32,9 @@ class CheckoutEmailVerificationTests(APITestCase):
         self.profile = CustomerProfile.objects.get(user=self.user)
 
     def _payload(self):
+        region = Region.objects.first() or Region.objects.create(
+            code="north", name="North", delivery_weekday=1, min_orders=5
+        )
         return {
             "items": [{"product_id": self.product.id, "quantity": 2}],
             "full_name": "Buyer User",
@@ -45,6 +48,7 @@ class CheckoutEmailVerificationTests(APITestCase):
                 "notes": "Ring the bell",
             },
             "notes": "Leave at door",
+            "region_code": region.code,
         }
 
     def test_anonymous_checkout_blocked(self):

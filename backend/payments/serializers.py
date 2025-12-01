@@ -2,7 +2,7 @@ from typing import Dict
 
 from rest_framework import serializers
 
-from orders.models import Order
+from orders.models import Order, Region
 from products.models import Product
 from .models import Payment
 
@@ -36,6 +36,9 @@ class CheckoutCreateSerializer(serializers.Serializer):
     notes = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, default=""
     )
+    region_code = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=32
+    )
 
     def validate_items(self, items):
         if not items:
@@ -55,7 +58,9 @@ class CheckoutCreateSerializer(serializers.Serializer):
 
         order_type = attrs.get("order_type")
         address = attrs.get("address") or {}
+        region_code = attrs.get("region_code") or ""
         errors: Dict[str, Dict[str, str]] = {}
+        resolved_region = None
 
         if order_type == Order.OrderType.DELIVERY:
             required_fields = ("line1", "city", "postal_code")
@@ -67,6 +72,15 @@ class CheckoutCreateSerializer(serializers.Serializer):
                     field: "This field is required for delivery."
                     for field in missing_fields
                 }
+            if not region_code or not str(region_code).strip():
+                errors["region_code"] = ["This field is required for delivery orders."]
+            else:
+                resolved_region = Region.objects.filter(code__iexact=str(region_code).strip()).first()
+                if not resolved_region:
+                    errors["region_code"] = ["Unknown region code."]
+        else:
+            if region_code and str(region_code).strip():
+                resolved_region = Region.objects.filter(code__iexact=str(region_code).strip()).first()
 
         if order_type == Order.OrderType.PICKUP and not (
             attrs.get("pickup_location") or ""
@@ -77,6 +91,7 @@ class CheckoutCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError(errors)
 
         attrs["products_map"] = products_map
+        attrs["region"] = resolved_region
         return attrs
 
 

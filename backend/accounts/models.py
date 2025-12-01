@@ -43,6 +43,13 @@ class CustomerProfile(models.Model):
     city = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
     region_code = models.CharField(max_length=32, blank=True)
+    region = models.ForeignKey(
+        "orders.Region",
+        null=True,
+        blank=True,
+        related_name="customer_profiles",
+        on_delete=models.SET_NULL,
+    )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     phone_verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

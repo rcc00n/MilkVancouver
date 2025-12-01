@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import CustomerProfile
+from orders.models import Region
 from orders.models import Order
 from products.models import Product
 
@@ -60,6 +61,9 @@ class OrderCreationVerificationTests(APITestCase):
         return user, profile
 
     def _delivery_payload(self, include_contact=True):
+        region = Region.objects.first() or Region.objects.create(
+            code="north", name="North", delivery_weekday=1, min_orders=5
+        )
         payload = {
             "items": [{"product_id": self.product.id, "quantity": 1}],
             "order_type": Order.OrderType.DELIVERY,
@@ -68,6 +72,7 @@ class OrderCreationVerificationTests(APITestCase):
                 "city": "Vancouver",
                 "postal_code": "V1V1V1",
             },
+            "region_code": region.code,
         }
         if include_contact:
             payload.update(

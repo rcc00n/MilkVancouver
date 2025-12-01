@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from accounts.models import CustomerProfile, PhoneVerification
+from orders.models import Region
 from accounts.tasks import send_phone_verification_sms
 
 
@@ -22,6 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
+    region_name = serializers.CharField(source="region.name", read_only=True)
+
     class Meta:
         model = CustomerProfile
         fields = [
@@ -33,18 +36,30 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "city",
             "postal_code",
             "region_code",
+            "region_name",
             "email_verified_at",
             "phone_verified_at",
         ]
-        read_only_fields = ["email_verified_at", "phone_verified_at"]
+        read_only_fields = ["email_verified_at", "phone_verified_at", "region_name"]
 
     def update(self, instance, validated_data):
         user = instance.user
         first_name = validated_data.get("first_name")
         last_name = validated_data.get("last_name")
+        region_code = validated_data.get("region_code", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        if region_code is not None:
+            region_value = (region_code or "").strip()
+            region = (
+                Region.objects.filter(code__iexact=region_value).first()
+                if region_value
+                else None
+            )
+            instance.region = region
+
         instance.save()
 
         user_update_fields = []

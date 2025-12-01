@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from products.models import Product
 
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Region
 
 
 class OrderItemInputSerializer(serializers.Serializer):
@@ -41,6 +41,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     pickup_location = serializers.CharField(required=False, allow_blank=True)
     pickup_instructions = serializers.CharField(required=False, allow_blank=True)
     delivery_notes = serializers.CharField(required=False, allow_blank=True)
+    region_code = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Order
@@ -57,6 +58,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             "pickup_location",
             "pickup_instructions",
             "delivery_notes",
+            "region_code",
         ]
         read_only_fields = ["id", "status"]
 
@@ -94,6 +96,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop("items")
         address_data = validated_data.pop("address", {})
         delivery_notes = validated_data.pop("delivery_notes", "")
+        region_code = validated_data.pop("region_code", "").strip()
 
         product_ids = [item["product_id"] for item in items_data]
         products = Product.objects.filter(id__in=product_ids)
@@ -107,6 +110,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         tax_cents = 0
         total_cents = subtotal + tax_cents
 
+        region = Region.objects.filter(code=region_code).first() if region_code else None
+
         order = Order.objects.create(
             address_line1=address_data.get("line1", ""),
             address_line2=address_data.get("line2", ""),
@@ -117,6 +122,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             tax_cents=tax_cents,
             total_cents=total_cents,
             status=Order.Status.PENDING,
+            region=region,
             **validated_data,
         )
 
@@ -141,6 +147,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    region = serializers.CharField(source="region.code", read_only=True)
+    region_name = serializers.CharField(source="region.name", read_only=True)
 
     class Meta:
         model = Order
@@ -165,6 +173,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "stripe_payment_intent_id",
             "estimated_delivery_at",
             "delivered_at",
+            "region",
+            "region_name",
             "items",
             "created_at",
         ]

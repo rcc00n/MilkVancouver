@@ -4,6 +4,23 @@ from django.db import models
 from products.models import Product
 
 
+class Region(models.Model):
+    code = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=255)
+    delivery_weekday = models.PositiveSmallIntegerField()
+    min_orders = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["code"]
+        verbose_name = "Region"
+        verbose_name_plural = "Regions"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
 class Order(models.Model):
     class OrderType(models.TextChoices):
         PICKUP = "pickup", "Pickup"
@@ -27,6 +44,13 @@ class Order(models.Model):
     address_line2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
+    region = models.ForeignKey(
+        Region,
+        null=True,
+        blank=True,
+        related_name="orders",
+        on_delete=models.SET_NULL,
+    )
 
     order_type = models.CharField(max_length=20, choices=OrderType.choices)
     status = models.CharField(

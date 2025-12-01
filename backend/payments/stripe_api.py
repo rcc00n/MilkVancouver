@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.models import CustomerProfile
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, Region
 from products.models import Product
 
 stripe.api_key = getattr(
@@ -188,6 +188,23 @@ def create_checkout(request):
     email_source = request.user.email or data.get("email", "")
     order_email = (email_source or "").strip()
 
+    region_code = (data.get("region_code") or "").strip()
+    region = None
+    if order_type == Order.OrderType.DELIVERY:
+        if not region_code:
+            return Response(
+                {"detail": "Invalid or missing region_code for delivery order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        region = Region.objects.filter(code__iexact=region_code).first()
+        if not region:
+            return Response(
+                {"detail": "Invalid or missing region_code for delivery order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    elif region_code:
+        region = Region.objects.filter(code__iexact=region_code).first()
+
     order = Order.objects.create(
         full_name=full_name,
         email=order_email,
@@ -206,6 +223,7 @@ def create_checkout(request):
         total_cents=total_cents,
         status=Order.Status.PENDING,
         user=request.user,
+        region=region,
     )
 
     order_items = [

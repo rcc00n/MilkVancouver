@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import CustomerProfile
-from orders.models import Order, OrderItem
+from orders.models import Order, OrderItem, Region
 from products.models import Product
 
 User = get_user_model()
@@ -15,6 +15,8 @@ User = get_user_model()
 
 class CreateCheckoutTests(APITestCase):
     def setUp(self):
+        Order.objects.all().delete()
+        OrderItem.objects.all().delete()
         self.product = Product.objects.create(
             name="Whole Milk",
             slug="whole-milk",
@@ -35,6 +37,9 @@ class CreateCheckoutTests(APITestCase):
         self.client.login(username=self.user.username, password="password123")
 
     def _base_payload(self):
+        region = Region.objects.first() or Region.objects.create(
+            code="north", name="North", delivery_weekday=1, min_orders=5
+        )
         return {
             "items": [{"product_id": self.product.id, "quantity": 2}],
             "full_name": "John Doe",
@@ -48,6 +53,7 @@ class CreateCheckoutTests(APITestCase):
                 "notes": "Ring the bell",
             },
             "notes": "Leave at door",
+            "region_code": region.code,
         }
 
     @patch("payments.api.create_payment_intent")
