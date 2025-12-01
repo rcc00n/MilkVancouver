@@ -30,7 +30,8 @@ class CreateCheckoutTests(APITestCase):
         )
         self.profile = CustomerProfile.objects.get(user=self.user)
         self.profile.email_verified_at = timezone.now()
-        self.profile.save(update_fields=["email_verified_at"])
+        self.profile.phone_verified_at = timezone.now()
+        self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
         self.client.login(username=self.user.username, password="password123")
 
     def _base_payload(self):

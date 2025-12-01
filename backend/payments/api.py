@@ -19,17 +19,54 @@ class CheckoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        serializer = CheckoutCreateSerializer(data=request.data)
+        profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
+
+        payload = request.data.copy()
+
+        full_name = payload.get("full_name")
+        if not full_name or not str(full_name).strip():
+            profile_full_name = " ".join(
+                part for part in [profile.first_name, profile.last_name] if part
+            ).strip()
+            fallback_full_name = profile_full_name or (request.user.get_full_name() or "").strip()
+            if not fallback_full_name:
+                fallback_full_name = (request.user.email or "").strip()
+            if fallback_full_name:
+                payload["full_name"] = fallback_full_name
+
+        email = payload.get("email")
+        if (not email or not str(email).strip()) and request.user.email:
+            payload["email"] = request.user.email
+
+        phone = payload.get("phone")
+        if (not phone or not str(phone).strip()) and profile.phone:
+            payload["phone"] = profile.phone
+
+        serializer = CheckoutCreateSerializer(data=payload)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         products_map: Dict[int, object] = data["products_map"]
         items_data: List[Dict] = data["items"]
 
-        profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
-        if not profile.email_verified_at:
+        raw_allow_unverified = request.data.get("allow_unverified")
+        allow_unverified = bool(raw_allow_unverified) and request.user.is_staff
+
+        order_type = data["order_type"]
+
+        if not profile.email_verified_at and not allow_unverified:
             return Response(
-                {"detail": "Please verify your email before checking out."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"detail": "Please verify your email before placing an order."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (
+            order_type == Order.OrderType.DELIVERY
+            and not profile.phone_verified_at
+            and not allow_unverified
+        ):
+            return Response(
+                {"detail": "Verify phone to place a delivery order."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         subtotal_cents = 0
@@ -55,7 +92,8 @@ class CheckoutView(APIView):
         total_cents = subtotal_cents + tax_cents
 
         address = data.get("address") or {}
-        order_email = request.user.email or data["email"]
+        email_source = request.user.email or data["email"]
+        order_email = email_source.strip() if email_source else ""
         order = Order.objects.create(
             user=request.user,
             full_name=data["full_name"],

@@ -1,14 +1,29 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from accounts.models import CustomerProfile
 from orders.models import Order
 from products.models import Product
+
+User = get_user_model()
 
 
 class OrderAPITests(APITestCase):
     def setUp(self):
         self.order_list_url = reverse("order-list")
+        self.user = User.objects.create_user(
+            username="orders@example.com",
+            email="orders@example.com",
+            password="password123",
+        )
+        self.profile = CustomerProfile.objects.get(user=self.user)
+        self.profile.email_verified_at = timezone.now()
+        self.profile.phone_verified_at = timezone.now()
+        self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
+        self.client.login(username=self.user.username, password="password123")
 
     def test_create_pickup_order_success(self):
         product1 = Product.objects.create(

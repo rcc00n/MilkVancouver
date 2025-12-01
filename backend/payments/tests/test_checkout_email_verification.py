@@ -54,8 +54,10 @@ class CheckoutEmailVerificationTests(APITestCase):
     def test_unverified_user_cannot_checkout(self):
         self.client.login(username=self.user.username, password="password123")
         response = self.client.post(self.url, self._payload(), format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.json()["detail"], "Please verify your email before checking out.")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json()["detail"], "Please verify your email before placing an order."
+        )
 
     @patch("payments.api.create_payment_intent")
     def test_verified_user_can_checkout_and_order_linked(self, mock_create_intent):
@@ -64,7 +66,8 @@ class CheckoutEmailVerificationTests(APITestCase):
             "client_secret": "cs_verified",
         }
         self.profile.email_verified_at = timezone.now()
-        self.profile.save(update_fields=["email_verified_at"])
+        self.profile.phone_verified_at = timezone.now()
+        self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
         self.client.login(username=self.user.username, password="password123")
 
         response = self.client.post(self.url, self._payload(), format="json")

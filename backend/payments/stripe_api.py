@@ -64,11 +64,6 @@ def create_checkout(request):
         )
 
     profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
-    if not profile.email_verified_at:
-        return Response(
-            {"detail": "Please verify your email before checking out."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
 
     if not isinstance(raw_items, list) or not raw_items:
         return Response(
@@ -150,18 +145,53 @@ def create_checkout(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    raw_allow_unverified = data.get("allow_unverified")
+    allow_unverified = bool(raw_allow_unverified) and request.user.is_staff
+
+    if not profile.email_verified_at and not allow_unverified:
+        return Response(
+            {"detail": "Please verify your email before placing an order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if (
+        order_type == Order.OrderType.DELIVERY
+        and not profile.phone_verified_at
+        and not allow_unverified
+    ):
+        return Response(
+            {"detail": "Verify phone to place a delivery order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     address = data.get("address") or {}
     if not isinstance(address, dict):
         address = {}
 
     delivery_notes = address.get("notes") or data.get("delivery_notes", "")
 
-    order_email = request.user.email or data.get("email", "")
+    full_name = data.get("full_name")
+    if not full_name or not str(full_name).strip():
+        profile_full_name = " ".join(
+            part for part in [profile.first_name, profile.last_name] if part
+        ).strip()
+        fallback_full_name = profile_full_name or (request.user.get_full_name() or "").strip()
+        if not fallback_full_name:
+            fallback_full_name = (request.user.email or "").strip()
+        full_name = fallback_full_name or ""
+
+    phone = data.get("phone")
+    if (not phone or not str(phone).strip()) and profile.phone:
+        phone = profile.phone
+    phone = phone or ""
+
+    email_source = request.user.email or data.get("email", "")
+    order_email = (email_source or "").strip()
 
     order = Order.objects.create(
-        full_name=data.get("full_name", ""),
+        full_name=full_name,
         email=order_email,
-        phone=data.get("phone", ""),
+        phone=phone,
         order_type=order_type,
         address_line1=address.get("line1", ""),
         address_line2=address.get("line2", ""),
