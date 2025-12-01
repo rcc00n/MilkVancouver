@@ -25,13 +25,29 @@ def pytest_configure():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def django_db_setup_and_teardown():
+def django_db_setup_and_teardown(request):
     """
     Create and tear down the Django test databases for pytest runs without pytest-django.
+    If pytest-django's blocking is active, temporarily unblock using the fixture; otherwise run normally.
     """
     test_runner = DiscoverRunner()
-    old_config = test_runner.setup_databases()
+    blocker = None
+    try:
+        blocker = request.getfixturevalue("django_db_blocker")
+    except Exception:
+        blocker = None
+
+    if blocker:
+        with blocker.unblock():
+            old_config = test_runner.setup_databases()
+    else:
+        old_config = test_runner.setup_databases()
+
     try:
         yield
     finally:
-        test_runner.teardown_databases(old_config)
+        if blocker:
+            with blocker.unblock():
+                test_runner.teardown_databases(old_config)
+        else:
+            test_runner.teardown_databases(old_config)

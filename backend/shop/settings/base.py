@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "orders",
+    "delivery",
     "payments",
     "notifications",
     "contacts",

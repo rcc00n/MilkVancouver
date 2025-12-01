@@ -41,13 +41,21 @@ class OrderCreationVerificationTests(APITestCase):
         last_name="",
         phone="",
     ):
-        user = User.objects.create_user(
-            username=email,
-            email=email,
-            password="password123",
-            first_name=first_name,
-            last_name=last_name,
-        )
+        try:
+            user = User.objects.get(username=email)
+            user.email = email
+            user.first_name = first_name
+            user.last_name = last_name
+            user.set_password("password123")
+            user.save()
+        except User.DoesNotExist:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password="password123",
+                first_name=first_name,
+                last_name=last_name,
+            )
         profile: CustomerProfile = CustomerProfile.objects.get(user=user)
         profile.phone = phone or profile.phone
         if email_verified:
