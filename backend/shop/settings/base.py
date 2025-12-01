@@ -1,6 +1,7 @@
 import os
 import urllib.parse
 from pathlib import Path
+from celery.schedules import crontab
 from dotenv import load_dotenv
 from kombu import Queue
 
@@ -213,10 +214,19 @@ CELERY_TASK_QUEUES = (
     Queue("sms"),
     Queue("logistics"),
 )
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    "cleanup_phone_verifications_daily": {
+        "task": "accounts.tasks.cleanup_expired_phone_verifications",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
+
+PHONE_VERIFICATION_MAX_ATTEMPTS = int(os.environ.get("PHONE_VERIFICATION_MAX_ATTEMPTS", 5))
+PHONE_VERIFICATION_MAX_PER_DAY = int(os.environ.get("PHONE_VERIFICATION_MAX_PER_DAY", 3))
+PHONE_VERIFICATION_TTL_MINUTES = int(os.environ.get("PHONE_VERIFICATION_TTL_MINUTES", 10))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

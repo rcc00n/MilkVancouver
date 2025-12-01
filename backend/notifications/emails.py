@@ -12,6 +12,36 @@ from .services import generate_order_receipt_pdf
 ORDER_RECEIPT_KIND = "order_receipt"
 
 
+def build_email_verification_url(token: str) -> str:
+    base = getattr(settings, "EMAIL_VERIFICATION_BASE_URL", None)
+    if not base:
+        origins = getattr(settings, "FRONTEND_ORIGINS", [])
+        if origins:
+            base = origins[0]
+    if not base:
+        backend_host = getattr(settings, "BACKEND_HOST", "localhost")
+        base = f"https://{backend_host}"
+    return f"{base.rstrip('/')}/verify-email?token={token}"
+
+
+def send_email_verification_email(user, token: str) -> None:
+    subject = "Verify your email address"
+    verification_url = build_email_verification_url(token)
+    context = {"user": user, "verification_url": verification_url}
+
+    text_body = render_to_string("notifications/email_verification_plain.txt", context)
+    html_body = render_to_string("notifications/email_verification.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    msg.send()
+
+
 def _render_receipt_bodies(order: Order) -> tuple[str, str]:
     context = {"order": order, "items": order.items.all()}
     text_body = render_to_string("emails/order_receipt.txt", context)

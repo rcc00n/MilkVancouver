@@ -3,9 +3,11 @@ import os
 import stripe
 from django.conf import settings
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.models import CustomerProfile
 from orders.models import Order, OrderItem
 from products.models import Product
 
@@ -50,9 +52,23 @@ def stripe_config(_request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_checkout(request):
     data = request.data or {}
     raw_items = data.get("items") or []
+
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Authentication credentials were not provided."},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
+    if not profile.email_verified_at:
+        return Response(
+            {"detail": "Please verify your email before checking out."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if not isinstance(raw_items, list) or not raw_items:
         return Response(
@@ -140,9 +156,11 @@ def create_checkout(request):
 
     delivery_notes = address.get("notes") or data.get("delivery_notes", "")
 
+    order_email = request.user.email or data.get("email", "")
+
     order = Order.objects.create(
         full_name=data.get("full_name", ""),
-        email=data.get("email", ""),
+        email=order_email,
         phone=data.get("phone", ""),
         order_type=order_type,
         address_line1=address.get("line1", ""),
@@ -157,6 +175,7 @@ def create_checkout(request):
         tax_cents=tax_cents,
         total_cents=total_cents,
         status=Order.Status.PENDING,
+        user=request.user,
     )
 
     order_items = [

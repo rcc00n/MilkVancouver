@@ -1,7 +1,14 @@
+import random
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password, make_password
+from django.utils import timezone
 from rest_framework import serializers
 
-from accounts.models import CustomerProfile
+from accounts.models import CustomerProfile, PhoneVerification
+from accounts.tasks import send_phone_verification_sms
 
 
 User = get_user_model()
@@ -113,3 +120,110 @@ class LoginSerializer(serializers.Serializer):
 class MeSerializer(serializers.Serializer):
     user = UserSerializer()
     profile = CustomerProfileSerializer()
+
+
+class RequestPhoneVerificationSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=32, required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        request = self.context["request"]
+        user = request.user
+        phone_number = attrs.get("phone_number", "").strip()
+
+        if not phone_number:
+            profile, _ = CustomerProfile.objects.get_or_create(user=user)
+            phone_number = profile.phone.strip()
+
+        if not phone_number:
+            raise serializers.ValidationError("Phone number is required.")
+
+        today = timezone.now().date()
+        max_per_day = getattr(settings, "PHONE_VERIFICATION_MAX_PER_DAY", 3)
+        daily_count = PhoneVerification.objects.filter(user=user, created_at__date=today).count()
+        if daily_count >= max_per_day:
+            raise serializers.ValidationError("You have reached the daily phone verification limit.")
+
+        attrs["phone_number"] = phone_number
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        phone_number = validated_data["phone_number"]
+
+        code = f"{random.randint(0, 999999):06d}"
+        code_hash = make_password(code)
+        expires_at = timezone.now() + timedelta(
+            minutes=getattr(settings, "PHONE_VERIFICATION_TTL_MINUTES", 10)
+        )
+
+        verification = PhoneVerification.objects.create(
+            user=user,
+            phone_number=phone_number,
+            code_hash=code_hash,
+            expires_at=expires_at,
+        )
+
+        send_phone_verification_sms.delay(verification.id, code)
+
+        return verification
+
+
+class VerifyPhoneSerializer(serializers.Serializer):
+    code = serializers.CharField()
+
+    def validate_code(self, value):
+        code = value.strip()
+        if len(code) != 6 or not code.isdigit():
+            raise serializers.ValidationError("Code must be a 6-digit number.")
+        return code
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        now = timezone.now()
+        verification = (
+            PhoneVerification.objects.filter(user=user, expires_at__gt=now)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not verification:
+            raise serializers.ValidationError("No active verification code found. Please request a new one.")
+
+        if verification.is_locked:
+            raise serializers.ValidationError("Too many incorrect attempts. Please request a new code.")
+
+        attrs["verification"] = verification
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        code = validated_data["code"]
+        verification = validated_data["verification"]
+
+        if not check_password(code, verification.code_hash):
+            verification.attempts += 1
+            verification.save(update_fields=["attempts"])
+            max_attempts = getattr(settings, "PHONE_VERIFICATION_MAX_ATTEMPTS", 5)
+            remaining = max(max_attempts - verification.attempts, 0)
+            message = "Incorrect code."
+            if remaining > 0:
+                message = f"{message} {remaining} attempt(s) remaining."
+            raise serializers.ValidationError(message)
+
+        now = timezone.now()
+        verification.verified_at = now
+        verification.attempts += 1
+        verification.save(update_fields=["verified_at", "attempts"])
+
+        PhoneVerification.objects.filter(
+            user=user,
+            expires_at__gt=now,
+            verified_at__isnull=True,
+        ).exclude(id=verification.id).update(expires_at=now)
+
+        profile, _ = CustomerProfile.objects.get_or_create(user=user)
+        profile.phone = verification.phone_number
+        profile.phone_verified_at = now
+        profile.save(update_fields=["phone", "phone_verified_at", "updated_at"])
+
+        return verification

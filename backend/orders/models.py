@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from products.models import Product
@@ -30,6 +31,13 @@ class Order(models.Model):
     order_type = models.CharField(max_length=20, choices=OrderType.choices)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        on_delete=models.SET_NULL,
     )
 
     subtotal_cents = models.PositiveIntegerField(default=0)

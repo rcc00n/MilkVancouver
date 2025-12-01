@@ -1,11 +1,16 @@
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from accounts.models import CustomerProfile
 from orders.models import Order, OrderItem
 from products.models import Product
+
+User = get_user_model()
 
 
 class CreateCheckoutTests(APITestCase):
@@ -18,6 +23,15 @@ class CreateCheckoutTests(APITestCase):
             main_image_url="",
             category="dairy",
         )
+        self.user = User.objects.create_user(
+            username="john@example.com",
+            email="john@example.com",
+            password="password123",
+        )
+        self.profile = CustomerProfile.objects.get(user=self.user)
+        self.profile.email_verified_at = timezone.now()
+        self.profile.save(update_fields=["email_verified_at"])
+        self.client.login(username=self.user.username, password="password123")
 
     def _base_payload(self):
         return {

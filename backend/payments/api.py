@@ -5,6 +5,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import CustomerProfile
 from orders.models import Order, OrderItem
 from .serializers import CheckoutCreateSerializer
 from .stripe_api import create_payment_intent
@@ -15,8 +16,7 @@ class CheckoutView(APIView):
     Accepts cart data, creates an Order and OrderItems, then creates a Stripe PaymentIntent.
     """
 
-    permission_classes = []  # AllowAny without default permission checks
-    authentication_classes = []  # Allow unauthenticated checkout without CSRF
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = CheckoutCreateSerializer(data=request.data)
@@ -24,6 +24,13 @@ class CheckoutView(APIView):
         data = serializer.validated_data
         products_map: Dict[int, object] = data["products_map"]
         items_data: List[Dict] = data["items"]
+
+        profile, _ = CustomerProfile.objects.get_or_create(user=request.user)
+        if not profile.email_verified_at:
+            return Response(
+                {"detail": "Please verify your email before checking out."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         subtotal_cents = 0
         order_items_payload: List[Dict] = []
@@ -48,9 +55,11 @@ class CheckoutView(APIView):
         total_cents = subtotal_cents + tax_cents
 
         address = data.get("address") or {}
+        order_email = request.user.email or data["email"]
         order = Order.objects.create(
+            user=request.user,
             full_name=data["full_name"],
-            email=data["email"],
+            email=order_email,
             phone=data["phone"],
             order_type=data["order_type"],
             status=Order.Status.PENDING,

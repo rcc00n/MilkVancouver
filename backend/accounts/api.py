@@ -1,16 +1,20 @@
 from django.contrib.auth import authenticate, get_user_model, login
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import CustomerProfile
+from accounts.models import CustomerProfile, EmailVerificationToken
 from accounts.serializers import (
     CustomerProfileSerializer,
     LoginSerializer,
     MeSerializer,
+    RequestPhoneVerificationSerializer,
     RegisterSerializer,
     UserSerializer,
+    VerifyPhoneSerializer,
 )
+from notifications.tasks import send_email_verification_email_task
 
 
 User = get_user_model()
@@ -80,3 +84,66 @@ class ProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class RequestEmailVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = EmailVerificationToken.objects.create_for_user(request.user)
+        send_email_verification_email_task.delay(request.user.id, token.token)
+        return Response({"detail": "Verification email sent."}, status=status.HTTP_200_OK)
+
+
+class VerifyEmailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        token_value = request.query_params.get("token")
+        if not token_value:
+            return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = EmailVerificationToken.objects.filter(token=token_value).select_related("user").first()
+        if not token:
+            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if token.is_used():
+            return Response({"detail": "Token has already been used."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if token.is_expired():
+            return Response({"detail": "Token has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token.mark_used()
+
+        profile, _created = CustomerProfile.objects.get_or_create(user=token.user)
+        profile.email_verified_at = timezone.now()
+        profile.save(update_fields=["email_verified_at", "updated_at"])
+
+        # Invalidate any other active tokens for this user.
+        EmailVerificationToken.objects.filter(
+            user=token.user,
+            used_at__isnull=True,
+            expires_at__gt=timezone.now(),
+        ).exclude(id=token.id).update(used_at=timezone.now())
+
+        return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
+
+
+class RequestPhoneVerificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = RequestPhoneVerificationSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Verification code sent via SMS."}, status=status.HTTP_201_CREATED)
+
+
+class VerifyPhoneView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = VerifyPhoneSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Phone number verified successfully."}, status=status.HTTP_200_OK)
