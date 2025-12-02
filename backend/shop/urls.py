@@ -3,6 +3,11 @@ from django.http import JsonResponse
 from django.urls import include, path, re_path
 from django.views.generic import TemplateView
 from django.views.decorators.csrf import ensure_csrf_cookie
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 
 @ensure_csrf_cookie
 def csrf_view(request):
@@ -17,6 +22,17 @@ urlpatterns = [
     path("api/csrf/", csrf_view, name="api-csrf"),
     path("api/auth/", include("accounts.urls")),
     path("api/admin/", include("admin_api.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/docs/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "api/docs/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
     path("api/", include("products.urls")),
     path("api/", include("orders.urls")),
     path("api/delivery/", include("delivery.urls", namespace="delivery")),

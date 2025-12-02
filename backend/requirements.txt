@@ -12,3 +12,4 @@ boto3
 Pillow
 python-dotenv
 twilio
+drf-spectacular

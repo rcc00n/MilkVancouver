@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.test import SimpleTestCase
+from shop.settings import base as base_settings
 
 
 class SettingsAndEmailTests(SimpleTestCase):
@@ -10,8 +11,11 @@ class SettingsAndEmailTests(SimpleTestCase):
         self.assertIn("NAME", default_db)
 
     def test_sendgrid_email_backend_defaults(self):
-        self.assertEqual(
-            settings.EMAIL_BACKEND, "anymail.backends.sendgrid.EmailBackend"
+        expected_backend = "anymail.backends.sendgrid.EmailBackend"
+        self.assertEqual(base_settings.EMAIL_BACKEND, expected_backend)
+        self.assertIn(
+            settings.EMAIL_BACKEND,
+            [expected_backend, "django.core.mail.backends.locmem.EmailBackend"],
         )
         self.assertTrue(isinstance(settings.DEFAULT_FROM_EMAIL, str))
         self.assertTrue(settings.DEFAULT_FROM_EMAIL)

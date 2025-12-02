@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "anymail",
     "corsheaders",
     "rest_framework",
+    "drf_spectacular",
     "accounts",
     "products",
     "orders",
@@ -117,6 +118,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "MilkVanq API",
+    "DESCRIPTION": "API documentation for the MilkVanq grocery delivery platform.",
+    "VERSION": "1.0.0",
 }
 
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "anymail.backends.sendgrid.EmailBackend")

@@ -48,6 +48,24 @@ class StripeWebhookReceiptEmailTests(TestCase):
             unit_price_cents=self.product.price_cents,
             total_cents=self.product.price_cents,
         )
+        secret_patcher = patch("payments.webhooks.STRIPE_WEBHOOK_SECRET", "")
+        secret_patcher.start()
+        self.addCleanup(secret_patcher.stop)
+
+    def _intent_payload(self, *, intent_id: str, amount: int, status: str = "succeeded", charge_id="ch_test"):
+        return {
+            "type": "payment_intent.succeeded",
+            "data": {
+                "object": {
+                    "id": intent_id,
+                    "amount": amount,
+                    "currency": "cad",
+                    "status": status,
+                    "metadata": {"order_id": str(self.order.id)},
+                    "charges": {"data": [{"id": charge_id}]},
+                }
+            },
+        }
 
     def test_payment_intent_succeeded_records_payment_and_enqueues_receipt_email(self):
         payload = {
@@ -89,3 +107,44 @@ class StripeWebhookReceiptEmailTests(TestCase):
             0,
         )
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_webhook_is_idempotent_for_same_payment_intent(self):
+        first_amount = self.order.total_cents
+        second_amount = first_amount + 123
+        first_payload = self._intent_payload(
+            intent_id="pi_idempotent",
+            amount=first_amount,
+            charge_id="ch_initial",
+        )
+        second_payload = self._intent_payload(
+            intent_id="pi_idempotent",
+            amount=second_amount,
+            charge_id="ch_updated",
+        )
+
+        with patch("payments.webhooks.send_order_receipt_email_task") as mock_task:
+            first_response = self.client.post(
+                reverse("stripe-webhook"), first_payload, format="json"
+            )
+            self.assertEqual(first_response.status_code, 200)
+            payment = Payment.objects.get(stripe_payment_intent_id="pi_idempotent")
+            self.assertEqual(payment.amount_cents, first_amount)
+            self.assertEqual(payment.stripe_charge_id, "ch_initial")
+            self.assertEqual(payment.status, "succeeded")
+            self.order.refresh_from_db()
+            self.assertEqual(self.order.status, Order.Status.PAID)
+            self.assertEqual(self.order.stripe_payment_intent_id, "pi_idempotent")
+
+            second_response = self.client.post(
+                reverse("stripe-webhook"), second_payload, format="json"
+            )
+            self.assertEqual(second_response.status_code, 200)
+            self.assertEqual(
+                Payment.objects.filter(stripe_payment_intent_id="pi_idempotent").count(), 1
+            )
+            payment.refresh_from_db()
+            self.assertEqual(payment.amount_cents, second_amount)
+            self.assertEqual(payment.stripe_charge_id, "ch_updated")
+            self.assertEqual(payment.raw_payload["amount"], second_amount)
+            # Webhook currently triggers receipt task per event; ensure it was invoked.
+            self.assertGreaterEqual(mock_task.delay.call_count, 1)
