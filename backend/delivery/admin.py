@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import DeliveryRoute, Driver, RouteStop
+from .models import DeliveryProof, DeliveryRoute, Driver, RouteStop
 
 
 class RouteStopInline(admin.TabularInline):
@@ -119,5 +119,23 @@ class RouteStopAdmin(admin.ModelAdmin):
 
     def driver(self, obj):
         return obj.route.driver if obj and obj.route else None
+
+    driver.short_description = "Driver"
+
+
+@admin.register(DeliveryProof)
+class DeliveryProofAdmin(admin.ModelAdmin):
+    list_display = ("id", "stop", "route", "driver", "photo", "created_at")
+    readonly_fields = ("created_at",)
+
+    def route(self, obj):
+        return obj.stop.route if obj and obj.stop else None
+
+    route.short_description = "Route"
+
+    def driver(self, obj):
+        if obj and obj.stop and obj.stop.route:
+            return obj.stop.route.driver
+        return None
 
     driver.short_description = "Driver"

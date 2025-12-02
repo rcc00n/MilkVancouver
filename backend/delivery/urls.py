@@ -3,6 +3,8 @@ from django.urls import path
 from .api import (
     DriverTodayRoutesView,
     DriverUpcomingRoutesView,
+    MarkStopDeliveredView,
+    MarkStopNoPickupView,
     MyRoutesView,
     RouteStopsView,
 )
@@ -21,5 +23,15 @@ urlpatterns = [
         "driver/routes/upcoming/",
         DriverUpcomingRoutesView.as_view(),
         name="driver-routes-upcoming",
+    ),
+    path(
+        "driver/stops/<int:stop_id>/mark-delivered/",
+        MarkStopDeliveredView.as_view(),
+        name="driver-stop-mark-delivered",
+    ),
+    path(
+        "driver/stops/<int:stop_id>/mark-no-pickup/",
+        MarkStopNoPickupView.as_view(),
+        name="driver-stop-mark-no-pickup",
     ),
 ]

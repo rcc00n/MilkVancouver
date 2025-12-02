@@ -20,11 +20,32 @@ class RouteStopOrderSerializer(serializers.ModelSerializer):
 
 class RouteStopSerializer(serializers.ModelSerializer):
     order = RouteStopOrderSerializer(read_only=True)
+    has_proof = serializers.SerializerMethodField()
+    proof_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = RouteStop
-        fields = ["id", "sequence", "status", "delivered_at", "order"]
+        fields = [
+            "id",
+            "sequence",
+            "status",
+            "delivered_at",
+            "has_proof",
+            "proof_photo_url",
+            "order",
+        ]
         read_only_fields = fields
+
+    def get_has_proof(self, obj):
+        return hasattr(obj, "delivery_proof")
+
+    def get_proof_photo_url(self, obj):
+        proof = getattr(obj, "delivery_proof", None)
+        if not proof or not proof.photo:
+            return ""
+        request = self.context.get("request")
+        url = proof.photo.url
+        return request.build_absolute_uri(url) if request else url
 
 
 class DeliveryRouteSerializer(serializers.ModelSerializer):
@@ -58,6 +79,8 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source="order.full_name", read_only=True)
     client_phone = serializers.CharField(source="order.phone", read_only=True)
     address = serializers.SerializerMethodField()
+    has_proof = serializers.SerializerMethodField()
+    proof_photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = RouteStop
@@ -66,6 +89,8 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             "sequence",
             "status",
             "delivered_at",
+            "has_proof",
+            "proof_photo_url",
             "order_id",
             "client_name",
             "client_phone",
@@ -78,6 +103,8 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             "client_name",
             "client_phone",
             "address",
+            "has_proof",
+            "proof_photo_url",
         ]
 
     def get_address(self, obj):
@@ -89,6 +116,17 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             getattr(order, "postal_code", ""),
         ]
         return ", ".join(part for part in parts if part)
+
+    def get_has_proof(self, obj):
+        return hasattr(obj, "delivery_proof")
+
+    def get_proof_photo_url(self, obj):
+        proof = getattr(obj, "delivery_proof", None)
+        if not proof or not proof.photo:
+            return ""
+        request = self.context.get("request")
+        url = proof.photo.url
+        return request.build_absolute_uri(url) if request else url
 
 
 class DriverRouteSerializer(serializers.ModelSerializer):

@@ -65,6 +65,19 @@ class DeliveryRoute(models.Model):
             driver_display = driver_identifier
         return f"Route {self.region.code} on {self.date} - {driver_display}"
 
+    def refresh_completion_status(self, save: bool = True) -> None:
+        """
+        Mark route as completed if all stops are either delivered or no_pickup.
+        """
+        completed = not self.stops.exclude(
+            status__in=[RouteStop.Status.DELIVERED, RouteStop.Status.NO_PICKUP]
+        ).exists()
+
+        if self.is_completed != completed:
+            self.is_completed = completed
+            if save:
+                self.save(update_fields=["is_completed"])
+
     @property
     def stops_count(self):
         annotated_value = getattr(self, "_stops_count", None)
@@ -103,3 +116,17 @@ class RouteStop(models.Model):
 
     def __str__(self):
         return f"Stop #{self.sequence} for order #{self.order_id} on route {self.route_id}"
+
+
+class DeliveryProof(models.Model):
+    stop = models.OneToOneField(
+        RouteStop, related_name="delivery_proof", on_delete=models.CASCADE
+    )
+    photo = models.ImageField(upload_to="delivery_proofs/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"DeliveryProof for stop {self.stop_id}"

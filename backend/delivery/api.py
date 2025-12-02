@@ -4,17 +4,27 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from delivery.models import DeliveryRoute, Driver, RouteStop
-from delivery.permissions import IsDriver
+from delivery.models import DeliveryProof, DeliveryRoute, Driver, RouteStop
+from delivery.permissions import IsDriver as BaseIsDriver
 from delivery.serializers import (
     DeliveryRouteSerializer,
     DriverRouteSerializer,
     DriverUpcomingRouteSerializer,
     RouteStopSerializer,
 )
+from orders.models import Order
+
+
+class IsDriver(BaseIsDriver):
+    """
+    Permission that checks if the authenticated user is a registered driver.
+    """
+
+    pass
 
 
 class MyRoutesView(APIView):
@@ -128,3 +138,100 @@ class RouteStopsView(APIView):
         stops = route.stops.select_related("order").order_by("sequence")
         serializer = RouteStopSerializer(stops, many=True)
         return Response(serializer.data)
+
+
+class MarkStopDeliveredView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsDriver]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, stop_id, *args, **kwargs):
+        driver = Driver.objects.filter(user=request.user).first()
+        if not driver:
+            return Response(
+                {"detail": IsDriver.message},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        stop = get_object_or_404(
+            RouteStop.objects.select_related("route", "route__driver", "order"),
+            pk=stop_id,
+        )
+
+        if not stop.route.driver or stop.route.driver_id != driver.id:
+            return Response(
+                {"detail": "You do not have permission to modify this stop."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        uploaded_photo = request.FILES.get("photo")
+        if not uploaded_photo:
+            return Response(
+                {"detail": "Photo file is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        DeliveryProof.objects.update_or_create(
+            stop=stop,
+            defaults={"photo": uploaded_photo},
+        )
+
+        stop.status = RouteStop.Status.DELIVERED
+        stop.delivered_at = timezone.now()
+        stop.save(update_fields=["status", "delivered_at"])
+
+        order = stop.order
+        order.status = Order.Status.COMPLETED
+        order.delivered_at = timezone.now()
+
+        order_update_fields = ["status", "delivered_at"]
+        if hasattr(order, "updated_at"):
+            order_update_fields.append("updated_at")
+        order.save(update_fields=order_update_fields)
+
+        stop.route.refresh_completion_status(save=True)
+
+        # from notifications.tasks import send_order_delivered_email
+        # send_order_delivered_email.delay(order.id)
+
+        serializer = RouteStopSerializer(stop, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MarkStopNoPickupView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsDriver]
+
+    def post(self, request, stop_id, *args, **kwargs):
+        driver = Driver.objects.filter(user=request.user).first()
+        if not driver:
+            return Response(
+                {"detail": IsDriver.message},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        stop = get_object_or_404(
+            RouteStop.objects.select_related("route", "route__driver", "order"),
+            pk=stop_id,
+        )
+
+        if not stop.route.driver or stop.route.driver_id != driver.id:
+            return Response(
+                {"detail": "You do not have permission to modify this stop."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        stop.status = RouteStop.Status.NO_PICKUP
+        stop.delivered_at = timezone.now()
+        stop.save(update_fields=["status", "delivered_at"])
+
+        order = stop.order
+        order.status = Order.Status.IN_PROGRESS
+
+        order_update_fields = ["status"]
+        if hasattr(order, "updated_at"):
+            order_update_fields.append("updated_at")
+        order.save(update_fields=order_update_fields)
+
+        stop.route.refresh_completion_status(save=True)
+
+        serializer = RouteStopSerializer(stop, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
