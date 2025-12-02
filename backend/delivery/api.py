@@ -1,5 +1,6 @@
 import datetime
 
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -7,7 +8,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from delivery.models import DeliveryRoute, Driver, RouteStop
-from delivery.serializers import DeliveryRouteSerializer, RouteStopSerializer
+from delivery.permissions import IsDriver
+from delivery.serializers import (
+    DeliveryRouteSerializer,
+    DriverRouteSerializer,
+    DriverUpcomingRouteSerializer,
+    RouteStopSerializer,
+)
 
 
 class MyRoutesView(APIView):
@@ -39,6 +46,66 @@ class MyRoutesView(APIView):
             .prefetch_related("stops", "stops__order")
         )
         serializer = DeliveryRouteSerializer(routes, many=True)
+        return Response(serializer.data)
+
+
+class DriverTodayRoutesView(APIView):
+    permission_classes = [IsDriver, permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        driver = Driver.objects.filter(user=request.user).first()
+        if not driver:
+            return Response(
+                {"detail": "You are not registered as a driver."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        today = timezone.now().date()
+        routes = (
+            DeliveryRoute.objects.filter(driver=driver, date=today)
+            .select_related("region", "driver", "driver__user")
+            .prefetch_related("stops", "stops__order")
+            .order_by("region__code", "id")
+        )
+        serializer = DriverRouteSerializer(routes, many=True)
+        return Response(serializer.data)
+
+
+class DriverUpcomingRoutesView(APIView):
+    permission_classes = [IsDriver, permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        driver = Driver.objects.filter(user=request.user).first()
+        if not driver:
+            return Response(
+                {"detail": "You are not registered as a driver."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        today = timezone.now().date()
+        routes = (
+            DeliveryRoute.objects.filter(
+                driver=driver,
+                date__gt=today,
+                is_completed=False,
+            )
+            .select_related("region")
+            .annotate(stops_count=Count("stops"))
+            .order_by("date", "region__code", "id")
+        )
+        serializer = DriverUpcomingRouteSerializer(routes, many=True)
         return Response(serializer.data)
 
 

@@ -67,7 +67,14 @@ class DeliveryRoute(models.Model):
 
     @property
     def stops_count(self):
+        annotated_value = getattr(self, "_stops_count", None)
+        if annotated_value is not None:
+            return annotated_value
         return self.stops.count()
+
+    @stops_count.setter
+    def stops_count(self, value):
+        self._stops_count = value
 
 
 class RouteStop(models.Model):
