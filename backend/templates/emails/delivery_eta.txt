@@ -1,0 +1,7 @@
+Hi {{ greeting }},
+
+Order #{{ order.id }}
+{{ eta_line }}
+
+Thanks for shopping with us!
+MilkVanq Team

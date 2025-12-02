@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import authenticate, get_user_model, login
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -18,6 +20,7 @@ from notifications.tasks import send_email_verification_email_task
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -101,16 +104,26 @@ class VerifyEmailView(APIView):
     def get(self, request):
         token_value = request.query_params.get("token")
         if not token_value:
+            logger.warning("email_verify_missing_token")
             return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         token = EmailVerificationToken.objects.filter(token=token_value).select_related("user").first()
         if not token:
+            logger.warning("email_verify_invalid_token", extra={"token_value": token_value})
             return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
 
         if token.is_used():
+            logger.info(
+                "email_verify_token_used",
+                extra={"token_id": token.id, "user_id": token.user_id},
+            )
             return Response({"detail": "Token has already been used."}, status=status.HTTP_400_BAD_REQUEST)
 
         if token.is_expired():
+            logger.info(
+                "email_verify_token_expired",
+                extra={"token_id": token.id, "user_id": token.user_id},
+            )
             return Response({"detail": "Token has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
         token.mark_used()
@@ -126,6 +139,10 @@ class VerifyEmailView(APIView):
             expires_at__gt=timezone.now(),
         ).exclude(id=token.id).update(used_at=timezone.now())
 
+        logger.info(
+            "email_verification_success",
+            extra={"token_id": token.id, "user_id": token.user_id},
+        )
         return Response({"detail": "Email verified successfully."}, status=status.HTTP_200_OK)
 
 

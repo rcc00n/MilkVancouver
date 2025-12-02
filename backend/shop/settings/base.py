@@ -224,6 +224,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounts.tasks.cleanup_expired_phone_verifications",
         "schedule": crontab(hour=3, minute=0),
     },
+    "cleanup_email_verification_tokens_daily": {
+        "task": "accounts.tasks.cleanup_email_verification_tokens",
+        "schedule": crontab(hour=3, minute=5),
+    },
+    "expire_stale_pending_orders_hourly": {
+        "task": "orders.tasks.expire_stale_pending_orders",
+        "schedule": crontab(minute=0),
+    },
     "generate_delivery_routes_weekly": {
         "task": "delivery.tasks.generate_delivery_routes",
         "schedule": crontab(hour=2, minute=0, day_of_week="sun"),  # Sunday night
@@ -248,5 +256,30 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 PHONE_VERIFICATION_MAX_ATTEMPTS = int(os.environ.get("PHONE_VERIFICATION_MAX_ATTEMPTS", 5))
 PHONE_VERIFICATION_MAX_PER_DAY = int(os.environ.get("PHONE_VERIFICATION_MAX_PER_DAY", 3))
 PHONE_VERIFICATION_TTL_MINUTES = int(os.environ.get("PHONE_VERIFICATION_TTL_MINUTES", 10))
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "structured": {
+            "format": 'level=%(levelname)s logger=%(name)s time="%(asctime)s" message="%(message)s" module=%(module)s func=%(funcName)s lineno=%(lineno)d',
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "structured",
+        }
+    },
+    "loggers": {
+        "accounts": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "payments": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "delivery": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "notifications": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "stripe": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "celery": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

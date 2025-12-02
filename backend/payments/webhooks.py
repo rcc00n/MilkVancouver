@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Dict
 
@@ -12,6 +13,7 @@ from .services import record_stripe_payment_from_intent
 
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "sk_test_placeholder")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+logger = logging.getLogger(__name__)
 
 
 def _to_dict(value: Any) -> Dict[str, Any]:
@@ -32,6 +34,13 @@ class StripeWebhookView(APIView):
     def post(self, request, *args, **kwargs):
         payload: bytes = request.body
         sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+        logger.info(
+            "stripe_webhook_received",
+            extra={
+                "content_length": request.META.get("CONTENT_LENGTH"),
+                "sig_header_present": bool(sig_header),
+            },
+        )
 
         if STRIPE_WEBHOOK_SECRET:
             try:
@@ -39,6 +48,10 @@ class StripeWebhookView(APIView):
                     payload.decode("utf-8"), sig_header, STRIPE_WEBHOOK_SECRET
                 )
             except (ValueError, stripe.error.SignatureVerificationError):
+                logger.warning(
+                    "stripe_webhook_invalid_signature",
+                    extra={"sig_header_present": bool(sig_header)},
+                )
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
             event = request.data
@@ -46,6 +59,8 @@ class StripeWebhookView(APIView):
         event_dict: Dict[str, Any] = _to_dict(event)
         event_type = event_dict.get("type") or getattr(event, "type", None)
         data_object = (event_dict.get("data") or {}).get("object")
+
+        logger.info("stripe_event_parsed", extra={"event_type": event_type})
 
         if not isinstance(data_object, dict):
             data_object = _to_dict(data_object)
@@ -57,6 +72,10 @@ class StripeWebhookView(APIView):
             order_id = metadata.get("order_id") if hasattr(metadata, "get") else None
 
             if not order_id:
+                logger.info(
+                    "stripe_payment_without_order_id",
+                    extra={"payment_intent_id": payment_intent_id},
+                )
                 return Response({"detail": "No order_id in metadata"}, status=status.HTTP_200_OK)
 
             order = Order.objects.filter(id=order_id).first()
@@ -67,5 +86,19 @@ class StripeWebhookView(APIView):
 
                 record_stripe_payment_from_intent(order, intent_data)
                 send_order_receipt_email_task.delay(order.id)
+                logger.info(
+                    "stripe_payment_processed",
+                    extra={
+                        "order_id": order_id,
+                        "payment_intent_id": payment_intent_id,
+                        "amount": intent_data.get("amount_received"),
+                        "currency": intent_data.get("currency"),
+                    },
+                )
+            else:
+                logger.warning(
+                    "stripe_payment_order_not_found",
+                    extra={"order_id": order_id, "payment_intent_id": payment_intent_id},
+                )
 
         return Response({"received": True}, status=status.HTTP_200_OK)

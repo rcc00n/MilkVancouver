@@ -1,0 +1,6 @@
+Hi {{ greeting }},
+
+Good news: your order #{{ order.id }} has been delivered.
+Delivered at {{ delivered_at|date:"Y-m-d H:i" }}.
+
+Thanks for choosing MilkVanq!

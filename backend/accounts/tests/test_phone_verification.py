@@ -108,7 +108,15 @@ class PhoneVerificationTaskTests(TestCase):
 
         send_phone_verification_sms(verification.id, "123456")
 
-        mock_send_sms.assert_called_once_with("+15550000000", "Your MilkVanq code is 123456")
+        mock_send_sms.assert_called_once_with(
+            "+15550000000",
+            "Your MilkVanq code is 123456",
+            metadata={
+                "kind": "phone_verification",
+                "verification_id": verification.id,
+                "user_id": self.user.id,
+            },
+        )
 
     @patch("accounts.tasks.send_sms")
     def test_send_phone_verification_sms_skips_when_invalid(self, mock_send_sms):

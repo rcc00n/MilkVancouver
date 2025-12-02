@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import timedelta
 
@@ -13,6 +14,7 @@ from accounts.tasks import send_phone_verification_sms
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -156,6 +158,15 @@ class RequestPhoneVerificationSerializer(serializers.Serializer):
         max_per_day = getattr(settings, "PHONE_VERIFICATION_MAX_PER_DAY", 3)
         daily_count = PhoneVerification.objects.filter(user=user, created_at__date=today).count()
         if daily_count >= max_per_day:
+            logger.info(
+                "phone_verification_rate_limited",
+                extra={
+                    "user_id": user.id,
+                    "phone_number": phone_number,
+                    "daily_count": daily_count,
+                    "max_per_day": max_per_day,
+                },
+            )
             raise serializers.ValidationError("You have reached the daily phone verification limit.")
 
         attrs["phone_number"] = phone_number
@@ -202,9 +213,17 @@ class VerifyPhoneSerializer(serializers.Serializer):
         )
 
         if not verification:
+            logger.info(
+                "phone_verification_missing",
+                extra={"user_id": user.id},
+            )
             raise serializers.ValidationError("No active verification code found. Please request a new one.")
 
         if verification.is_locked:
+            logger.info(
+                "phone_verification_locked",
+                extra={"user_id": user.id, "verification_id": verification.id},
+            )
             raise serializers.ValidationError("Too many incorrect attempts. Please request a new code.")
 
         attrs["verification"] = verification
@@ -223,6 +242,14 @@ class VerifyPhoneSerializer(serializers.Serializer):
             message = "Incorrect code."
             if remaining > 0:
                 message = f"{message} {remaining} attempt(s) remaining."
+            logger.info(
+                "phone_verification_incorrect_code",
+                extra={
+                    "user_id": user.id,
+                    "verification_id": verification.id,
+                    "attempts": verification.attempts,
+                },
+            )
             raise serializers.ValidationError(message)
 
         now = timezone.now()
@@ -241,4 +268,8 @@ class VerifyPhoneSerializer(serializers.Serializer):
         profile.phone_verified_at = now
         profile.save(update_fields=["phone", "phone_verified_at", "updated_at"])
 
+        logger.info(
+            "phone_verification_success",
+            extra={"user_id": user.id, "verification_id": verification.id},
+        )
         return verification

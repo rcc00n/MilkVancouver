@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
@@ -16,7 +17,10 @@ from delivery.serializers import (
     DriverUpcomingRouteSerializer,
     RouteStopSerializer,
 )
+from notifications.tasks import send_order_delivered_email_once
 from orders.models import Order
+
+logger = logging.getLogger(__name__)
 
 
 class IsDriver(BaseIsDriver):
@@ -204,8 +208,14 @@ class MarkStopDeliveredView(APIView):
 
         stop.route.refresh_completion_status(save=True)
 
-        # from notifications.tasks import send_order_delivered_email
-        # send_order_delivered_email.delay(order.id)
+        try:
+            send_order_delivered_email_once.delay(order.id)
+        except Exception:
+            logger.error(
+                "enqueue_delivered_email_failed",
+                extra={"order_id": order.id},
+                exc_info=True,
+            )
 
         serializer = RouteStopSerializer(stop, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)

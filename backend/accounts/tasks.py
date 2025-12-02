@@ -21,19 +21,46 @@ def cleanup_email_verification_tokens():
     ).delete()
 
 
-@shared_task(queue="sms")
-def send_phone_verification_sms(verification_id: int, code: str):
+@shared_task(
+    bind=True,
+    queue="sms",
+    autoretry_for=(Exception,),
+    retry_backoff=30,
+    retry_kwargs={"max_retries": 3},
+)
+def send_phone_verification_sms(self, verification_id: int, code: str):
     try:
         verification = PhoneVerification.objects.get(id=verification_id)
     except PhoneVerification.DoesNotExist:
+        logger.warning("phone_verification_not_found", extra={"verification_id": verification_id})
         return
 
     if verification.is_expired or verification.is_verified:
+        logger.info(
+            "phone_verification_skipped",
+            extra={
+                "verification_id": verification.id,
+                "is_expired": verification.is_expired,
+                "is_verified": verification.is_verified,
+            },
+        )
         return
 
     message = f"Your MilkVanq code is {code}"
-    send_sms(verification.phone_number, message)
-    logger.info("Sent phone verification SMS for verification_id=%s", verification_id)
+    metadata = {
+        "kind": "phone_verification",
+        "verification_id": verification.id,
+        "user_id": verification.user_id,
+    }
+    send_sms(verification.phone_number, message, metadata=metadata)
+    logger.info(
+        "phone_verification_sms_sent",
+        extra={
+            "verification_id": verification.id,
+            "user_id": verification.user_id,
+            "phone_number": verification.phone_number,
+        },
+    )
 
 
 @shared_task
