@@ -16,6 +16,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/csrf/", csrf_view, name="api-csrf"),
     path("api/auth/", include("accounts.urls")),
+    path("api/admin/", include("admin_api.urls")),
     path("api/", include("products.urls")),
     path("api/", include("orders.urls")),
     path("api/delivery/", include("delivery.urls", namespace="delivery")),

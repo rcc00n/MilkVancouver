@@ -1,0 +1,19 @@
+from django.urls import path
+
+from .api import (
+    AdminClientsView,
+    AdminDashboardView,
+    AdminRouteDetailView,
+    AdminRouteListView,
+    AdminRouteReorderView,
+)
+
+app_name = "admin_api"
+
+urlpatterns = [
+    path("dashboard/", AdminDashboardView.as_view(), name="dashboard"),
+    path("clients/", AdminClientsView.as_view(), name="clients"),
+    path("routes/", AdminRouteListView.as_view(), name="routes-list"),
+    path("routes/<int:pk>/", AdminRouteDetailView.as_view(), name="routes-detail"),
+    path("routes/<int:pk>/reorder/", AdminRouteReorderView.as_view(), name="routes-reorder"),
+]
