@@ -5,6 +5,23 @@ from django.utils.html import format_html
 from .models import DeliveryProof, DeliveryRoute, Driver, RouteStop
 
 
+class DeliveryProofInline(admin.StackedInline):
+    model = DeliveryProof
+    extra = 0
+    fields = ("photo", "thumbnail", "created_at")
+    readonly_fields = ("thumbnail", "created_at")
+
+    def thumbnail(self, obj):
+        if obj and getattr(obj, "photo", None):
+            return format_html(
+                '<img src="{}" style="max-height:120px;max-width:200px;" alt="Proof photo" />',
+                obj.photo.url,
+            )
+        return "—"
+
+    thumbnail.short_description = "Preview"
+
+
 class RouteStopInline(admin.TabularInline):
     model = RouteStop
     extra = 0
@@ -111,6 +128,7 @@ class RouteStopAdmin(admin.ModelAdmin):
     )
     ordering = ("route__date", "route__region__code", "sequence")
     autocomplete_fields = ("route", "order")
+    inlines = [DeliveryProofInline]
 
     def region(self, obj):
         return obj.route.region if obj and obj.route else None
@@ -125,17 +143,36 @@ class RouteStopAdmin(admin.ModelAdmin):
 
 @admin.register(DeliveryProof)
 class DeliveryProofAdmin(admin.ModelAdmin):
-    list_display = ("id", "stop", "route", "driver", "photo", "created_at")
-    readonly_fields = ("created_at",)
+    list_display = ("id", "stop", "route", "order", "thumbnail", "created_at")
+    list_filter = (
+        ("created_at", admin.DateFieldListFilter),
+        "stop__route__region",
+        "stop__route__driver",
+    )
+    search_fields = (
+        "stop__order__id",
+        "stop__route__region__code",
+        "stop__route__region__name",
+        "stop__route__driver__user__email",
+    )
+    readonly_fields = ("thumbnail", "created_at")
 
     def route(self, obj):
         return obj.stop.route if obj and obj.stop else None
 
     route.short_description = "Route"
 
-    def driver(self, obj):
-        if obj and obj.stop and obj.stop.route:
-            return obj.stop.route.driver
-        return None
+    def order(self, obj):
+        return obj.stop.order if obj and obj.stop else None
 
-    driver.short_description = "Driver"
+    order.short_description = "Order"
+
+    def thumbnail(self, obj):
+        if obj and getattr(obj, "photo", None):
+            return format_html(
+                '<img src="{}" style="max-height:120px;max-width:200px;" alt="Proof photo" />',
+                obj.photo.url,
+            )
+        return "—"
+
+    thumbnail.short_description = "Preview"

@@ -11,12 +11,20 @@ class EmailNotificationAdmin(admin.ModelAdmin):
         "kind",
         "to_email",
         "status",
+        "error",
         "created_at",
         "sent_at",
         "receipt_link",
     )
     list_filter = ("kind", "status")
-    readonly_fields = ("receipt_link", "created_at", "updated_at", "sent_at", "receipt_pdf")
+    search_fields = ("order__id", "to_email", "kind", "status")
+    readonly_fields = (
+        "receipt_link",
+        "created_at",
+        "updated_at",
+        "sent_at",
+        "receipt_pdf",
+    )
 
     def receipt_link(self, obj):
         if obj.receipt_pdf:

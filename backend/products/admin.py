@@ -15,7 +15,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "category",
-        "price_cents",
+        "price_display",
         "is_popular",
         "is_active",
         "image_preview",
@@ -48,3 +48,9 @@ class ProductAdmin(admin.ModelAdmin):
         return "No image"
 
     image_preview.short_description = "Preview"
+
+    def price_display(self, obj):
+        return f"${obj.price_cents / 100:.2f}"
+
+    price_display.short_description = "Price"
+    price_display.admin_order_field = "price_cents"

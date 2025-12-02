@@ -30,9 +30,29 @@ ORDER_TYPE_COLORS = {
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 1
-    fields = ("product", "product_name", "quantity", "unit_price_cents", "total_cents")
-    readonly_fields = ("product_name", "unit_price_cents", "total_cents")
+    fields = (
+        "product",
+        "product_name",
+        "quantity",
+        "unit_price_display",
+        "line_total_display",
+    )
+    readonly_fields = ("product_name", "unit_price_display", "line_total_display")
     show_change_link = False
+
+    def unit_price_display(self, obj):
+        if not obj or obj.unit_price_cents is None:
+            return "—"
+        return f"${obj.unit_price_cents / 100:.2f}"
+
+    unit_price_display.short_description = "Unit price"
+
+    def line_total_display(self, obj):
+        if not obj or obj.total_cents is None:
+            return "—"
+        return f"${obj.total_cents / 100:.2f}"
+
+    line_total_display.short_description = "Line total"
 
 
 @admin.register(Region)
@@ -47,11 +67,13 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "full_name",
+        "region_display",
         "order_type_badge",
-        "region_code_display",
         "colored_status",
         "status_shortcuts",
-        "display_total",
+        "subtotal_display",
+        "tax_display",
+        "total_display",
         "created_at",
         "latest_receipt_link",
     )
@@ -66,6 +88,9 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = (
         "order_type_badge",
         "colored_status",
+        "subtotal_display",
+        "tax_display",
+        "total_display",
         "subtotal_cents",
         "tax_cents",
         "total_cents",
@@ -126,13 +151,14 @@ class OrderAdmin(admin.ModelAdmin):
             "Totals",
             {
                 "fields": (
-                    "subtotal_cents",
-                    "tax_cents",
-                    "total_cents",
+                    "subtotal_display",
+                    "tax_display",
+                    "total_display",
                     "stripe_payment_intent_id",
                 )
             },
         ),
+        ("Receipts", {"fields": ("latest_receipt_link",)}),
         ("Metadata", {"fields": ("created_at", "updated_at")}),
     )
     inlines = [OrderItemInline]
@@ -169,16 +195,35 @@ class OrderAdmin(admin.ModelAdmin):
     colored_status.short_description = "Status"
     colored_status.admin_order_field = "status"
 
-    def display_total(self, obj):
-        return f"${obj.total_cents / 100:.2f}"
+    @staticmethod
+    def _format_cents(value):
+        return f"${(value or 0) / 100:.2f}"
 
-    display_total.short_description = "Total"
-    display_total.admin_order_field = "total_cents"
+    def subtotal_display(self, obj):
+        return self._format_cents(obj.subtotal_cents)
 
-    def region_code_display(self, obj):
-        return obj.region.code if obj.region else "—"
+    subtotal_display.short_description = "Subtotal"
+    subtotal_display.admin_order_field = "subtotal_cents"
 
-    region_code_display.short_description = "Region"
+    def tax_display(self, obj):
+        return self._format_cents(obj.tax_cents)
+
+    tax_display.short_description = "Tax"
+    tax_display.admin_order_field = "tax_cents"
+
+    def total_display(self, obj):
+        return self._format_cents(obj.total_cents)
+
+    total_display.short_description = "Total"
+    total_display.admin_order_field = "total_cents"
+
+    def region_display(self, obj):
+        if not obj.region:
+            return "—"
+        return obj.region.name
+
+    region_display.short_description = "Region"
+    region_display.admin_order_field = "region__name"
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -300,18 +345,12 @@ class OrderAdmin(admin.ModelAdmin):
             .order_by("-sent_at", "-created_at")
             .first()
         )
-        if not notification:
-            return "—"
-        if notification.receipt_pdf:
+        if notification and notification.receipt_pdf:
             return format_html(
-                '<a href="{}" target="_blank" rel="noopener">Receipt PDF</a>',
+                '<a href="{}" target="_blank" rel="noopener">View receipt</a>',
                 notification.receipt_pdf.url,
             )
-        url = reverse(
-            "admin:notifications_emailnotification_change",
-            args=[notification.pk],
-        )
-        return format_html('<a href="{}">Notification</a>', url)
+        return "—"
 
     latest_receipt_link.short_description = "Latest Receipt"
 

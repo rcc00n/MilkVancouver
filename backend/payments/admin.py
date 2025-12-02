@@ -10,10 +10,11 @@ class PaymentAdmin(admin.ModelAdmin):
         "order",
         "provider",
         "kind",
-        "amount_cents",
+        "amount_display",
         "currency",
         "status",
         "stripe_payment_intent_id",
+        "stripe_charge_id",
         "created_at",
     )
     list_filter = ("provider", "kind", "status")
@@ -26,3 +27,9 @@ class PaymentAdmin(admin.ModelAdmin):
     )
     date_hierarchy = "created_at"
     readonly_fields = ("created_at", "updated_at")
+
+    def amount_display(self, obj):
+        return f"${obj.amount_cents / 100:.2f}"
+
+    amount_display.short_description = "Amount"
+    amount_display.admin_order_field = "amount_cents"
