@@ -44,6 +44,8 @@ class Order(models.Model):
     address_line2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     region = models.ForeignKey(
         Region,
         null=True,

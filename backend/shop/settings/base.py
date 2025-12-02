@@ -126,6 +126,9 @@ ANYMAIL = {
 }
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+DELIVERY_DEPOT_LAT = os.environ.get("DELIVERY_DEPOT_LAT")
+DELIVERY_DEPOT_LNG = os.environ.get("DELIVERY_DEPOT_LNG")
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -224,6 +227,11 @@ CELERY_BEAT_SCHEDULE = {
     "generate_delivery_routes_weekly": {
         "task": "delivery.tasks.generate_delivery_routes",
         "schedule": crontab(hour=2, minute=0, day_of_week="sun"),  # Sunday night
+        "options": {"queue": "logistics"},
+    },
+    "optimize_delivery_routes_weekly": {
+        "task": "delivery.tasks.optimize_future_routes",
+        "schedule": crontab(hour=3, minute=0, day_of_week="sun"),
         "options": {"queue": "logistics"},
     },
     "generate_delivery_routes_nightly": {

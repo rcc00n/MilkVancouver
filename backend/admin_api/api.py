@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, F, Max, OuterRef, Prefetch, Q, Subquery, Sum
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.permissions import IsAdminUser
@@ -33,13 +33,24 @@ class AdminDashboardView(APIView):
         total_sales_agg = paid_orders.aggregate(total_sales_cents=Sum("total_cents"))
         total_sales_cents = total_sales_agg.get("total_sales_cents") or 0
 
-        orders_by_status_qs = Order.objects.values("status").annotate(count=Count("id"))
+        dashboard_statuses = [
+            Order.Status.PAID,
+            Order.Status.COMPLETED,
+            Order.Status.CANCELLED,
+        ]
+        orders_by_status_qs = (
+            Order.objects.filter(status__in=dashboard_statuses)
+            .values("status")
+            .annotate(count=Count("id"))
+        )
         orders_by_status: Dict[str, int] = {
             row["status"]: row["count"] for row in orders_by_status_qs
         }
 
         top_regions_qs = (
-            Order.objects.exclude(region__isnull=True)
+            Order.objects.filter(
+                status__in=dashboard_statuses, region__isnull=False
+            )
             .values(code=F("region__code"), name=F("region__name"))
             .annotate(order_count=Count("id"))
             .order_by("-order_count", "code")[:5]
@@ -133,7 +144,14 @@ class AdminRouteListView(APIView):
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         queryset = (
             DeliveryRoute.objects.select_related("region", "driver", "driver__user")
-            .prefetch_related("stops", "stops__order")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            )
             .order_by("-date", "region__code", "id")
         )
 
@@ -167,7 +185,14 @@ class AdminRouteDetailView(APIView):
     def get(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         route = get_object_or_404(
             DeliveryRoute.objects.select_related("region", "driver", "driver__user")
-            .prefetch_related("stops", "stops__order"),
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            ),
             pk=pk,
         )
         serializer = DeliveryRouteSerializer(route, context={"request": request})
@@ -186,7 +211,9 @@ class AdminRouteReorderView(APIView):
 
     def post(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         route = get_object_or_404(
-            DeliveryRoute.objects.prefetch_related("stops"),
+            DeliveryRoute.objects.prefetch_related(
+                Prefetch("stops", queryset=RouteStop.objects.order_by("sequence", "id"))
+            ),
             pk=pk,
         )
         serializer = RouteReorderSerializer(data=request.data)
@@ -218,7 +245,14 @@ class AdminRouteReorderView(APIView):
 
         refreshed_route = (
             DeliveryRoute.objects.select_related("region", "driver", "driver__user")
-            .prefetch_related("stops", "stops__order")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            )
             .get(pk=pk)
         )
         response_serializer = DeliveryRouteSerializer(

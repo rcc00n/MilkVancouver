@@ -5,10 +5,12 @@ from typing import Dict, List
 
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 
 from orders.models import Order, Region
 from delivery.models import DeliveryRoute, RouteStop
+from delivery.google_routes import optimize_route_with_google
 from notifications.tasks import send_delivery_eta_email_task
 
 logger = logging.getLogger(__name__)
@@ -134,4 +136,55 @@ def generate_delivery_routes() -> dict:
         "low_volume_regions": low_volume_regions,
     }
     logger.info("Delivery route generation summary: %s", summary)
+    return summary
+
+
+@shared_task(name="delivery.optimize_future_routes", queue="logistics")
+def optimize_future_routes() -> dict:
+    today = timezone.localdate()
+    routes = (
+        DeliveryRoute.objects.filter(date__gt=today, is_completed=False)
+        .prefetch_related("stops__order")
+        .order_by("date", "id")
+    )
+
+    optimized_routes: List[int] = []
+    skipped_routes: Dict[int, str] = {}
+
+    for route in routes:
+        stops = list(route.stops.all().order_by("sequence", "id"))
+
+        if len(stops) <= 1:
+            skipped_routes[route.id] = "too_few_stops"
+            continue
+
+        optimized_stops = optimize_route_with_google(stops)
+        if [stop.id for stop in optimized_stops] == [stop.id for stop in stops]:
+            skipped_routes[route.id] = "no_change"
+            continue
+
+        max_sequence = (
+            RouteStop.objects.filter(route=route).aggregate(max_seq=Max("sequence")).get(
+                "max_seq"
+            )
+            or 0
+        )
+        temp_offset = max_sequence + 1000
+
+        for sequence, stop in enumerate(optimized_stops, start=1):
+            stop.sequence = temp_offset + sequence
+        RouteStop.objects.bulk_update(optimized_stops, ["sequence"])
+
+        for sequence, stop in enumerate(optimized_stops, start=1):
+            stop.sequence = sequence
+        RouteStop.objects.bulk_update(optimized_stops, ["sequence"])
+        optimized_routes.append(route.id)
+        logger.info(
+            "Optimized route %s with %s stops",
+            route.id,
+            len(optimized_stops),
+        )
+
+    summary = {"optimized_routes": optimized_routes, "skipped_routes": skipped_routes}
+    logger.info("Optimize future routes summary: %s", summary)
     return summary

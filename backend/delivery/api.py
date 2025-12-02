@@ -1,6 +1,6 @@
 import datetime
 
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -53,7 +53,14 @@ class MyRoutesView(APIView):
         routes = (
             DeliveryRoute.objects.filter(driver=driver, date=date_value)
             .select_related("region", "driver", "driver__user")
-            .prefetch_related("stops", "stops__order")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            )
         )
         serializer = DeliveryRouteSerializer(routes, many=True)
         return Response(serializer.data)
@@ -80,7 +87,14 @@ class DriverTodayRoutesView(APIView):
         routes = (
             DeliveryRoute.objects.filter(driver=driver, date=today)
             .select_related("region", "driver", "driver__user")
-            .prefetch_related("stops", "stops__order")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            )
             .order_by("region__code", "id")
         )
         serializer = DriverRouteSerializer(routes, many=True)
@@ -135,7 +149,7 @@ class RouteStopsView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        stops = route.stops.select_related("order").order_by("sequence")
+        stops = route.stops.select_related("order").order_by("sequence", "id")
         serializer = RouteStopSerializer(stops, many=True)
         return Response(serializer.data)
 
