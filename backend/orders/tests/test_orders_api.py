@@ -56,26 +56,28 @@ class OrderAPITests(TestCase):
         self.profile.phone_verified_at = timezone.now()
         self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
 
+        initial_count = Order.objects.count()
         response = self.client.post(reverse("order-list"), self._delivery_payload(), format="json")
 
         self.assertEqual(response.status_code, 400)
         detail = response.json().get("detail", "").lower()
         self.assertIn("email", detail)
         self.assertIn("verify", detail)
-        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Order.objects.count(), initial_count)
 
     def test_delivery_requires_verified_phone(self):
         self.profile.email_verified_at = timezone.now()
         self.profile.phone_verified_at = None
         self.profile.save(update_fields=["email_verified_at", "phone_verified_at"])
 
+        initial_count = Order.objects.count()
         response = self.client.post(reverse("order-list"), self._delivery_payload(), format="json")
 
         self.assertEqual(response.status_code, 400)
         detail = response.json().get("detail", "").lower()
         self.assertIn("phone", detail)
         self.assertIn("verify", detail)
-        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(Order.objects.count(), initial_count)
 
     def test_successful_order_creation_computes_totals_and_sets_region(self):
         now = timezone.now()

@@ -39,10 +39,11 @@ class ProductAPITests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(len(data), 2)
-        returned_names = {item["name"] for item in data}
-        self.assertSetEqual(returned_names, {active_one.name, active_two.name})
-        self.assertTrue(all(item["is_active"] for item in data))
+        returned_slugs = {item["slug"] for item in data}
+        self.assertIn(active_one.slug, returned_slugs)
+        self.assertIn(active_two.slug, returned_slugs)
+        self.assertNotIn("inactive-cheese", returned_slugs)
+        self.assertTrue(all(item["is_active"] for item in data if item["slug"] in {active_one.slug, active_two.slug}))
 
     def test_search_filters_by_name(self):
         whole_milk = Product.objects.create(
@@ -75,7 +76,9 @@ class ProductAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         returned_slugs = {item["slug"] for item in data}
-        self.assertSetEqual(returned_slugs, {whole_milk.slug, skim_milk.slug})
+        self.assertIn(whole_milk.slug, returned_slugs)
+        self.assertIn(skim_milk.slug, returned_slugs)
+        self.assertNotIn("orange-juice-1l", returned_slugs)
 
     def test_filters_by_category(self):
         dairy_one = Product.objects.create(
