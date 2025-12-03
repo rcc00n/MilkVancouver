@@ -1,6 +1,24 @@
 import axios, { AxiosHeaders } from "axios";
 
-const resolvedBaseUrl = (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim() || "/api";
+function resolveBaseUrl(): string {
+  const envValue = (import.meta.env?.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (envValue && envValue !== "undefined") {
+    return envValue.replace(/\/+$/, ""); // strip trailing slashes
+  }
+
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    // In production the API lives on the api.* subdomain.
+    if (host === "milkvanq.duckdns.org") {
+      return "https://api.milkvanq.duckdns.org/api";
+    }
+  }
+
+  // Local dev: rely on the reverse proxy or relative /api path.
+  return "/api";
+}
+
+const resolvedBaseUrl = resolveBaseUrl();
 
 const api = axios.create({
   baseURL: resolvedBaseUrl,
