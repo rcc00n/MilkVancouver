@@ -1,21 +1,380 @@
-import PageShell from "../components/PageShell";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  BadgeCheck,
+  Clock3,
+  Droplets,
+  MapPin,
+  Milk,
+  ShieldCheck,
+  Smile,
+  Truck,
+} from "lucide-react";
+
+import { getProducts } from "../api/products";
+import ProductCard from "../components/products/ProductCard";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { brand } from "../config/brand";
+import type { Product } from "../types";
+
+const HERO_IMAGE =
+  "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=10";
+
+const howItWorks = [
+  {
+    title: "Choose your milk",
+    copy: "Whole, 2%, lactose-free, chocolate, or barista.",
+    icon: Milk,
+  },
+  {
+    title: "Pick delivery or pickup",
+    copy: "Neighborhood dropoffs or pickup windows in Vancouver.",
+    icon: Truck,
+  },
+  {
+    title: "Enjoy fresh Yummee",
+    copy: "Bottles arrive cold with deposits handled for you.",
+    icon: ShieldCheck,
+  },
+];
+
+const benefits = [
+  {
+    title: "Local Vancouver producers",
+    copy: "Fraser Valley partners, bottled before sunrise.",
+    icon: MapPin,
+  },
+  {
+    title: "Sustainably packaged",
+    copy: "Reusable glass, easy returns on your next order.",
+    icon: Droplets,
+  },
+  {
+    title: "Delivered cold and on time",
+    copy: "0–4°C routes with SMS updates.",
+    icon: Clock3,
+  },
+  {
+    title: "Barista-level quality",
+    copy: "Velvety texture that steams and tastes sweet.",
+    icon: BadgeCheck,
+  },
+];
+
+const testimonials = [
+  {
+    quote: "Cold bottles on my doorstep by 8am. The chocolate milk disappears first.",
+    name: "Maya, Kitsilano",
+  },
+  {
+    quote: "Tastes like the farm, not the shelf. Returns are easy—I leave them out.",
+    name: "Luis, Mount Pleasant",
+  },
+  {
+    quote: "We swapped to their lactose-free milk and never went back.",
+    name: "Priya, Commercial Drive",
+  },
+];
 
 function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    getProducts(undefined, controller.signal)
+      .then((result) => setProducts(result))
+      .catch((fetchError) => {
+        if (controller.signal.aborted) return;
+        console.error("Failed to fetch products", fetchError);
+        setError("Products are loading slowly. Try again in a moment.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const featuredProducts = useMemo(() => products.slice(0, 3), [products]);
+  const popularProducts = useMemo(() => products.filter((product) => product.is_popular).slice(0, 3), [products]);
+
   return (
-    <PageShell
-      title="Yummee home"
-      note="Day 1 scaffolding"
-      description="Routing, layout, and design tokens are in place. Next we’ll drop in the hero, featured products, and testimonials."
-    >
-      <div className="page-placeholder">
-        <p>This is the Home page placeholder. Use it to verify the nav, styling tokens, and spacing scale.</p>
-        <ul>
-          <li>CTA-ready hero and product highlights coming next</li>
-          <li>Keep max width at the shared container for consistency</li>
-          <li>Buttons use the solid primary and subtle secondary styles</li>
-        </ul>
-      </div>
-    </PageShell>
+    <div className="home-page space-y-16 lg:space-y-20">
+      <section className="container">
+        <div className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-[#eaf5ff] via-white to-[#fff4e6] p-8 md:p-10 lg:p-12 shadow-[0_32px_80px_-48px_rgba(15,47,77,0.6)]">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -left-12 -top-20 h-64 w-64 rounded-full bg-sky-200/40 blur-3xl" />
+            <div className="absolute right-6 top-8 h-72 w-72 rounded-full bg-amber-100/50 blur-3xl" />
+            <div className="absolute left-10 bottom-0 h-60 w-60 rounded-full bg-blue-200/30 blur-3xl" />
+          </div>
+
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-6 text-slate-900">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-sm font-semibold text-sky-900 shadow-sm backdrop-blur">
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                Delivering fresh across Vancouver
+              </div>
+              <div className="space-y-3">
+                <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+                  Fresh local milk, delivered in Vancouver.
+                </h1>
+                <p className="max-w-2xl text-lg text-slate-700">
+                  {brand.shortName} bottles Fraser Valley milk, yogurt, and cream before sunrise, then drops it cold at
+                  your door or pickup spot.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button size="lg" className="px-6 py-3 text-base font-semibold shadow-lg" asChild>
+                  <Link to="/shop">Shop Milk</Link>
+                </Button>
+                <Button size="lg" variant="outline" className="px-6 py-3 text-base" asChild>
+                  <Link to="/pricing">See Pricing</Link>
+                </Button>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">From farm</p>
+                  <p className="text-2xl font-semibold text-slate-900">24 hrs</p>
+                  <p className="text-sm text-slate-600">Milked, bottled, and sealed fast.</p>
+                </div>
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">Delivery</p>
+                  <p className="text-2xl font-semibold text-slate-900">2–3x weekly</p>
+                  <p className="text-sm text-slate-600">Routes across Vancouver & the North Shore.</p>
+                </div>
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">Bottles</p>
+                  <p className="text-2xl font-semibold text-slate-900">Returns easy</p>
+                  <p className="text-sm text-slate-600">Leave glass out; deposits are tracked.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-2xl border border-sky-100 bg-white/80 shadow-xl backdrop-blur">
+                <img
+                  src={HERO_IMAGE}
+                  alt="Milk bottles and glasses on a bright table"
+                  className="h-full w-full min-h-[280px] object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              <Card className="border-slate-200/70 bg-white/90 shadow-lg backdrop-blur">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-800">
+                    Popular right now
+                  </CardTitle>
+                  <CardDescription className="text-sm text-slate-600">
+                    Live picks from the shop. Add to cart or tap for details.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  {popularProducts.length ? (
+                    popularProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-3"
+                      >
+                        <div>
+                          <div className="font-semibold text-slate-900">{product.name}</div>
+                          {product.category ? (
+                            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              {product.category}
+                            </div>
+                          ) : null}
+                        </div>
+                        <span className="text-sm font-semibold text-sky-800">
+                          ${(product.price_cents / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-600">
+                      {loading ? "Loading the top picks..." : "Tag products as popular to feature them here."}
+                    </p>
+                  )}
+                  {error && <p className="text-sm text-amber-700">{error}</p>}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">How {brand.shortName} works</p>
+            <h2 className="text-3xl font-semibold text-slate-900">Three steps and you&apos;re stocked.</h2>
+            <p className="text-slate-600">Short, simple, and always cold-packed.</p>
+          </div>
+          <Button variant="ghost" className="px-4 text-sm font-semibold" asChild>
+            <Link to="/menu" className="inline-flex items-center gap-2">
+              Browse the menu <ArrowRight size={16} />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {howItWorks.map((step) => {
+            const Icon = step.icon;
+            return (
+              <Card key={step.title} className="h-full border-slate-200/80 shadow-sm">
+                <CardHeader className="flex flex-col gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                    <Icon size={22} />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-slate-900">{step.title}</CardTitle>
+                  <CardDescription className="text-slate-600">{step.copy}</CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Featured products</p>
+            <h2 className="text-3xl font-semibold text-slate-900">A quick taste of the shop.</h2>
+            <p className="text-slate-600">Add bottles now or peek at pricing first.</p>
+          </div>
+          <Button variant="ghost" className="px-4 text-sm font-semibold" asChild>
+            <Link to="/shop" className="inline-flex items-center gap-2">
+              Shop all milk <ArrowRight size={16} />
+            </Link>
+          </Button>
+        </div>
+
+        {error && <p className="text-sm text-amber-700">{error}</p>}
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {loading && !featuredProducts.length
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="product-card product-card--skeleton">
+                  <div className="product-card__image-wrapper">
+                    <div className="skeleton skeleton--image" />
+                  </div>
+                  <div className="product-card__body">
+                    <div className="skeleton skeleton--text" />
+                    <div className="skeleton skeleton--text skeleton--short" />
+                    <div className="skeleton skeleton--pill" />
+                  </div>
+                </div>
+              ))
+            : null}
+
+          {!loading && !featuredProducts.length ? (
+            <Card className="md:col-span-3 border-dashed border-slate-200 bg-slate-50">
+              <CardContent className="flex flex-col gap-2 py-8">
+                <p className="text-base font-semibold text-slate-900">Products will appear here once added.</p>
+                <p className="text-sm text-slate-600">Create items in the admin to showcase them on the homepage.</p>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {featuredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
+        <div className="space-y-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Why {brand.shortName}</p>
+          <h2 className="text-3xl font-semibold text-slate-900">Reasons customers stick with us.</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {benefits.map((benefit) => {
+            const Icon = benefit.icon;
+            return (
+              <Card key={benefit.title} className="h-full border-slate-200/80 shadow-sm">
+                <CardHeader className="flex flex-col gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                    <Icon size={22} />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-slate-900">{benefit.title}</CardTitle>
+                  <CardDescription className="text-slate-600">{benefit.copy}</CardDescription>
+                </CardHeader>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Neighbors</p>
+            <h2 className="text-3xl font-semibold text-slate-900">Short, punchy proof.</h2>
+            <p className="text-slate-600">Real notes from Vancouver blocks.</p>
+          </div>
+          <Button variant="ghost" className="px-4 text-sm font-semibold" asChild>
+            <Link to="/about" className="inline-flex items-center gap-2">
+              Read our story <ArrowRight size={16} />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <Card key={testimonial.name} className="h-full border-slate-200/80 bg-white shadow-sm">
+              <CardHeader className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white">
+                    <Smile size={18} />
+                  </div>
+                  <CardTitle className="text-lg font-semibold text-slate-900">{testimonial.name}</CardTitle>
+                </div>
+                <CardDescription className="text-slate-700">“{testimonial.quote}”</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="container">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 px-6 py-10 text-white shadow-[0_24px_64px_-32px_rgba(0,0,0,0.55)] md:px-10 lg:px-12">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.16),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(248,250,252,0.16),transparent_28%)]" />
+          <div className="relative flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-100">Ready?</p>
+              <h2 className="text-3xl font-semibold text-white">Ready for fresher milk?</h2>
+              <p className="max-w-2xl text-slate-200">
+                Pick your bottles, choose delivery or pickup, and let us handle the cold chain and returns.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="!bg-white !text-slate-900 !hover:bg-slate-100 px-6 py-3 text-base font-semibold shadow-lg"
+                asChild
+              >
+                <Link to="/shop">Shop Now</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                className="border border-white/60 bg-transparent px-6 py-3 text-base font-semibold !text-white !hover:bg-white/10 !hover:text-white"
+                asChild
+              >
+                <Link to="/pricing">Compare pricing</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 
