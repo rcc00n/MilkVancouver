@@ -49,9 +49,14 @@ class RouteStopSerializer(serializers.ModelSerializer):
 
 
 class DeliveryRouteSerializer(serializers.ModelSerializer):
+    region_code = serializers.CharField(source="region.code", read_only=True)
     region_name = serializers.CharField(source="region.name", read_only=True)
+    driver_id = serializers.IntegerField(
+        source="driver.id", read_only=True, allow_null=True
+    )
     driver_name = serializers.SerializerMethodField()
     stops = RouteStopSerializer(many=True, read_only=True)
+    stops_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = DeliveryRoute
@@ -59,10 +64,13 @@ class DeliveryRouteSerializer(serializers.ModelSerializer):
             "id",
             "date",
             "region",
+            "region_code",
             "region_name",
+            "driver_id",
             "driver_name",
             "is_completed",
             "stops",
+            "stops_count",
         ]
         read_only_fields = fields
 

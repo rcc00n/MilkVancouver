@@ -17,9 +17,12 @@ export type AdminRoute = {
   id: number;
   date: string;
   region: number;
+  region_code: string;
   region_name: string;
+  driver_id: number | null;
   driver_name: string;
   is_completed: boolean;
+  stops_count: number;
   stops: RouteStop[];
 };
 
