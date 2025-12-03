@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -12,12 +12,11 @@ import {
   Truck,
 } from "lucide-react";
 
-import { getProducts } from "../api/products";
 import ProductCard from "../components/products/ProductCard";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { brand } from "../config/brand";
-import type { Product } from "../types";
+import { useProducts } from "../context/ProductsContext";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=10";
@@ -79,28 +78,14 @@ const testimonials = [
 ];
 
 function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { products, loading, error, initialized, refresh } = useProducts();
+  const isLoadingProducts = loading || !initialized;
 
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    getProducts(undefined, controller.signal)
-      .then((result) => setProducts(result))
-      .catch((fetchError) => {
-        if (controller.signal.aborted) return;
-        console.error("Failed to fetch products", fetchError);
-        setError("Products are loading slowly. Try again in a moment.");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, []);
+    if (!initialized) {
+      refresh();
+    }
+  }, [initialized, refresh]);
 
   const featuredProducts = useMemo(() => products.slice(0, 3), [products]);
   const popularProducts = useMemo(() => products.filter((product) => product.is_popular).slice(0, 3), [products]);
@@ -198,7 +183,7 @@ function Home() {
                     ))
                   ) : (
                     <p className="text-sm text-slate-600">
-                      {loading ? "Loading the top picks..." : "Tag products as popular to feature them here."}
+                      {isLoadingProducts ? "Loading the top picks..." : "Tag products as popular to feature them here."}
                     </p>
                   )}
                   {error && <p className="text-sm text-amber-700">{error}</p>}
@@ -258,7 +243,7 @@ function Home() {
         {error && <p className="text-sm text-amber-700">{error}</p>}
 
         <div className="grid gap-4 md:grid-cols-3">
-          {loading && !featuredProducts.length
+          {isLoadingProducts && !featuredProducts.length
             ? Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="product-card product-card--skeleton">
                   <div className="product-card__image-wrapper">
@@ -273,7 +258,7 @@ function Home() {
               ))
             : null}
 
-          {!loading && !featuredProducts.length ? (
+          {!isLoadingProducts && !featuredProducts.length ? (
             <Card className="md:col-span-3 border-dashed border-slate-200 bg-slate-50">
               <CardContent className="flex flex-col gap-2 py-8">
                 <p className="text-base font-semibold text-slate-900">Products will appear here once added.</p>

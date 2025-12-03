@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { CartProvider } from "./context/CartContext";
+import { ProductsProvider } from "./context/ProductsContext";
 import "./styles/globals.css";
 import "./index.css";
 
@@ -15,8 +16,10 @@ const root = createRoot(container);
 
 root.render(
   <StrictMode>
-    <CartProvider>
-      <App />
-    </CartProvider>
+    <ProductsProvider>
+      <CartProvider>
+        <App />
+      </CartProvider>
+    </ProductsProvider>
   </StrictMode>,
 );

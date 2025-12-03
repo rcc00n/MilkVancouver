@@ -4,9 +4,11 @@ import ProductCard from "./ProductCard";
 interface ProductGridProps {
   products: Product[];
   loading?: boolean;
+  emptyTitle?: string;
+  emptyHint?: string;
 }
 
-function ProductGrid({ products, loading = false }: ProductGridProps) {
+function ProductGrid({ products, loading = false, emptyTitle, emptyHint }: ProductGridProps) {
   if (loading) {
     return (
       <div className="product-grid">
@@ -29,8 +31,8 @@ function ProductGrid({ products, loading = false }: ProductGridProps) {
   if (!products.length) {
     return (
       <div className="product-empty">
-        <div className="product-empty__title">No products match your filters yet.</div>
-        <p className="product-empty__hint">Try clearing the filters or searching a simpler term.</p>
+        <div className="product-empty__title">{emptyTitle || "No products yet."}</div>
+        <p className="product-empty__hint">{emptyHint || "Check back soon or adjust filters."}</p>
       </div>
     );
   }

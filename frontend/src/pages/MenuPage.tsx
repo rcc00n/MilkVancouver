@@ -240,7 +240,12 @@ function MenuPage() {
           </div>
 
           {error && <div className="alert alert--error">{error}</div>}
-          <ProductGrid products={products} loading={loading} />
+          <ProductGrid
+            products={products}
+            loading={loading}
+            emptyTitle="No products match your filters yet."
+            emptyHint="Try clearing the filters or searching a simpler term."
+          />
         </div>
       </section>
     </div>
