@@ -251,8 +251,14 @@ function AdminRouteDetailPage() {
                   Edit order
                 </Button>
               )}
-            </div>
           </div>
+        </div>
+
+          {isReorderMode ? (
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-700">
+              Drag stops to change driver route order, then click Save.
+            </div>
+          ) : null}
 
           {route.is_completed ? (
             <div className="border-b border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">

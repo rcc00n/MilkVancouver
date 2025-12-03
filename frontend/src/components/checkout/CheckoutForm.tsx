@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { CardElement } from "@stripe/react-stripe-js";
 
-import type { OrderType } from "../../api/orders";
+import type { OrderType } from "../../types/orders";
 
 export interface CheckoutFormValues {
   order_type: OrderType;

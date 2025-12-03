@@ -47,9 +47,9 @@ type LoadState = "loading" | "ready" | "error" | "no-access";
 type MutatingAction = "deliver" | "no_pickup" | null;
 
 const stopToneClasses: Record<RouteStopStatus, string> = {
-  pending: "border-slate-200 bg-white",
-  delivered: "border-emerald-100 bg-emerald-50/60",
-  no_pickup: "border-amber-100 bg-amber-50/70",
+  pending: "border-amber-100 bg-amber-50/70",
+  delivered: "border-emerald-200 bg-emerald-50/70",
+  no_pickup: "border-orange-200 bg-orange-50/70",
 };
 const postErrorToast = "Couldn't send update. Try again.";
 
@@ -485,6 +485,9 @@ function DriverRoutePage() {
                   )}
                 </Button>
               </div>
+              <p className="mt-1 text-xs text-slate-600">
+                Use this if the client wasn&apos;t home or refused pickup.
+              </p>
             </div>
           );
         })}

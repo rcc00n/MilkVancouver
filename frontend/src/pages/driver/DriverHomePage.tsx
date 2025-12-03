@@ -7,11 +7,20 @@ import { fetchDriverTodayRoutes, fetchDriverUpcomingRoutes } from "../../api/dri
 import NoAccess from "../../components/internal/NoAccess";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import { Skeleton } from "../../components/ui/skeleton";
 import { DriverRoute, DriverUpcomingRoute, RouteStopStatus } from "../../types/delivery";
 import { countCompletedStops, stopStatusStyles } from "../../utils/stop-status-styles";
 
 type LoadState = "idle" | "loading" | "error" | "ready" | "no-access";
+const HOW_IT_WORKS_KEY = "driver-how-it-works";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -23,6 +32,7 @@ function DriverHomePage() {
   const [upcomingRoutes, setUpcomingRoutes] = useState<DriverUpcomingRoute[]>([]);
   const [state, setState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(false);
 
   const loadRoutes = useCallback(async () => {
     setState("loading");
@@ -52,6 +62,14 @@ function DriverHomePage() {
     loadRoutes();
   }, [loadRoutes]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const seen = window.localStorage.getItem(HOW_IT_WORKS_KEY);
+    if (!seen) {
+      setShowIntro(true);
+    }
+  }, []);
+
   const upcomingSorted = useMemo(
     () =>
       [...upcomingRoutes].sort(
@@ -77,13 +95,25 @@ function DriverHomePage() {
     return <NoAccess role="driver" />;
   }
 
+  const dismissIntro = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(HOW_IT_WORKS_KEY, "seen");
+    }
+    setShowIntro(false);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-slate-900">Today&apos;s routes</h1>
-        <p className="text-sm text-slate-600">
-          Check in, call clients, and update stops. Built for quick thumb-friendly actions.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-slate-900">Today&apos;s routes</h1>
+          <p className="text-sm text-slate-600">
+            Check in, call clients, and update stops. Built for quick thumb-friendly actions.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => setShowIntro(true)}>
+          How it works
+        </Button>
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
@@ -167,6 +197,35 @@ function DriverHomePage() {
           </div>
         )}
       </section>
+      <Dialog
+        open={showIntro}
+        onOpenChange={(open) => {
+          if (!open) {
+            dismissIntro();
+          } else {
+            setShowIntro(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How the driver console works</DialogTitle>
+            <DialogDescription>Quick reminders for first-time visits.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm text-slate-700">
+            <p>1) Refresh to pull today&apos;s routes assigned to you.</p>
+            <p>2) Open a route to call clients, open maps, and upload delivery proof.</p>
+            <p>3) Mark deliveries with a photo; use &ldquo;No pickup&rdquo; when nobody is home.</p>
+            <p>4) Upcoming tab shows the next few days so you can plan ahead.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={dismissIntro}>
+              Close
+            </Button>
+            <Button onClick={dismissIntro}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,15 +1,17 @@
-import {
-  Gauge,
-  LayoutDashboard,
-  Menu,
-  Receipt,
-  Route,
-  UsersRound,
-} from "lucide-react";
+import { useState } from "react";
+import { Gauge, HelpCircle, LayoutDashboard, Menu, Receipt, Route, UsersRound } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 import AreaSwitcher from "../components/internal/AreaSwitcher";
+import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +39,7 @@ const navItems = [
 function AdminLayout() {
   const { pathname } = useLocation();
   const { user } = useSession();
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   return (
     <SidebarProvider>
@@ -84,6 +87,16 @@ function AdminLayout() {
             Internal tools
           </div>
           <div className="ml-auto flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-slate-700"
+              onClick={() => setIsHelpOpen(true)}
+              title="What lives in this admin?"
+            >
+              <HelpCircle className="h-5 w-5" aria-hidden="true" />
+              <span className="sr-only">Open admin help</span>
+            </Button>
             <div className="text-right">
               <p className="text-sm font-semibold text-slate-900">
                 {user ? `${user.firstName} ${user.lastName}`.trim() || user.email : "Admin"}
@@ -100,6 +113,39 @@ function AdminLayout() {
             <Outlet />
           </div>
         </div>
+        <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Admin quick guide</DialogTitle>
+              <DialogDescription>
+                Short reminders for Dashboard, Routes, and Clients.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 text-sm text-slate-700">
+              <div>
+                <p className="font-semibold text-slate-900">Dashboard</p>
+                <p className="text-slate-600">
+                  Revenue totals plus paid/completed/cancelled counts. Top regions and products mirror the Django admin.
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Routes</p>
+                <p className="text-slate-600">
+                  Filter by date, region, or driver. Open a route to reorder stops and review proof photos.
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900">Clients</p>
+                <p className="text-slate-600">
+                  Search by email, sort by spend/orders, and open a drawer to see their recent orders before hopping to Django admin.
+                </p>
+              </div>
+              <p className="text-xs text-slate-500">
+                Tip: Use Django admin for quick status edits on orders and deliveries.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SidebarInset>
     </SidebarProvider>
   );

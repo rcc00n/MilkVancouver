@@ -1,6 +1,5 @@
 import api from "./client";
-
-export type OrderType = "pickup" | "delivery";
+import type { OrderDetail, OrderStatus, OrderType } from "../types/orders";
 
 export interface OrderItemPayload {
   product_id: number;
@@ -32,11 +31,16 @@ export interface OrderPayload {
 
 export interface OrderResponse {
   id: number;
-  status: string;
+  status: OrderStatus;
   total_cents: number;
 }
 
 export async function createOrder(payload: OrderPayload): Promise<OrderResponse> {
   const response = await api.post<OrderResponse>("/orders/", payload);
+  return response.data;
+}
+
+export async function fetchOrders(): Promise<OrderDetail[]> {
+  const response = await api.get<OrderDetail[]>("/orders/");
   return response.data;
 }
