@@ -4319,6 +4319,447 @@ a {
   border: none;
 }
 
+.about-page-v2 {
+  display: grid;
+  gap: clamp(36px, 5vw, 72px);
+  padding-top: 12px;
+}
+
+.about-hero-v2 {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 6vw, 72px) 0;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(15, 47, 77, 0.12), transparent 36%),
+    radial-gradient(circle at 82% 0%, rgba(124, 197, 194, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(15, 47, 77, 0.04), rgba(15, 47, 77, 0));
+}
+
+.about-hero-v2::after {
+  content: "";
+  position: absolute;
+  inset: 12% auto auto 52%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(15, 47, 77, 0.18), transparent 60%);
+  filter: blur(60px);
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.about-hero-v2__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(18px, 4vw, 32px);
+  align-items: center;
+}
+
+.about-hero-v2__copy {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+}
+
+.about-hero-v2__lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  max-width: 640px;
+}
+
+.about-hero-v2__pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.about-hero-v2__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.about-hero-v2__note {
+  margin: 0;
+  color: var(--muted);
+  max-width: 620px;
+}
+
+.about-hero-v2__visual {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 24px 46px -34px rgba(15, 47, 77, 0.45);
+}
+
+.about-hero-v2__badge {
+  align-self: start;
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0f2f4d, #1f4f7a);
+  color: #f8fafc;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.about-hero-v2__image {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f1f5f9, #e0f2fe);
+}
+
+.about-hero-v2__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.about-hero-v2__card {
+  background: linear-gradient(135deg, #0f3d2c, #0f2f4d);
+  color: #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.about-hero-v2__stat {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0;
+  color: #fff;
+}
+
+.about-hero-v2__stat-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.about-hero-v2__card .pill--small {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+
+.about-hero-v2__card .pill--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #dbeafe;
+}
+
+.about-section-v2 {
+  display: block;
+}
+
+.about-section-v2__inner {
+  display: grid;
+  gap: 18px;
+}
+
+.about-section-v2__header {
+  display: grid;
+  gap: 6px;
+  max-width: 720px;
+}
+
+.about-section-v2__header h2 {
+  margin: 0;
+}
+
+.about-section-v2__header p {
+  margin: 0;
+}
+
+.about-section-v2--muted {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.about-section-v2--muted .about-section-v2__inner {
+  background: linear-gradient(135deg, rgba(15, 47, 77, 0.06), rgba(124, 197, 194, 0.14));
+  border: 1px solid #dce6f2;
+  border-radius: 18px;
+  padding: clamp(18px, 3vw, 26px);
+  box-shadow: 0 20px 40px -32px rgba(15, 47, 77, 0.4);
+}
+
+.two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 3vw, 28px);
+  align-items: center;
+}
+
+.two-column__col {
+  display: grid;
+  gap: 12px;
+}
+
+.two-column--reverse .two-column__col:first-child {
+  order: 2;
+}
+
+.two-column--reverse .two-column__col:last-child {
+  order: 1;
+}
+
+.about-story-v2 {
+  display: grid;
+  gap: 12px;
+}
+
+.about-story-v2__highlights {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.story-visual {
+  display: grid;
+  gap: 10px;
+}
+
+.story-visual__image {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc, #e0f2fe);
+  box-shadow: 0 18px 36px -30px rgba(15, 47, 77, 0.35);
+}
+
+.story-visual__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.story-visual__caption {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.value-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 18px 36px -28px rgba(15, 47, 77, 0.25);
+}
+
+.value-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe, #ffffff);
+  border: 1px solid #dbeafe;
+  font-size: 20px;
+}
+
+.value-card__title {
+  font-weight: 800;
+}
+
+.value-card__copy {
+  margin: 4px 0 0 0;
+  color: var(--muted);
+}
+
+.map-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.map-copy__list {
+  display: grid;
+  gap: 10px;
+}
+
+.map-copy__item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 16px 30px -28px rgba(15, 47, 77, 0.3);
+}
+
+.map-copy__label {
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: var(--foreground);
+}
+
+.map-copy__detail {
+  margin: 0;
+  color: var(--muted);
+}
+
+.map-copy__chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.about-map {
+  border: 1px solid #0f2f4d;
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(15, 47, 77, 0.9), #123452);
+  color: #e5e7eb;
+  padding: 16px;
+  box-shadow: 0 24px 44px -32px rgba(15, 23, 42, 0.55);
+}
+
+.about-map__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.about-map__eyebrow {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.about-map__title {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.about-map__body {
+  display: grid;
+  gap: 10px;
+}
+
+.about-map__grid {
+  position: relative;
+  height: 220px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 80% 40%, rgba(124, 197, 194, 0.24), rgba(255, 255, 255, 0) 50%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 50%, transparent 50% 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0 50%, transparent 50% 100%);
+  background-size: 36px 36px, 100% 100%, 28px 28px, 28px 28px;
+  overflow: hidden;
+}
+
+.about-map__pin {
+  position: absolute;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ecfdf3;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid #bbf7d0;
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.5);
+}
+
+.about-map__pin--kits {
+  bottom: 18%;
+  left: 18%;
+}
+
+.about-map__pin--downtown {
+  top: 42%;
+  left: 46%;
+}
+
+.about-map__pin--east {
+  bottom: 24%;
+  right: 16%;
+}
+
+.about-map__pin--north {
+  top: 18%;
+  left: 56%;
+}
+
+.about-map__note {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.about-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.about-cta__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.about-cta__meta {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.pill--ghost {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: var(--foreground);
+}
+
+@media (max-width: 1024px) {
+  .about-hero-v2__inner,
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .two-column--reverse .two-column__col:first-child,
+  .two-column--reverse .two-column__col:last-child {
+    order: unset;
+  }
+
+  .about-hero-v2__visual {
+    order: 2;
+  }
+
+  .about-hero-v2__copy {
+    order: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .about-map__grid {
+    height: 180px;
+  }
+}
+
 .site-footer {
   background: linear-gradient(180deg, #0f172a, #0b1220);
   color: #e2e8f0;
