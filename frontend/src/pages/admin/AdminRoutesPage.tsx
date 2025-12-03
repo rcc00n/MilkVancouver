@@ -40,6 +40,9 @@ type FilterOptions = {
   drivers: { id: number; name: string }[];
 };
 
+const ALL_REGIONS_VALUE = "all";
+const ALL_DRIVERS_VALUE = "all";
+
 function getTodayInputValue() {
   return new Date().toISOString().split("T")[0];
 }
@@ -61,13 +64,18 @@ function mergeFilterOptions(prev: FilterOptions, routes: AdminRoute[]): FilterOp
   const driverMap = new Map(prev.drivers.map((driver) => [driver.id, driver]));
 
   routes.forEach((route) => {
-    const code = route.region_code || String(route.region);
-    const normalizedCode = code.toLowerCase();
-    if (!regionMap.has(normalizedCode)) {
-      regionMap.set(normalizedCode, { code, name: route.region_name });
+    const code = (route.region_code || String(route.region || "")).trim();
+    if (code) {
+      const normalizedCode = code.toLowerCase();
+      if (!regionMap.has(normalizedCode)) {
+        regionMap.set(normalizedCode, { code, name: route.region_name || code });
+      }
     }
-    if (route.driver_id) {
-      driverMap.set(route.driver_id, { id: route.driver_id, name: route.driver_name || "Driver" });
+    if (typeof route.driver_id === "number") {
+      driverMap.set(route.driver_id, {
+        id: route.driver_id,
+        name: route.driver_name || `Driver ${route.driver_id}`,
+      });
     }
   });
 
@@ -83,8 +91,8 @@ function AdminRoutesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(() => ({
     date: getTodayInputValue(),
-    region: "",
-    driverId: "",
+    region: ALL_REGIONS_VALUE,
+    driverId: ALL_DRIVERS_VALUE,
   }));
   const [options, setOptions] = useState<FilterOptions>({ regions: [], drivers: [] });
 
@@ -94,8 +102,11 @@ function AdminRoutesPage() {
     try {
       const data = await fetchAdminRoutes({
         date: params.date || undefined,
-        region: params.region || undefined,
-        driverId: params.driverId ? Number(params.driverId) : undefined,
+        region: params.region === ALL_REGIONS_VALUE ? undefined : params.region,
+        driverId:
+          params.driverId && params.driverId !== ALL_DRIVERS_VALUE
+            ? Number(params.driverId)
+            : undefined,
       });
       setRoutes(data);
       setOptions((prev) => mergeFilterOptions(prev, data));
@@ -124,7 +135,11 @@ function AdminRoutesPage() {
   };
 
   const resetFilters = () => {
-    const reset: Filters = { date: getTodayInputValue(), region: "", driverId: "" };
+    const reset: Filters = {
+      date: getTodayInputValue(),
+      region: ALL_REGIONS_VALUE,
+      driverId: ALL_DRIVERS_VALUE,
+    };
     setFilters(reset);
     loadRoutes(reset);
   };
@@ -170,15 +185,15 @@ function AdminRoutesPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="region">Region</Label>
-            <Select
-              value={filters.region}
-              onValueChange={(value) => setFilters((prev) => ({ ...prev, region: value }))}
-            >
+              <Select
+                value={filters.region}
+                onValueChange={(value) => setFilters((prev) => ({ ...prev, region: value }))}
+              >
               <SelectTrigger id="region">
                 <SelectValue placeholder="All regions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All regions</SelectItem>
+                <SelectItem value={ALL_REGIONS_VALUE}>All regions</SelectItem>
                 {options.regions.map((region) => (
                   <SelectItem key={region.code} value={region.code}>
                     {region.code.toUpperCase()} · {region.name}
@@ -189,15 +204,15 @@ function AdminRoutesPage() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="driverId">Driver</Label>
-            <Select
-              value={filters.driverId}
-              onValueChange={(value) => setFilters((prev) => ({ ...prev, driverId: value }))}
-            >
+              <Select
+                value={filters.driverId}
+                onValueChange={(value) => setFilters((prev) => ({ ...prev, driverId: value }))}
+              >
               <SelectTrigger id="driverId">
                 <SelectValue placeholder="All drivers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All drivers</SelectItem>
+                <SelectItem value={ALL_DRIVERS_VALUE}>All drivers</SelectItem>
                 {options.drivers.map((driver) => (
                   <SelectItem key={driver.id} value={String(driver.id)}>
                     {driver.name}
