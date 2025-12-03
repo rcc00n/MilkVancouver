@@ -17,9 +17,9 @@ function Header({ onCartClick }: HeaderProps) {
 
   const navLinks = [
     { label: "Home", to: "/" },
-    { label: "Shop", to: "/menu" },
+    { label: "Shop", to: "/shop" },
     { label: "Pricing", to: "/pricing" },
-    { label: "About", to: "/about-us" },
+    { label: "About", to: "/about" },
     { label: "Blog", to: "/blog" },
     { label: "Contact", to: "/contact" },
   ];
