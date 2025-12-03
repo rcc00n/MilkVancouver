@@ -8,9 +8,9 @@ function resolveBaseUrl(): string {
 
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
-    // In production the API lives on the api.* subdomain.
-    if (host === "milkvanq.duckdns.org") {
-      return "https://api.milkvanq.duckdns.org/api";
+    // In production serve API via same-origin /api path (nginx proxies to backend).
+    if (host.endsWith("milkvanq.duckdns.org")) {
+      return "/api";
     }
   }
 

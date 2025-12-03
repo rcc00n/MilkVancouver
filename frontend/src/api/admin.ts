@@ -19,7 +19,13 @@ export async function fetchAdminRoutes(filters: RouteFilters = {}) {
   if (typeof filters.driverId === "number") params.driver_id = String(filters.driverId);
 
   const response = await api.get<AdminRoute[]>("/admin/routes/", { params });
-  return response.data;
+  const data = response.data;
+
+  if (!Array.isArray(data)) {
+    throw new Error("Unexpected routes payload");
+  }
+
+  return data;
 }
 
 export async function fetchAdminRoute(routeId: number) {
