@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 
 import { getBlogPost, getLatestBlogPosts } from "../api/blog";
 import BlogCard from "../components/blog/BlogCard";
+import { brand } from "../config/brand";
 import type { BlogPost, BlogPostDetail } from "../types";
 
 function formatPublishedDate(date?: string) {
@@ -61,7 +62,8 @@ function BlogPostPage() {
     return () => controller.abort();
   }, [slug]);
 
-  const authorLabel = post?.author?.trim() || "Vancouver Milk Co. Team";
+  const authorLabel = post?.author?.trim() || `${brand.shortName} Team`;
+  const categoryLabel = post?.category?.trim() || `${brand.shortName} Dispatch`;
 
   const renderContent = () => {
     if (!post?.content) return null;
@@ -88,7 +90,7 @@ function BlogPostPage() {
       <div className="container">
         <div className="blog-post__back">
           <Link to="/blog" className="link-button">
-            ← Back to blog
+            ← Back to Yummee Blog
           </Link>
         </div>
 
@@ -107,12 +109,16 @@ function BlogPostPage() {
 
         {post && (
           <article className="blog-post">
-            <div className="blog-post__meta">
-              <span>{formatPublishedDate(post.published_at)}</span>
-              <span>By {authorLabel}</span>
+            <div className="blog-post__header">
+              <div className="eyebrow">Yummee Blog</div>
+              <h1 className="blog-post__title">{post.title}</h1>
+              <div className="blog-post__meta">
+                <span className="pill pill--outline">{categoryLabel}</span>
+                <span>{formatPublishedDate(post.published_at)}</span>
+                <span>By {authorLabel}</span>
+              </div>
+              {post.excerpt && <p className="blog-post__excerpt">{post.excerpt}</p>}
             </div>
-            <h1 className="blog-post__title">{post.title}</h1>
-            {post.excerpt && <p className="blog-post__excerpt muted">{post.excerpt}</p>}
             {post.cover_image_url && (
               <div className="blog-post__cover">
                 <img src={post.cover_image_url} alt={post.title} />
@@ -133,7 +139,7 @@ function BlogPostPage() {
                 All posts →
               </Link>
             </div>
-            <div className="blog-grid">
+            <div className="blog-grid blog-grid--columns">
               {relatedPosts.map((related) => (
                 <BlogCard key={related.id} post={related} />
               ))}

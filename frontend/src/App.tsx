@@ -1,12 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Layout from "./layout/Layout";
-import About from "./pages/About";
-import Blog from "./pages/Blog";
-import Contact from "./pages/Contact";
-import Home from "./pages/Home";
-import Pricing from "./pages/Pricing";
-import Shop from "./pages/Shop";
 import AboutPage from "./pages/AboutPage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
@@ -20,6 +14,11 @@ import MenuPage from "./pages/MenuPage";
 import PricingPage from "./pages/PricingPage";
 import ProductPage from "./pages/ProductPage";
 import SuccessPage from "./pages/SuccessPage";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Home from "./pages/Home";
+import Pricing from "./pages/Pricing";
+import Shop from "./pages/Shop";
 
 function App() {
   return (
@@ -31,7 +30,7 @@ function App() {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/about" element={<About />} />
           <Route path="/about-us" element={<About />} />
-          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/list" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/contact" element={<Contact />} />

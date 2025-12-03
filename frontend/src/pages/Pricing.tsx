@@ -122,18 +122,18 @@ function Pricing() {
 
           <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-5">
-              <div className="flex flex-wrap gap-2">
-                <Badge className="border-slate-200 bg-white/80 text-sky-900 shadow-sm">
-                  CAD pricing, deposits handled
-                </Badge>
-                <Badge variant="outline" className="border-sky-200 bg-white/70 text-slate-700">
-                  Local delivery & pickup
-                </Badge>
-              </div>
-              <p className="max-w-2xl text-lg text-slate-700">
-                Pick the cadence that fits your fridge. Delivery windows are set by neighborhood, and you can pause or
-                switch in seconds.
-              </p>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="border-slate-200 bg-white/80 text-sky-900 shadow-sm">
+                CAD pricing, deposits handled
+              </Badge>
+              <Badge variant="outline" className="border-sky-200 bg-white/70 text-slate-700">
+                Local delivery & pickup
+              </Badge>
+            </div>
+            <p className="max-w-2xl text-base text-slate-700/90">
+              Pick the cadence that fits your fridge. Delivery windows are set by neighborhood, and you can pause or
+              switch in seconds.
+            </p>
               <div className="grid gap-3 sm:flex sm:flex-wrap">
                 <Button
                   className="w-full px-6 py-3 text-base font-semibold shadow-lg sm:w-auto"
@@ -191,21 +191,21 @@ function Pricing() {
           </div>
         </section>
 
-        <section className="space-y-4" id="plans">
+        <section className="space-y-6" id="plans">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Compare plans</p>
               <h2 className="text-2xl font-semibold text-slate-900">Choose a plan and adjust anytime.</h2>
-              <p className="text-slate-600">
+              <p className="max-w-3xl text-slate-600">
                 Switch between delivery and pickup. We timestamp every bottle and manage returns automatically.
               </p>
             </div>
-            <div className="rounded-full border border-slate-200 bg-white/70 px-4 py-2 text-sm text-slate-700 shadow-sm">
+            <div className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs font-medium text-slate-700 shadow-sm">
               <span className="font-semibold text-slate-900">No long contracts.</span> Pause, skip, or edit items weekly.
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:gap-8 xl:grid-cols-3">
             {plans.map((plan) => (
               <PricingCard key={plan.name} {...plan} />
             ))}

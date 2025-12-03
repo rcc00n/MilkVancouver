@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { getBlogPosts } from "../api/blog";
 import BlogCard from "../components/blog/BlogCard";
+import { brand } from "../config/brand";
 import type { BlogPost } from "../types";
 
 const PAGE_SIZE = 6;
@@ -13,6 +14,7 @@ function BlogListPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState<string>("all");
 
   const pageParam = Number(searchParams.get("page") || 1);
   const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
@@ -42,6 +44,26 @@ function BlogListPage() {
     return () => controller.abort();
   }, [page]);
 
+  const categories = useMemo(() => {
+    const unique = new Set<string>();
+    posts.forEach((post) => {
+      if (post.category) {
+        unique.add(post.category);
+      }
+    });
+    return Array.from(unique);
+  }, [posts]);
+
+  useEffect(() => {
+    if (activeCategory === "all") return;
+    const hasCategory = posts.some((post) => post.category === activeCategory);
+    if (!hasCategory) {
+      setActiveCategory("all");
+    }
+  }, [activeCategory, posts]);
+
+  const filteredPosts = activeCategory === "all" ? posts : posts.filter((post) => post.category === activeCategory);
+
   const handlePageChange = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages) return;
     const params = new URLSearchParams();
@@ -51,49 +73,79 @@ function BlogListPage() {
     setSearchParams(params);
   };
 
+  const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
+    handlePageChange(1);
+  };
+
+  const articleCount = totalCount || posts.length;
+
   return (
     <div className="blog-page">
       <section className="page-hero page-hero--blog">
-        <div className="container page-hero__grid">
-          <div className="page-hero__intro">
-            <div className="eyebrow">Blog</div>
-            <h1>Stories, dairy tips, and coffee bar notes from Vancouver Milk Co.</h1>
+        <div className="container page-hero__grid blog-hero">
+          <div className="page-hero__intro blog-hero__intro">
+            <div className="eyebrow">Yummee Blog</div>
+            <h1>Tips, recipes, and updates from your local milk crew.</h1>
             <p className="muted">
-              Learn how we bottle grass-fed milk, steam silky lattes, and use cultured butter and yogurt in weeknight
-              cooking—plus updates from our Vancouver delivery routes.
+              Pour a glass, learn how we bottle grass-fed milk, and browse easy ways to fold yogurt, cultured butter,
+              and barista blends into breakfast and late-night snacks around {brand.location}.
             </p>
-            <div className="page-hero__chips">
-              <span className="pill pill--accent">Grass-fed dairy</span>
-              <span className="pill">Barista guides</span>
-              <span className="pill">Recipes</span>
-              <span className="pill">Fridge hacks</span>
+            <div className="blog-hero__meta">
+              <span className="pill pill--strong">{articleCount || "New"} posts</span>
+              <span className="pill">Recipes · Delivery notes · Cafe tips</span>
             </div>
           </div>
-          <div className="page-hero__card">
-            <h3>What you will learn</h3>
+          <div className="page-hero__card blog-hero__card">
+            <h3>On the menu this week</h3>
             <ul className="checklist">
-              <li>How to steam and pour barista milk for glossy microfoam.</li>
-              <li>When to pick whole milk vs. low-fat for baking and sauces.</li>
-              <li>Why pasteurization windows and cold-chain matter for flavor.</li>
+              <li>15-minute breakfasts powered by our yogurt and oat pairings.</li>
+              <li>Milk-steaming techniques for silky foam at home.</li>
+              <li>Behind-the-scenes from the Yummee delivery route.</li>
             </ul>
-            <Link to="/menu" className="link-button">
-              Shop the dairy case →
-            </Link>
+            <div className="blog-hero__actions">
+              <Link to="/shop" className="btn btn--primary">
+                Shop the fridge
+              </Link>
+              <Link to="/contact" className="link-button">
+                Ask us anything →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="container blog-list">
-        <div className="section-heading">
+        <div className="section-heading blog-list__heading">
           <div>
             <div className="eyebrow">Latest posts</div>
             <h2>Browse every story</h2>
-            <p className="muted">Cooking methods, sourcing explainers, and seasonal menu ideas.</p>
+            <p className="muted">Fresh dairy know-how, seasonal menu ideas, and updates from the delivery van.</p>
           </div>
-          <span className="pill pill--strong">{totalCount || posts.length} articles</span>
+          {categories.length > 0 && (
+            <div className="blog-filters" role="tablist" aria-label="Filter by category">
+              <button
+                type="button"
+                className={`blog-filter ${activeCategory === "all" ? "is-active" : ""}`}
+                onClick={() => handleCategoryChange("all")}
+              >
+                All
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={`blog-filter ${activeCategory === category ? "is-active" : ""}`}
+                  onClick={() => handleCategoryChange(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {error && <div className="alert alert--error">{error}</div>}
-        <div className="blog-grid blog-grid--spacious">
+        <div className="blog-grid blog-grid--columns">
           {loading &&
             Array.from({ length: Math.min(PAGE_SIZE, 6) }).map((_, index) => (
               <div key={index} className="blog-card blog-card--skeleton">
@@ -107,19 +159,21 @@ function BlogListPage() {
           {!loading && posts.length === 0 && (
             <div className="alert alert--muted">No posts yet—our team is writing the first story now.</div>
           )}
-          {!loading && posts.map((post) => <BlogCard key={post.id} post={post} />)}
+          {!loading && filteredPosts.map((post) => <BlogCard key={post.id} post={post} />)}
         </div>
-        <div className="pagination">
-          <button type="button" onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
-            ← Newer
-          </button>
-          <div className="pagination__meta">
-            Page {Math.min(page, totalPages)} of {totalPages}
+        {totalPages > 1 && (
+          <div className="pagination">
+            <button type="button" onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
+              ← Newer
+            </button>
+            <div className="pagination__meta">
+              Page {Math.min(page, totalPages)} of {totalPages}
+            </div>
+            <button type="button" onClick={() => handlePageChange(page + 1)} disabled={page >= totalPages}>
+              Older →
+            </button>
           </div>
-          <button type="button" onClick={() => handlePageChange(page + 1)} disabled={page >= totalPages}>
-            Older →
-          </button>
-        </div>
+        )}
       </section>
     </div>
   );

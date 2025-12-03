@@ -29,6 +29,7 @@ export interface BlogPost {
   slug: string;
   author?: string;
   excerpt?: string;
+  category?: string;
   cover_image_url?: string;
   published_at?: string;
 }

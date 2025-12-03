@@ -41,7 +41,7 @@ function PricingCard({
   return (
     <Card
       className={cn(
-        "relative h-full overflow-hidden border-slate-200/80 bg-white/90 shadow-[0_24px_64px_-46px_rgba(15,47,77,0.6)] backdrop-blur-sm",
+        "relative flex h-full flex-col overflow-hidden border-slate-200/80 bg-white shadow-[0_24px_64px_-46px_rgba(15,47,77,0.5)]",
         highlight
           ? "border-primary/80 ring-1 ring-primary/15"
           : "border-slate-200/70",
@@ -53,24 +53,26 @@ function PricingCard({
           highlight && "from-amber-300 via-primary to-sky-400",
         )}
       />
-      {badge ? (
-        <Badge className="absolute right-4 top-4 border-amber-200 bg-amber-100 text-amber-900 shadow-sm">
-          {badge}
-        </Badge>
-      ) : null}
 
-      <CardHeader className="space-y-3 pb-3 pt-6">
+      <CardHeader className="space-y-4 pb-4 pt-6">
         <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold text-slate-900">
-              {name}
-            </CardTitle>
-            <CardDescription className="text-base text-slate-600">
-              {description}
-            </CardDescription>
+          <div className="space-y-2">
+            {badge ? (
+              <Badge className="w-fit rounded-full border-amber-200 bg-amber-50 text-amber-900 shadow-sm">
+                {badge}
+              </Badge>
+            ) : null}
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-semibold text-slate-900">
+                {name}
+              </CardTitle>
+              <CardDescription className="text-base text-slate-600">
+                {description}
+              </CardDescription>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-semibold leading-none text-slate-900">
+          <div className="rounded-xl bg-slate-50/90 px-3 py-2 text-right shadow-inner">
+            <div className="text-[28px] font-semibold leading-none text-slate-900">
               {price}
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -80,8 +82,8 @@ function PricingCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 pt-0">
-        <ul className="space-y-2 text-sm text-slate-800">
+      <CardContent className="flex-1 space-y-3 pt-0">
+        <ul className="space-y-2 text-sm text-slate-700">
           {features.map((feature) => (
             <li key={feature} className="flex items-start gap-2">
               <Check className="mt-0.5 size-4 text-emerald-600" />
