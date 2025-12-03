@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
 
 import { useCart } from "../../context/CartContext";
 import { brand } from "../../config/brand";
+import AreaSwitcher from "../internal/AreaSwitcher";
 
 type HeaderProps = {
   onCartClick?: () => void;
@@ -36,6 +38,54 @@ function Header({ onCartClick }: HeaderProps) {
     closeMobileMenu();
   };
 
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
+
+  const mobileNavLayer = (
+    <>
+      <div className={`mobile-nav ${isMobileOpen ? "is-open" : ""}`} aria-hidden={!isMobileOpen}>
+        <div className="mobile-nav__header">
+          <Link to="/" className="nav-brand nav-brand--mobile" onClick={closeMobileMenu}>
+            <span className="nav-brand__word">{brand.name}</span>
+          </Link>
+          <button type="button" className="mobile-nav__close" aria-label="Close menu" onClick={closeMobileMenu}>
+            ✕
+          </button>
+        </div>
+
+        <div className="mobile-nav__links">
+          {navLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) => `mobile-nav__link ${isActive ? "is-active" : ""}`}
+              onClick={closeMobileMenu}
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </div>
+
+        <div className="mobile-nav__links">
+          <AreaSwitcher align="start" size="sm" />
+        </div>
+
+        <div className="mobile-nav__cta">
+          <Link to="/shop" className="nav-cta nav-cta--full" onClick={closeMobileMenu}>
+            Shop Now
+          </Link>
+          <button type="button" className="mobile-nav__cart" onClick={handleCartClick}>
+            Cart · {itemCount} item{itemCount === 1 ? "" : "s"} (${subtotal})
+          </button>
+        </div>
+      </div>
+      <div
+        className={`mobile-nav__backdrop ${isMobileOpen ? "is-visible" : ""}`}
+        onClick={closeMobileMenu}
+        role="presentation"
+      />
+    </>
+  );
+
   return (
     <header className="site-header">
       <div className="nav-surface">
@@ -60,6 +110,10 @@ function Header({ onCartClick }: HeaderProps) {
             ))}
           </nav>
 
+          <div className="hidden lg:block">
+            <AreaSwitcher size="sm" />
+          </div>
+
           <div className="nav-actions">
             <button type="button" onClick={handleCartClick} className="nav-cart" aria-label="Open cart">
               <span className="nav-cart__count">{itemCount}</span>
@@ -83,43 +137,7 @@ function Header({ onCartClick }: HeaderProps) {
         </div>
       </div>
 
-      <div className={`mobile-nav ${isMobileOpen ? "is-open" : ""}`} aria-hidden={!isMobileOpen}>
-        <div className="mobile-nav__header">
-          <Link to="/" className="nav-brand nav-brand--mobile" onClick={closeMobileMenu}>
-            <span className="nav-brand__word">{brand.name}</span>
-          </Link>
-          <button type="button" className="mobile-nav__close" aria-label="Close menu" onClick={closeMobileMenu}>
-            ✕
-          </button>
-        </div>
-
-        <div className="mobile-nav__links">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => `mobile-nav__link ${isActive ? "is-active" : ""}`}
-              onClick={closeMobileMenu}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="mobile-nav__cta">
-          <Link to="/shop" className="nav-cta nav-cta--full" onClick={closeMobileMenu}>
-            Shop Now
-          </Link>
-          <button type="button" className="mobile-nav__cart" onClick={handleCartClick}>
-            Cart · {itemCount} item{itemCount === 1 ? "" : "s"} (${subtotal})
-          </button>
-        </div>
-      </div>
-      <div
-        className={`mobile-nav__backdrop ${isMobileOpen ? "is-visible" : ""}`}
-        onClick={closeMobileMenu}
-        role="presentation"
-      />
+      {portalTarget ? createPortal(mobileNavLayer, portalTarget) : mobileNavLayer}
     </header>
   );
 }

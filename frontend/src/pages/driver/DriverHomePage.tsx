@@ -1,0 +1,232 @@
+import axios from "axios";
+import { Clock, Leaf, MapPin, RefreshCw, Truck } from "lucide-react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+
+import { fetchDriverTodayRoutes, fetchDriverUpcomingRoutes } from "../../api/driver";
+import NoAccess from "../../components/internal/NoAccess";
+import { Button } from "../../components/ui/button";
+import { Badge } from "../../components/ui/badge";
+import { DriverRoute, DriverUpcomingRoute } from "../../types/delivery";
+
+type LoadState = "idle" | "loading" | "error" | "ready" | "no-access";
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+function DriverHomePage() {
+  const [todayRoutes, setTodayRoutes] = useState<DriverRoute[]>([]);
+  const [upcomingRoutes, setUpcomingRoutes] = useState<DriverUpcomingRoute[]>([]);
+  const [state, setState] = useState<LoadState>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      setState("loading");
+      setError(null);
+      try {
+        const [today, upcoming] = await Promise.all([
+          fetchDriverTodayRoutes(),
+          fetchDriverUpcomingRoutes(),
+        ]);
+        setTodayRoutes(today);
+        setUpcomingRoutes(upcoming);
+        setState("ready");
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          if (status === 401 || status === 403) {
+            setState("no-access");
+            return;
+          }
+        }
+        setError("Unable to load driver routes.");
+        setState("error");
+      }
+    };
+
+    load();
+  }, []);
+
+  const summary = useMemo(() => {
+    const totalStops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);
+    const delivered = todayRoutes.reduce(
+      (sum, route) => sum + route.stops.filter((stop) => stop.status === "delivered").length,
+      0,
+    );
+    const pending = todayRoutes.reduce(
+      (sum, route) => sum + route.stops.filter((stop) => stop.status === "pending").length,
+      0,
+    );
+    return { totalStops, delivered, pending };
+  }, [todayRoutes]);
+
+  if (state === "no-access") {
+    return <NoAccess role="driver" />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold text-slate-900">Today&apos;s routes</h1>
+        <p className="text-sm text-slate-600">
+          Check in, call clients, and update stops. Built for quick thumb-friendly actions.
+        </p>
+      </div>
+
+      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
+        <Stat title="Total stops" value={summary.totalStops} icon={<Truck className="h-4 w-4" />} />
+        <Stat
+          title="Delivered"
+          value={summary.delivered}
+          tone="success"
+          icon={<Leaf className="h-4 w-4" />}
+        />
+        <Stat
+          title="Pending"
+          value={summary.pending}
+          tone="muted"
+          icon={<Clock className="h-4 w-4" />}
+        />
+      </div>
+
+      <section className="space-y-3">
+        <header className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Assigned today</h2>
+          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+            <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+            Refresh
+          </Button>
+        </header>
+
+        {state === "loading" ? (
+          <div className="text-sm text-slate-500">Loading routes…</div>
+        ) : null}
+
+        {state === "error" && error ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {error}
+          </div>
+        ) : null}
+
+        {state === "ready" && todayRoutes.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+            No routes assigned for today yet.
+          </div>
+        ) : null}
+
+        <div className="space-y-3">
+          {todayRoutes.map((route) => (
+            <Link
+              key={route.id}
+              to={`/driver/route/${route.id}`}
+              state={{ route }}
+              className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
+                    {route.region_name} · {route.region_code}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">{formatDate(route.date)}</h3>
+                  <p className="text-sm text-slate-600">{route.stops.length} stops assigned</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={route.is_completed ? "default" : "secondary"}>
+                    {route.is_completed ? "Completed" : "In progress"}
+                  </Badge>
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    {route.stops.filter((stop) => stop.status === "delivered").length} /{" "}
+                    {route.stops.length} delivered
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                {route.stops.slice(0, 3).map((stop) => (
+                  <span
+                    key={stop.id}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
+                  >
+                    #{stop.sequence} · {stop.status.replace("_", " ")}
+                  </span>
+                ))}
+                {route.stops.length > 3 ? (
+                  <span className="rounded-full bg-slate-50 px-2.5 py-1 font-semibold text-slate-600">
+                    +{route.stops.length - 3} more stops
+                  </span>
+                ) : null}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900">Upcoming</h2>
+          <Link to="/driver/upcoming" className="text-sm font-semibold text-primary">
+            View all
+          </Link>
+        </div>
+        {state === "ready" && upcomingRoutes.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+            No upcoming routes yet.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {upcomingRoutes.slice(0, 3).map((route) => (
+              <div
+                key={route.id}
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {route.region_name} · {route.region_code}
+                  </p>
+                  <p className="text-xs text-slate-600">{formatDate(route.date)}</p>
+                </div>
+                <div className="text-xs font-semibold text-slate-600">{route.stops_count} stops</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Stat({
+  title,
+  value,
+  tone = "default",
+  icon,
+}: {
+  title: string;
+  value: number;
+  tone?: "default" | "success" | "muted";
+  icon?: ReactNode;
+}) {
+  const toneClasses =
+    tone === "success"
+      ? "bg-emerald-50 text-emerald-700"
+      : tone === "muted"
+        ? "bg-slate-50 text-slate-600"
+        : "bg-slate-100 text-slate-800";
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm">
+        {icon}
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+        <p className={`text-xl font-bold ${toneClasses}`}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+export default DriverHomePage;
