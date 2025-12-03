@@ -25,8 +25,9 @@ class DeliveryProofInline(admin.StackedInline):
 class RouteStopInline(admin.TabularInline):
     model = RouteStop
     extra = 0
-    fields = ("sequence", "order_link", "status", "delivered_at")
+    fields = ("sequence", "order", "order_link", "status", "delivered_at")
     readonly_fields = ("order_link",)
+    autocomplete_fields = ("order",)
     ordering = ("sequence",)
 
     def order_link(self, obj):
