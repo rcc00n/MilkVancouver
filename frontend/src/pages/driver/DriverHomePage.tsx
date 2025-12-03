@@ -52,6 +52,14 @@ function DriverHomePage() {
     loadRoutes();
   }, [loadRoutes]);
 
+  const upcomingSorted = useMemo(
+    () =>
+      [...upcomingRoutes].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      ),
+    [upcomingRoutes],
+  );
+
   const summary = useMemo(() => {
     const totalStops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);
     const delivered = todayRoutes.reduce(
@@ -136,13 +144,13 @@ function DriverHomePage() {
             View all
           </Link>
         </div>
-        {state === "ready" && upcomingRoutes.length === 0 ? (
+        {state === "ready" && upcomingSorted.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
             No upcoming routes yet.
           </div>
         ) : (
           <div className="space-y-2">
-            {upcomingRoutes.slice(0, 3).map((route) => (
+            {upcomingSorted.slice(0, 3).map((route) => (
               <div
                 key={route.id}
                 className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3"

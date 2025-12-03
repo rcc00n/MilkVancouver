@@ -51,6 +51,7 @@ const stopToneClasses: Record<RouteStopStatus, string> = {
   delivered: "border-emerald-100 bg-emerald-50/60",
   no_pickup: "border-amber-100 bg-amber-50/70",
 };
+const postErrorToast = "Couldn't send update. Try again.";
 
 function formatDeliveredTime(timestamp?: string | null) {
   if (!timestamp) return null;
@@ -104,6 +105,7 @@ function DriverRoutePage() {
   const [route, setRoute] = useState<DriverRoute | null>(initialRoute);
   const [state, setState] = useState<LoadState>(initialRoute ? "ready" : "loading");
   const [error, setError] = useState<string | null>(null);
+  const [stopFilter, setStopFilter] = useState<"all" | "remaining" | "done">("all");
   const [mutatingStopId, setMutatingStopId] = useState<number | null>(null);
   const [mutatingAction, setMutatingAction] = useState<MutatingAction>(null);
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
@@ -159,6 +161,15 @@ function DriverRoutePage() {
   }, [loadRoute, initialRoute]);
 
   const stops = useMemo(() => sortStops(route?.stops || []), [route?.stops]);
+  const filteredStops = useMemo(() => {
+    if (stopFilter === "remaining") {
+      return stops.filter((stop) => stop.status === "pending");
+    }
+    if (stopFilter === "done") {
+      return stops.filter((stop) => completedStopStatuses.includes(stop.status));
+    }
+    return stops;
+  }, [stopFilter, stops]);
 
   const stopTotals = useMemo(() => {
     const delivered = stops.filter((stop) => stop.status === "delivered").length;
@@ -233,8 +244,9 @@ function DriverRoutePage() {
       updateStopState(stopId, driverStop);
       toast.success("Marked as no pickup");
     } catch (err) {
-      const message = getErrorMessage(err, "Could not mark as no pickup.");
-      toast.error(message);
+      const message = getErrorMessage(err, postErrorToast);
+      console.error("Failed to mark no pickup:", message);
+      toast.error(postErrorToast);
     } finally {
       setMutatingStopId(null);
       setMutatingAction(null);
@@ -257,9 +269,9 @@ function DriverRoutePage() {
       toast.success("Delivery recorded");
       closeDeliveryDialog();
     } catch (err) {
-      const message = getErrorMessage(err, "Could not upload delivery proof. Try again.");
+      const message = getErrorMessage(err, postErrorToast);
       setDeliveryError(message);
-      toast.error(message);
+      toast.error(postErrorToast);
     } finally {
       setMutatingStopId(null);
       setMutatingAction(null);
@@ -300,10 +312,35 @@ function DriverRoutePage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-        <StatusSummaryChip status="pending" value={stopTotals.pending} />
-        <StatusSummaryChip status="no_pickup" value={stopTotals.noPickup} />
-        <StatusSummaryChip status="delivered" value={stopTotals.delivered} />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+        <div className="flex flex-wrap gap-2">
+          <StatusSummaryChip status="pending" value={stopTotals.pending} />
+          <StatusSummaryChip status="no_pickup" value={stopTotals.noPickup} />
+          <StatusSummaryChip status="delivered" value={stopTotals.delivered} />
+        </div>
+        <div className="flex items-center gap-1 rounded-full bg-white p-1 shadow-sm">
+          {[
+            { value: "all", label: "All" },
+            { value: "remaining", label: "Remaining" },
+            { value: "done", label: "Done" },
+          ].map((option) => {
+            const isActive = stopFilter === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStopFilter(option.value as typeof stopFilter)}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-semibold transition",
+                  isActive ? "bg-slate-900 text-white shadow" : "text-slate-700 hover:bg-slate-100",
+                ].join(" ")}
+                aria-pressed={isActive}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {state === "loading" ? <div className="text-sm text-slate-500">Loading route…</div> : null}
@@ -318,7 +355,7 @@ function DriverRoutePage() {
       ) : null}
 
       <div className="space-y-3">
-        {stops.map((stop) => {
+        {filteredStops.map((stop) => {
           const status = stop.status as RouteStopStatus;
           const deliveredTime = formatDeliveredTime(stop.delivered_at);
           const isPending = status === "pending";
@@ -345,7 +382,7 @@ function DriverRoutePage() {
                       asChild
                       variant="ghost"
                       size="icon"
-                      className="border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+                      className="h-12 w-12 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50 sm:h-11 sm:w-11"
                       title={`Call ${stop.client_phone}`}
                       aria-label={`Call ${stop.client_phone}`}
                     >
@@ -357,7 +394,7 @@ function DriverRoutePage() {
                       asChild
                       variant="ghost"
                       size="icon"
-                      className="border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+                      className="h-12 w-12 rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50 sm:h-11 sm:w-11"
                       title="Open in Google Maps"
                       aria-label="Open in Google Maps"
                     >
@@ -412,7 +449,11 @@ function DriverRoutePage() {
               ) : null}
 
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button disabled={!isPending || isDelivering} onClick={() => openDeliveryDialog(stop)} className="w-full">
+                <Button
+                  disabled={!isPending || isDelivering}
+                  onClick={() => openDeliveryDialog(stop)}
+                  className="h-12 w-full text-base"
+                >
                   {isDelivering ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
@@ -429,7 +470,7 @@ function DriverRoutePage() {
                   variant="outline"
                   disabled={!isPending || isMarkingNoPickup}
                   onClick={() => setConfirmStopId(stop.id)}
-                  className="w-full"
+                  className="h-12 w-full text-base"
                 >
                   {isMarkingNoPickup ? (
                     <>
@@ -447,6 +488,15 @@ function DriverRoutePage() {
             </div>
           );
         })}
+        {filteredStops.length === 0 && state === "ready" ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-700">
+            {stopFilter === "remaining"
+              ? "Nothing left to do. Great work!"
+              : stopFilter === "done"
+                ? "No stops are done yet."
+                : "No stops to show."}
+          </div>
+        ) : null}
       </div>
 
       <Dialog

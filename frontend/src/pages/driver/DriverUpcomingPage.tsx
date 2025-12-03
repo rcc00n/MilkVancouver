@@ -1,6 +1,6 @@
 import axios from "axios";
 import { CalendarClock, MapPin, Truck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { fetchDriverUpcomingRoutes } from "../../api/driver";
@@ -22,6 +22,13 @@ function formatDate(dateString: string) {
 function DriverUpcomingPage() {
   const [routes, setRoutes] = useState<DriverUpcomingRoute[]>([]);
   const [state, setState] = useState<LoadState>("loading");
+  const sortedRoutes = useMemo(
+    () =>
+      [...routes].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      ),
+    [routes],
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -70,13 +77,13 @@ function DriverUpcomingPage() {
         <div className="text-sm text-slate-500">Loading upcoming routes…</div>
       ) : null}
 
-      {state === "ready" && routes.length === 0 ? (
+      {state === "ready" && sortedRoutes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-600">
           No upcoming routes yet.
         </div>
       ) : (
         <div className="space-y-3">
-          {routes.map((route) => (
+          {sortedRoutes.map((route) => (
             <Link
               to={`/driver/route/${route.id}`}
               key={route.id}
