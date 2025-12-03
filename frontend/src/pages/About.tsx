@@ -93,43 +93,72 @@ function About() {
       <section className="about-hero-v2">
         <div className="container about-hero-v2__inner">
           <div className="about-hero-v2__copy">
-            <p className="eyebrow">About Yummee</p>
-            <h1>About Yummee</h1>
+            <p className="eyebrow">About {brand.shortName}</p>
+            <h1>Gentle, grass-fed milk bottled for Vancouver mornings.</h1>
             <p className="about-hero-v2__lead">
-              Vancouver’s fresh milk company focused on quality, local farms, and simple, honest dairy.
+              We keep batches small, bottle within 24 hours, and run quiet delivery loops so your fridge always has
+              clean, honest dairy.
             </p>
-            <div className="about-hero-v2__pills">
-              <span className="pill">Grass-fed BC dairy</span>
-              <span className="pill pill--accent">Glass bottles & returns</span>
-              <span className="pill">Delivered chilled, 3x weekly</span>
+            <div className="about-hero-v3__list">
+              <div className="about-hero-v3__item">
+                <span className="about-hero-v3__dot" aria-hidden="true" />
+                <div>
+                  <div className="about-hero-v3__label">24 hours from farm to bottle</div>
+                  <p>Batch codes, pasteurization window, and dairy partner on every label.</p>
+                </div>
+              </div>
+              <div className="about-hero-v3__item">
+                <span className="about-hero-v3__dot" aria-hidden="true" />
+                <div>
+                  <div className="about-hero-v3__label">Reusable glass without the fuss</div>
+                  <p>Leave bottles out, get deposits back automatically—no extra steps.</p>
+                </div>
+              </div>
+              <div className="about-hero-v3__item">
+                <span className="about-hero-v3__dot" aria-hidden="true" />
+                <div>
+                  <div className="about-hero-v3__label">Calm, chilled routes</div>
+                  <p>0–4°C delivery with quick SMS updates if you need to tweak a drop-off.</p>
+                </div>
+              </div>
             </div>
             <div className="about-hero-v2__actions">
               <Link className="btn btn--primary" to="/shop">
-                Shop Now
+                Shop milk
               </Link>
-              <a className="btn btn--ghost" href="#story">
-                Read our story
-              </a>
+              <Link className="btn btn--ghost" to="/good-to-know">
+                Delivery details
+              </Link>
             </div>
             <p className="about-hero-v2__note">
-              Built in Vancouver with the same care we put into your morning coffee—clean milk, friendly labels, and a
-              delivery loop you can count on.
+              Friendly team, simple ingredients, and labels that tell you everything at a glance.
             </p>
           </div>
-          <div className="about-hero-v2__visual">
-            <div className="about-hero-v2__badge">Vancouver-born · {brand.name}</div>
-            <div className="about-hero-v2__image">
-              <img src={heroImage} alt="Bottles ready for Vancouver delivery" loading="lazy" />
+          <div className="about-hero-v3__card">
+            <div className="about-hero-v3__stamp">Vancouver bottled · {brand.name}</div>
+            <div className="about-hero-v3__image">
+              <img src={heroImage} alt="Yummee bottles ready for delivery" loading="lazy" />
             </div>
-            <div className="about-hero-v2__card">
-              <div>
-                <div className="about-hero-v2__stat">24 hrs</div>
-                <p className="muted">Farm to bottle with batch codes on the label.</p>
+            <div className="about-hero-v3__stats">
+              <div className="about-hero-v3__metric">
+                <div className="about-hero-v3__value">24 hrs</div>
+                <div className="about-hero-v3__metric-label">Farm → bottle</div>
               </div>
-              <div className="about-hero-v2__stat-row">
-                <span className="pill pill--small">BC Dairy inspected</span>
-                <span className="pill pill--small pill--ghost">Cold chain: 0–4°C</span>
+              <div className="about-hero-v3__metric">
+                <div className="about-hero-v3__value">0–4°C</div>
+                <div className="about-hero-v3__metric-label">Chilled routes</div>
               </div>
+              <div className="about-hero-v3__metric">
+                <div className="about-hero-v3__value">Glass</div>
+                <div className="about-hero-v3__metric-label">Simple returns</div>
+              </div>
+            </div>
+            <p className="about-hero-v3__caption">
+              Calm deliveries with clean ingredients, reusable bottles, and friendly support if you need us.
+            </p>
+            <div className="about-hero-v3__chips">
+              <span className="pill pill--small">BC Dairy inspected</span>
+              <span className="pill pill--small pill--ghost">Family & cafe friendly</span>
             </div>
           </div>
         </div>
