@@ -1,29 +1,90 @@
 import axios from "axios";
 import {
+  AlertTriangle,
   ArrowLeft,
   BadgeCheck,
-  ImageDown,
+  Camera,
+  Eye,
   Loader2,
   MapPinned,
   PhoneCall,
   Truck,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { fetchDriverTodayRoutes, markStopDelivered, markStopNoPickup } from "../../api/driver";
 import NoAccess from "../../components/internal/NoAccess";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import { DriverRoute, DriverStop, RouteStop, RouteStopStatus } from "../../types/delivery";
 import {
   completedStopStatuses,
   countCompletedStops,
   stopStatusStyles,
 } from "../../utils/stop-status-styles";
+import { toast } from "sonner";
 
 type LoadState = "loading" | "ready" | "error" | "no-access";
 type MutatingAction = "deliver" | "no_pickup" | null;
+
+const stopToneClasses: Record<RouteStopStatus, string> = {
+  pending: "border-slate-200 bg-white",
+  delivered: "border-emerald-100 bg-emerald-50/60",
+  no_pickup: "border-amber-100 bg-amber-50/70",
+};
+
+function formatDeliveredTime(timestamp?: string | null) {
+  if (!timestamp) return null;
+  return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function getErrorMessage(err: unknown, fallback: string) {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as unknown;
+    if (typeof data === "string") {
+      return data || fallback;
+    }
+    if (data && typeof data === "object") {
+      const payload = data as Record<string, unknown>;
+      const direct =
+        (payload.detail as string | undefined) ||
+        (payload.message as string | undefined) ||
+        (payload.error as string | undefined);
+      if (direct) {
+        return direct;
+      }
+      const values = Object.values(payload);
+      for (const value of values) {
+        if (typeof value === "string" && value.trim()) {
+          return value;
+        }
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
+          return value[0];
+        }
+      }
+    }
+  }
+  return fallback;
+}
 
 function DriverRoutePage() {
   const params = useParams();
@@ -45,7 +106,22 @@ function DriverRoutePage() {
   const [error, setError] = useState<string | null>(null);
   const [mutatingStopId, setMutatingStopId] = useState<number | null>(null);
   const [mutatingAction, setMutatingAction] = useState<MutatingAction>(null);
-  const fileInputs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
+  const [activeStop, setActiveStop] = useState<DriverStop | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
+  const [confirmStopId, setConfirmStopId] = useState<number | null>(null);
+  const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
 
   const loadRoute = useCallback(
     async (showLoading = false) => {
@@ -92,67 +168,103 @@ function DriverRoutePage() {
   }, [stops]);
 
   const completedCount = useMemo(() => countCompletedStops(stops), [stops]);
+  const stopForConfirm = confirmStopId ? stops.find((stop) => stop.id === confirmStopId) : null;
+  const isActionBusy = (stopId: number, action: Exclude<MutatingAction, null>) =>
+    mutatingStopId === stopId && mutatingAction === action;
+  const deliveringStopId = activeStop?.id;
+  const isDeliveringActive = deliveringStopId ? isActionBusy(deliveringStopId, "deliver") : false;
+
+  const updateStopState = useCallback((stopId: number, driverStop: DriverStop) => {
+    setRoute((prev) => {
+      if (!prev) return prev;
+      const nextStops = sortStops(prev.stops.map((stop) => (stop.id === stopId ? driverStop : stop)));
+      const allCompleted = nextStops.every((stop) => completedStopStatuses.includes(stop.status));
+      return {
+        ...prev,
+        is_completed: allCompleted,
+        stops: nextStops,
+      };
+    });
+  }, []);
+
+  const openDeliveryDialog = (stop: DriverStop) => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setActiveStop(stop);
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
+    setDeliveryError(null);
+    setDeliveryDialogOpen(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const closeDeliveryDialog = () => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setDeliveryDialogOpen(false);
+    setActiveStop(null);
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
+    setDeliveryError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handlePhotoSelect = (file: File) => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setSelectedPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setDeliveryError(null);
+  };
 
   const handleNoPickup = async (stopId: number) => {
     setMutatingStopId(stopId);
     setMutatingAction("no_pickup");
-    setError(null);
     try {
       const updated = await markStopNoPickup(stopId);
       const driverStop = normalizeStop(updated);
-      setRoute((prev) => {
-        if (!prev) return prev;
-        const nextStops = sortStops(
-          prev.stops.map((stop) => (stop.id === stopId ? driverStop : stop)),
-        );
-        const allCompleted = nextStops.every((stop) => completedStopStatuses.includes(stop.status));
-        return {
-          ...prev,
-          is_completed: allCompleted,
-          stops: nextStops,
-        };
-      });
+      updateStopState(stopId, driverStop);
+      toast.success("Marked as no pickup");
     } catch (err) {
-      setError("Could not mark as no pickup.");
+      const message = getErrorMessage(err, "Could not mark as no pickup.");
+      toast.error(message);
     } finally {
       setMutatingStopId(null);
       setMutatingAction(null);
+      setConfirmStopId(null);
     }
   };
 
-  const handleDeliver = async (stopId: number, file: File) => {
-    setMutatingStopId(stopId);
+  const submitDelivery = async () => {
+    if (!activeStop || !selectedPhoto) {
+      setDeliveryError("Please choose a photo to upload.");
+      return;
+    }
+    setMutatingStopId(activeStop.id);
     setMutatingAction("deliver");
-    setError(null);
+    setDeliveryError(null);
     try {
-      const updated = await markStopDelivered(stopId, file);
+      const updated = await markStopDelivered(activeStop.id, selectedPhoto);
       const driverStop = normalizeStop(updated);
-      setRoute((prev) => {
-        if (!prev) return prev;
-        const nextStops = sortStops(
-          prev.stops.map((stop) => (stop.id === stopId ? driverStop : stop)),
-        );
-        const allCompleted = nextStops.every((stop) => completedStopStatuses.includes(stop.status));
-        return {
-          ...prev,
-          is_completed: allCompleted,
-          stops: nextStops,
-        };
-      });
+      updateStopState(activeStop.id, driverStop);
+      toast.success("Delivery recorded");
+      closeDeliveryDialog();
     } catch (err) {
-      setError("Could not upload delivery proof. Try again.");
+      const message = getErrorMessage(err, "Could not upload delivery proof. Try again.");
+      setDeliveryError(message);
+      toast.error(message);
     } finally {
       setMutatingStopId(null);
       setMutatingAction(null);
-      const input = fileInputs.current[stopId];
-      if (input) {
-        input.value = "";
-      }
     }
   };
-
-  const isActionBusy = (stopId: number, action: Exclude<MutatingAction, null>) =>
-    mutatingStopId === stopId && mutatingAction === action;
 
   if (state === "no-access") {
     return <NoAccess role="driver" />;
@@ -208,11 +320,15 @@ function DriverRoutePage() {
       <div className="space-y-3">
         {stops.map((stop) => {
           const status = stop.status as RouteStopStatus;
+          const deliveredTime = formatDeliveredTime(stop.delivered_at);
+          const isPending = status === "pending";
+          const isDelivering = isActionBusy(stop.id, "deliver");
+          const isMarkingNoPickup = isActionBusy(stop.id, "no_pickup");
 
           return (
             <div
               key={stop.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className={`rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${stopToneClasses[status]}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -220,105 +336,266 @@ function DriverRoutePage() {
                     Stop #{stop.sequence}
                   </p>
                   <p className="text-base font-semibold text-slate-900">{stop.client_name}</p>
-                  <p className="text-sm text-slate-600">Phone: {stop.client_phone}</p>
                   <p className="text-sm text-slate-600">{stop.address}</p>
+                  <p className="text-sm text-slate-600">Phone: {stop.client_phone}</p>
                 </div>
-                <StopStatusBadge status={status} />
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon"
+                      className="border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+                      title={`Call ${stop.client_phone}`}
+                      aria-label={`Call ${stop.client_phone}`}
+                    >
+                      <a href={`tel:${stop.client_phone}`}>
+                        <PhoneCall className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="icon"
+                      className="border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+                      title="Open in Google Maps"
+                      aria-label="Open in Google Maps"
+                    >
+                      <a
+                        href={`https://maps.google.com/?q=${encodeURIComponent(stop.address)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <MapPinned className="h-4 w-4" aria-hidden="true" />
+                      </a>
+                    </Button>
+                  </div>
+                  <StopStatusBadge status={status} />
+                </div>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
-                <ActionLink href={`tel:${stop.client_phone}`} icon={<PhoneCall className="h-4 w-4" />}>
-                  Call client
-                </ActionLink>
-                <ActionLink
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.address)}`}
-                  icon={<MapPinned className="h-4 w-4" />}
-                >
-                  Open in Maps
-                </ActionLink>
-              </div>
+              {stop.delivered_at ? (
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {status === "no_pickup" ? (
+                    <AlertTriangle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+                  ) : (
+                    <BadgeCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  )}
+                  {status === "no_pickup" ? "No pickup recorded" : "Delivered"}
+                  {deliveredTime ? ` at ${deliveredTime}` : ""}
+                </div>
+              ) : null}
+
+              {stop.proof_photo_url ? (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border border-emerald-100 bg-white/70 px-3 py-2">
+                  <img
+                    src={stop.proof_photo_url}
+                    alt={`Delivery proof for stop ${stop.sequence}`}
+                    className="h-14 w-14 rounded-lg object-cover ring-1 ring-emerald-100"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                      <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                      Proof uploaded
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-fit px-2 text-sm"
+                      onClick={() => setViewPhotoUrl(stop.proof_photo_url || null)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
+                      View photo
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={(node) => {
-                    fileInputs.current[stop.id] = node;
-                  }}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (file) {
-                      handleDeliver(stop.id, file);
-                    }
-                  }}
-                />
-                <Button
-                  disabled={status !== "pending" || isActionBusy(stop.id, "deliver")}
-                  onClick={() => fileInputs.current[stop.id]?.click()}
-                  className="w-full"
-                >
-                  {isActionBusy(stop.id, "deliver") ? (
+                <Button disabled={!isPending || isDelivering} onClick={() => openDeliveryDialog(stop)} className="w-full">
+                  {isDelivering ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                       Uploading…
                     </>
                   ) : (
                     <>
-                      <ImageDown className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Mark delivered (photo)
+                      <Camera className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Delivered (add photo)
                     </>
                   )}
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={status !== "pending" || isActionBusy(stop.id, "no_pickup")}
-                  onClick={() => handleNoPickup(stop.id)}
+                  disabled={!isPending || isMarkingNoPickup}
+                  onClick={() => setConfirmStopId(stop.id)}
                   className="w-full"
                 >
-                  {isActionBusy(stop.id, "no_pickup") ? "Updating…" : "Mark no pickup"}
+                  {isMarkingNoPickup ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      Updating…
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Mark no pickup
+                    </>
+                  )}
                 </Button>
               </div>
-
-              {stop.proof_photo_url ? (
-                <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-                  <BadgeCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                  Proof uploaded
-                  <Link
-                    to={stop.proof_photo_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    View photo
-                  </Link>
-                </div>
-              ) : null}
             </div>
           );
         })}
       </div>
-    </div>
-  );
-}
 
-function ActionLink({
-  href,
-  children,
-  icon,
-}: {
-  href: string;
-  children: React.ReactNode;
-  icon: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
-    >
-      {icon}
-      {children}
-    </a>
+      <Dialog
+        open={deliveryDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDeliveryDialog();
+          } else {
+            setDeliveryDialogOpen(true);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader className="space-y-1">
+            <DialogTitle>Mark delivered</DialogTitle>
+            <DialogDescription>
+              Add a quick photo before we mark stop {activeStop?.sequence} as delivered.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  handlePhotoSelect(file);
+                }
+              }}
+            />
+
+            <div
+              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-6 text-center transition hover:border-slate-400 hover:bg-white"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Selected delivery proof"
+                  className="h-40 w-full max-w-xs rounded-lg object-cover shadow-sm"
+                />
+              ) : (
+                <>
+                  <Camera className="h-8 w-8 text-slate-500" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-slate-800">Tap to add a delivery photo</p>
+                  <p className="text-xs text-slate-600">
+                    Required for proof of delivery. We keep it until you finish or cancel.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {selectedPhoto ? (
+              <div className="flex items-center justify-between rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700">
+                <span className="truncate">{selectedPhoto.name}</span>
+                <span>{Math.round(selectedPhoto.size / 1024)} KB</span>
+              </div>
+            ) : null}
+
+            {deliveryError ? (
+              <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeliveryDialog} disabled={isDeliveringActive}>
+              Cancel
+            </Button>
+            <Button onClick={submitDelivery} disabled={!selectedPhoto || isDeliveringActive}>
+              {isDeliveringActive ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                  Uploading…
+                </>
+              ) : (
+                <>
+                  <BadgeCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Save delivery
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(viewPhotoUrl)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewPhotoUrl(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Delivery proof</DialogTitle>
+            <DialogDescription>Full-size photo uploaded for this stop.</DialogDescription>
+          </DialogHeader>
+          {viewPhotoUrl ? (
+            <img
+              src={viewPhotoUrl}
+              alt="Delivery proof preview"
+              className="w-full rounded-lg border border-slate-200 object-contain"
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={confirmStopId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmStopId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as no pickup?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-1">
+              <span>Are you sure there was no pickup at this address?</span>
+              {stopForConfirm ? (
+                <span className="block text-sm font-semibold text-slate-800">{stopForConfirm.address}</span>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={confirmStopId ? isActionBusy(confirmStopId, "no_pickup") : false}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmStopId) {
+                  handleNoPickup(confirmStopId);
+                }
+              }}
+              disabled={confirmStopId ? isActionBusy(confirmStopId, "no_pickup") : false}
+            >
+              {confirmStopId && isActionBusy(confirmStopId, "no_pickup") ? "Updating…" : "Confirm no pickup"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 

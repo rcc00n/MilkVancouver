@@ -1,5 +1,6 @@
-import { Outlet, NavLink } from "react-router-dom";
 import { CalendarClock, Route } from "lucide-react";
+import { Toaster } from "sonner";
+import { Outlet, NavLink } from "react-router-dom";
 
 import AreaSwitcher from "../components/internal/AreaSwitcher";
 
@@ -51,6 +52,7 @@ function DriverLayout() {
       <main className="mx-auto w-full max-w-4xl px-4 py-5">
         <Outlet />
       </main>
+      <Toaster position="top-center" richColors closeButton />
     </div>
   );
 }
