@@ -1,12 +1,12 @@
 export const brand = {
-  name: "Vancouver Milk Co.",
-  shortName: "VanMilk",
-  tagline: "Fresh BC dairy, bottled and delivered across Vancouver.",
+  name: "Yummee",
+  shortName: "Yummee",
+  tagline: "Fresh milk products in Vancouver.",
   phone: "(604) 555-1840",
-  email: "hello@vanmilk.ca",
+  email: "hello@yummee.ca",
   location: "Vancouver, BC",
   supportHours: "Daily 8am–8pm PT",
-  fallbackImageText: "Vancouver Milk Co.",
+  fallbackImageText: "Yummee",
 };
 
 export type BrandConfig = typeof brand;

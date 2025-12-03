@@ -3,41 +3,49 @@ import { Link } from "react-router-dom";
 import { brand } from "../../config/brand";
 
 function Footer() {
+  const navLinks = [
+    { label: "Home", to: "/" },
+    { label: "Shop", to: "/shop" },
+    { label: "Pricing", to: "/pricing" },
+    { label: "About", to: "/about" },
+    { label: "Blog", to: "/blog" },
+    { label: "Contact", to: "/contact" },
+  ];
+
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
-        <div className="footer-brand">
-          <div>
-            <div className="brand__name">{brand.name}</div>
-            <p className="muted">Vancouver, BC dairy bottled at dawn and delivered cold.</p>
+        <div className="footer-column footer-column--brand">
+          <div className="footer-wordmark">
+            <span className="nav-brand__word">{brand.name}</span>
+          </div>
+          <p className="footer-tagline">{brand.tagline}</p>
+        </div>
+
+        <div className="footer-column">
+          <h4 className="footer__heading">Browse</h4>
+          <div className="footer-links">
+            {navLinks.map((link) => (
+              <Link key={link.to} to={link.to} className="footer-link">
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
-        <div>
+
+        <div className="footer-column">
           <h4 className="footer__heading">Contact</h4>
           <div className="footer__text">
-            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`}>{brand.phone}</a>
-            <br />
             <a href={`mailto:${brand.email}`}>{brand.email}</a>
-            <br />
-            <Link to="/contact">Contact page</Link>
-            <br />
             <span>{brand.location}</span>
+            <span>{brand.supportHours}</span>
           </div>
-        </div>
-        <div>
-          <h4 className="footer__heading">Hours</h4>
-          <div className="footer__text">{brand.supportHours}</div>
-          <div className="footer__text">Shop anytime</div>
-        </div>
-        <div>
-          <h4 className="footer__heading">Follow</h4>
-          <div className="footer__text">Stay connected with us</div>
         </div>
       </div>
       <div className="footer__bottom">
         <div className="container footer__bottom-row">
-          <span>Grass-fed milk · Pasteurized & cold-held · Vancouver made</span>
           <span>© {new Date().getFullYear()} {brand.name}</span>
+          <span>{brand.tagline}</span>
         </div>
       </div>
     </footer>

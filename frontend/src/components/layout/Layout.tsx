@@ -15,9 +15,6 @@ function Layout() {
 
   useEffect(() => {
     setIsCartOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
 
@@ -27,18 +24,16 @@ function Layout() {
   return (
     <div className="layout-shell">
       <Header onCartClick={handleOpenCart} />
-      <div className={`layout-content ${isHome ? "layout-content--home" : ""}`}>
-        <div className="cart-link-mobile">
-          <button type="button" onClick={handleOpenCart}>
-            Open cart ({itemCount})
-          </button>
+      <main className={`site-main ${isHome ? "site-main--wide" : ""}`}>
+        <div className="site-main__inner">
+          <div className="cart-link-mobile">
+            <button type="button" onClick={handleOpenCart} aria-label="Open cart">
+              Cart ({itemCount}) · ${(subtotalCents / 100).toFixed(2)}
+            </button>
+          </div>
+          <Outlet />
         </div>
-        <div className="layout-main">
-          <main className="page-main">
-            <Outlet />
-          </main>
-        </div>
-      </div>
+      </main>
       <button
         type="button"
         className="cart-fab"

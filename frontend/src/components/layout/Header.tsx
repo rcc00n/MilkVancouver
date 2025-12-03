@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { useCart } from "../../context/CartContext";
 import { brand } from "../../config/brand";
-import logo from "../../assets/logo.svg";
 
 type HeaderProps = {
   onCartClick?: () => void;
 };
+
+const navLinks = [
+  { label: "Home", to: "/" },
+  { label: "Shop", to: "/shop" },
+  { label: "Pricing", to: "/pricing" },
+  { label: "About", to: "/about" },
+  { label: "Blog", to: "/blog" },
+  { label: "Contact", to: "/contact" },
+];
 
 function Header({ onCartClick }: HeaderProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -15,14 +23,10 @@ function Header({ onCartClick }: HeaderProps) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = (subtotalCents / 100).toFixed(2);
 
-  const navLinks = [
-    { label: "Home", to: "/" },
-    { label: "Shop", to: "/shop" },
-    { label: "Pricing", to: "/pricing" },
-    { label: "About", to: "/about" },
-    { label: "Blog", to: "/blog" },
-    { label: "Contact", to: "/contact" },
-  ];
+  useEffect(() => {
+    document.body.classList.toggle("nav-open", isMobileOpen);
+    return () => document.body.classList.remove("nav-open");
+  }, [isMobileOpen]);
 
   const toggleMobileMenu = () => setIsMobileOpen((open) => !open);
   const closeMobileMenu = () => setIsMobileOpen(false);
@@ -34,99 +38,85 @@ function Header({ onCartClick }: HeaderProps) {
 
   return (
     <header className="site-header">
-      <div className="header-ribbon">
-        <div className="container header-ribbon__content">
-          <div className="header-ribbon__left">
-            <span className="header-ribbon__badge">Vancouver · BC dairy</span>
-            <span className="header-ribbon__note">Bottled at dawn • Cold chain 0–4°C</span>
-          </div>
-          <div className="header-ribbon__right">
-            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`} className="header-ribbon__link">
-              Call {brand.phone}
-            </a>
-            <span className="header-ribbon__divider" aria-hidden="true">
-              ·
+      <div className="nav-surface">
+        <div className="container nav-bar">
+          <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
+            <span className="nav-brand__word">{brand.name}</span>
+            <span className="nav-brand__dot" aria-hidden="true">
+              ●
             </span>
-            <a href={`mailto:${brand.email}`} className="header-ribbon__link">
-              {brand.email}
-            </a>
-            <span className="header-ribbon__pill">{brand.supportHours}</span>
-          </div>
-        </div>
-      </div>
-      <div className="container nav-shell">
-        <Link to="/" className="brand">
-          <img src={logo} alt={`${brand.name} logo`} className="brand__logo" />
-          <div>
-            <div className="brand__name">{brand.name}</div>
-            <div className="brand__tagline">Fresh BC dairy bottled in Vancouver</div>
-          </div>
-        </Link>
+            <span className="nav-brand__tagline">{brand.tagline}</span>
+          </Link>
 
-        <nav className="nav__links nav__links--desktop">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => `nav__link ${isActive ? "is-active" : ""}`}
+          <nav className="nav-links" aria-label="Primary navigation">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="nav-actions">
+            <button type="button" onClick={handleCartClick} className="nav-cart" aria-label="Open cart">
+              <span className="nav-cart__count">{itemCount}</span>
+              <span className="nav-cart__label">Cart · ${subtotal}</span>
+            </button>
+            <Link to="/shop" className="nav-cta">
+              Shop Now
+            </Link>
+            <button
+              type="button"
+              className={`nav-toggle ${isMobileOpen ? "is-active" : ""}`}
+              aria-expanded={isMobileOpen}
+              aria-label="Toggle navigation menu"
+              onClick={toggleMobileMenu}
             >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="nav__actions">
-          <button type="button" onClick={handleCartClick} className="nav__cart" aria-label="Open cart">
-            <span>Cart: ${subtotal}</span>
-            <span className="nav__cart-count">
-              {itemCount} item{itemCount === 1 ? "" : "s"}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`nav__toggle ${isMobileOpen ? "is-active" : ""}`}
-            aria-expanded={isMobileOpen}
-            aria-label="Toggle navigation menu"
-            onClick={toggleMobileMenu}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className={`nav-drawer ${isMobileOpen ? "is-open" : ""}`}>
-        <div className="nav-drawer__header">
-          <div className="brand__name">Menu</div>
-          <button type="button" className="nav-drawer__close" onClick={closeMobileMenu}>
-            Close
+      <div className={`mobile-nav ${isMobileOpen ? "is-open" : ""}`} aria-hidden={!isMobileOpen}>
+        <div className="mobile-nav__header">
+          <Link to="/" className="nav-brand nav-brand--mobile" onClick={closeMobileMenu}>
+            <span className="nav-brand__word">{brand.name}</span>
+          </Link>
+          <button type="button" className="mobile-nav__close" aria-label="Close menu" onClick={closeMobileMenu}>
+            ✕
           </button>
         </div>
-        <div className="nav-drawer__links">
+
+        <div className="mobile-nav__links">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
-              className={({ isActive }) => `nav-drawer__link ${isActive ? "is-active" : ""}`}
+              className={({ isActive }) => `mobile-nav__link ${isActive ? "is-active" : ""}`}
               onClick={closeMobileMenu}
             >
               {link.label}
             </NavLink>
           ))}
         </div>
-        <div className="nav-drawer__meta">
-          <button type="button" className="btn btn--solid btn--full" onClick={handleCartClick}>
-            Cart · ${subtotal}
+
+        <div className="mobile-nav__cta">
+          <Link to="/shop" className="nav-cta nav-cta--full" onClick={closeMobileMenu}>
+            Shop Now
+          </Link>
+          <button type="button" className="mobile-nav__cart" onClick={handleCartClick}>
+            Cart · {itemCount} item{itemCount === 1 ? "" : "s"} (${subtotal})
           </button>
-          <div className="nav-drawer__contact">
-            <a href={`tel:${brand.phone.replace(/[^\d+]/g, "")}`}>{brand.phone}</a>
-            <a href={`mailto:${brand.email}`}>{brand.email}</a>
-          </div>
         </div>
       </div>
       <div
-        className={`nav-drawer__backdrop ${isMobileOpen ? "is-active" : ""}`}
+        className={`mobile-nav__backdrop ${isMobileOpen ? "is-visible" : ""}`}
         onClick={closeMobileMenu}
         role="presentation"
       />
