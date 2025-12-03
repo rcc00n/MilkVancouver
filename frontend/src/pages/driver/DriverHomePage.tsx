@@ -1,13 +1,15 @@
 import axios from "axios";
 import { Clock, Leaf, MapPin, RefreshCw, Truck } from "lucide-react";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { fetchDriverTodayRoutes, fetchDriverUpcomingRoutes } from "../../api/driver";
 import NoAccess from "../../components/internal/NoAccess";
-import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
-import { DriverRoute, DriverUpcomingRoute } from "../../types/delivery";
+import { Button } from "../../components/ui/button";
+import { Skeleton } from "../../components/ui/skeleton";
+import { DriverRoute, DriverUpcomingRoute, RouteStopStatus } from "../../types/delivery";
+import { countCompletedStops, stopStatusStyles } from "../../utils/stop-status-styles";
 
 type LoadState = "idle" | "loading" | "error" | "ready" | "no-access";
 
@@ -22,33 +24,33 @@ function DriverHomePage() {
   const [state, setState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setState("loading");
-      setError(null);
-      try {
-        const [today, upcoming] = await Promise.all([
-          fetchDriverTodayRoutes(),
-          fetchDriverUpcomingRoutes(),
-        ]);
-        setTodayRoutes(today);
-        setUpcomingRoutes(upcoming);
-        setState("ready");
-      } catch (err) {
-        if (axios.isAxiosError(err)) {
-          const status = err.response?.status;
-          if (status === 401 || status === 403) {
-            setState("no-access");
-            return;
-          }
+  const loadRoutes = useCallback(async () => {
+    setState("loading");
+    setError(null);
+    try {
+      const [today, upcoming] = await Promise.all([
+        fetchDriverTodayRoutes(),
+        fetchDriverUpcomingRoutes(),
+      ]);
+      setTodayRoutes(today);
+      setUpcomingRoutes(upcoming);
+      setState("ready");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401 || status === 403) {
+          setState("no-access");
+          return;
         }
-        setError("Unable to load driver routes.");
-        setState("error");
       }
-    };
-
-    load();
+      setError("Couldn't load routes. Try again.");
+      setState("error");
+    }
   }, []);
+
+  useEffect(() => {
+    loadRoutes();
+  }, [loadRoutes]);
 
   const summary = useMemo(() => {
     const totalStops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);
@@ -95,73 +97,36 @@ function DriverHomePage() {
       <section className="space-y-3">
         <header className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Assigned today</h2>
-          <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+          <Button variant="ghost" size="sm" onClick={loadRoutes} disabled={state === "loading"}>
             <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
             Refresh
           </Button>
         </header>
 
-        {state === "loading" ? (
-          <div className="text-sm text-slate-500">Loading routes…</div>
-        ) : null}
+        {state === "loading" ? <RouteSkeletons /> : null}
 
         {state === "error" && error ? (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            {error}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span>{error}</span>
+            <Button size="sm" variant="outline" onClick={loadRoutes}>
+              Retry
+            </Button>
           </div>
         ) : null}
 
         {state === "ready" && todayRoutes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
-            No routes assigned for today yet.
+            You have no routes for today.
           </div>
         ) : null}
 
-        <div className="space-y-3">
-          {todayRoutes.map((route) => (
-            <Link
-              key={route.id}
-              to={`/driver/route/${route.id}`}
-              state={{ route }}
-              className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <MapPin className="h-4 w-4" aria-hidden="true" />
-                    {route.region_name} · {route.region_code}
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-900">{formatDate(route.date)}</h3>
-                  <p className="text-sm text-slate-600">{route.stops.length} stops assigned</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={route.is_completed ? "default" : "secondary"}>
-                    {route.is_completed ? "Completed" : "In progress"}
-                  </Badge>
-                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                    {route.stops.filter((stop) => stop.status === "delivered").length} /{" "}
-                    {route.stops.length} delivered
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                {route.stops.slice(0, 3).map((stop) => (
-                  <span
-                    key={stop.id}
-                    className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
-                  >
-                    #{stop.sequence} · {stop.status.replace("_", " ")}
-                  </span>
-                ))}
-                {route.stops.length > 3 ? (
-                  <span className="rounded-full bg-slate-50 px-2.5 py-1 font-semibold text-slate-600">
-                    +{route.stops.length - 3} more stops
-                  </span>
-                ) : null}
-              </div>
-            </Link>
-          ))}
-        </div>
+        {state === "ready" && todayRoutes.length > 0 ? (
+          <div className="space-y-3">
+            {todayRoutes.map((route) => (
+              <RouteCard key={route.id} route={route} />
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-3">
@@ -194,6 +159,93 @@ function DriverHomePage() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+const statusOrder: RouteStopStatus[] = ["delivered", "pending", "no_pickup"];
+
+function RouteCard({ route }: { route: DriverRoute }) {
+  const statusCounts: Record<RouteStopStatus, number> = {
+    delivered: 0,
+    pending: 0,
+    no_pickup: 0,
+  };
+
+  route.stops.forEach((stop) => {
+    statusCounts[stop.status] += 1;
+  });
+
+  const completed = countCompletedStops(route.stops);
+
+  return (
+    <Link
+      to={`/driver/route/${route.id}`}
+      state={{ route }}
+      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <MapPin className="h-4 w-4" aria-hidden="true" />
+            {route.region_name} · {route.region_code}
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900">{formatDate(route.date)}</h3>
+          <p className="text-sm text-slate-600">{route.stops.length} stops assigned</p>
+        </div>
+        <div className="flex flex-col items-end gap-2 text-right">
+          <Badge variant={route.is_completed ? "default" : "secondary"}>
+            {route.is_completed ? "Completed" : "In progress"}
+          </Badge>
+          <div className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {completed} of {route.stops.length} stops completed
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+        {statusOrder.map((status) => (
+          <StatusPill key={status} status={status} value={statusCounts[status]} />
+        ))}
+      </div>
+    </Link>
+  );
+}
+
+function StatusPill({ status, value }: { status: RouteStopStatus; value: number }) {
+  const styles = stopStatusStyles[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${styles.badgeClass}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${styles.dotClass}`} />
+      {styles.label}: {value}
+    </span>
+  );
+}
+
+function RouteSkeletons() {
+  return (
+    <div className="space-y-3">
+      {[1, 2].map((item) => (
+        <div
+          key={item}
+          className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-28 rounded-full bg-slate-200/70" />
+              <Skeleton className="h-5 w-40 rounded-full bg-slate-200/70" />
+              <Skeleton className="h-3 w-24 rounded-full bg-slate-200/70" />
+            </div>
+            <Skeleton className="h-6 w-24 rounded-full bg-slate-200/70" />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Skeleton className="h-7 w-24 rounded-full bg-slate-200/70" />
+            <Skeleton className="h-7 w-20 rounded-full bg-slate-200/70" />
+            <Skeleton className="h-7 w-28 rounded-full bg-slate-200/70" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
