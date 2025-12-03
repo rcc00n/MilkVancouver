@@ -112,7 +112,7 @@ function Pricing() {
       title="Simple pricing for fresh milk."
       description="All pricing shown in CAD with local Vancouver and North Shore delivery options. Pick delivery or pickup—switch anytime."
     >
-      <div className="space-y-12">
+      <div className="space-y-12 pt-6 md:pt-10">
         <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-gradient-to-br from-[#eaf5ff] via-white to-[#fff4e6] p-6 shadow-[0_32px_80px_-60px_rgba(15,47,77,0.6)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -left-12 -top-16 h-48 w-48 rounded-full bg-sky-200/50 blur-3xl" />
