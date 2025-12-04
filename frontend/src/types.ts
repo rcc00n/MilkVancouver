@@ -13,7 +13,13 @@ export interface Product {
   price_cents: number;
   image_url?: string;
   main_image_url?: string;
-  category?: string;
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+  } | null;
+  category_name?: string | null;
   is_popular: boolean;
   images: ProductImage[];
 }

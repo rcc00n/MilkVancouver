@@ -138,10 +138,10 @@ def create_checkout(request):
     tax_cents = int(subtotal_cents * 0.05)
     total_cents = subtotal_cents + tax_cents
 
-    order_type = data.get("order_type") or Order.OrderType.PICKUP
-    if order_type not in Order.OrderType.values:
+    order_type = data.get("order_type") or Order.OrderType.DELIVERY
+    if order_type != Order.OrderType.DELIVERY:
         return Response(
-            {"detail": "Invalid order type."},
+            {"detail": "Only delivery orders are supported."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -154,11 +154,7 @@ def create_checkout(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if (
-        order_type == Order.OrderType.DELIVERY
-        and not profile.phone_verified_at
-        and not allow_unverified
-    ):
+    if not profile.phone_verified_at and not allow_unverified:
         return Response(
             {"detail": "Verify phone to place a delivery order."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -190,20 +186,17 @@ def create_checkout(request):
 
     region_code = (data.get("region_code") or "").strip()
     region = None
-    if order_type == Order.OrderType.DELIVERY:
-        if not region_code:
-            return Response(
-                {"detail": "Invalid or missing region_code for delivery order."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        region = Region.objects.filter(code__iexact=region_code).first()
-        if not region:
-            return Response(
-                {"detail": "Invalid or missing region_code for delivery order."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-    elif region_code:
-        region = Region.objects.filter(code__iexact=region_code).first()
+    if not region_code:
+        return Response(
+            {"detail": "Invalid or missing region_code for delivery order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    region = Region.objects.filter(code__iexact=region_code).first()
+    if not region:
+        return Response(
+            {"detail": "Invalid or missing region_code for delivery order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     order = Order.objects.create(
         full_name=full_name,
@@ -216,8 +209,8 @@ def create_checkout(request):
         postal_code=address.get("postal_code", ""),
         delivery_notes=delivery_notes,
         notes=data.get("notes", ""),
-        pickup_location=data.get("pickup_location", ""),
-        pickup_instructions=data.get("pickup_instructions", ""),
+        pickup_location="",
+        pickup_instructions="",
         subtotal_cents=subtotal_cents,
         tax_cents=tax_cents,
         total_cents=total_cents,

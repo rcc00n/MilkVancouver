@@ -90,8 +90,8 @@ function ProductPage() {
     return catalog.filter(
       (candidate) =>
         candidate.id !== product.id &&
-        product.category &&
-        candidate.category === product.category,
+        product.category?.slug &&
+        candidate.category?.slug === product.category.slug,
     );
   }, [catalog, product]);
 
@@ -194,7 +194,7 @@ function ProductPage() {
                       fontSize: 12,
                     }}
                   >
-                    {product.category}
+                    {product.category.name}
                   </span>
                 )}
                 {product.is_popular && (

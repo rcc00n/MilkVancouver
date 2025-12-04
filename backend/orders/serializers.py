@@ -1,13 +1,18 @@
 from rest_framework import serializers
 
 from products.models import Product
-
 from .models import Order, OrderItem, Region
 
 
 class OrderItemInputSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1)
+
+
+class RegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Region
+        fields = ["code", "name", "delivery_weekday", "min_orders"]
 
 
 class AddressSerializer(serializers.Serializer):
@@ -20,6 +25,7 @@ class AddressSerializer(serializers.Serializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(source="product.id", read_only=True)
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
@@ -30,16 +36,26 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity",
             "unit_price_cents",
             "total_cents",
+            "image_url",
         ]
         read_only_fields = fields
+
+    def get_image_url(self, obj):
+        product = getattr(obj, "product", None)
+        if not product:
+            return ""
+        if product.image:
+            try:
+                return product.image.url
+            except Exception:
+                return ""
+        return product.main_image_url or ""
 
 
 class OrderCreateSerializer(serializers.ModelSerializer):
     items = OrderItemInputSerializer(many=True)
     address = AddressSerializer(required=False)
     notes = serializers.CharField(required=False, allow_blank=True)
-    pickup_location = serializers.CharField(required=False, allow_blank=True)
-    pickup_instructions = serializers.CharField(required=False, allow_blank=True)
     delivery_notes = serializers.CharField(required=False, allow_blank=True)
     region_code = serializers.CharField(required=False, allow_blank=True)
 
@@ -55,8 +71,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             "items",
             "address",
             "notes",
-            "pickup_location",
-            "pickup_instructions",
             "delivery_notes",
             "region_code",
         ]
@@ -77,18 +91,14 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         address = attrs.get("address", {})
         required_delivery_fields = ["line1", "city", "postal_code"]
 
-        if order_type == Order.OrderType.DELIVERY:
-            missing = [f for f in required_delivery_fields if not address.get(f)]
-            if missing:
-                missing_fields = ", ".join(missing)
-                raise serializers.ValidationError(
-                    f"Delivery requires: {missing_fields}."
-                )
-        elif order_type == Order.OrderType.PICKUP:
-            # For pickup we only require contact details which are already validated by fields.
-            pass
-        else:
-            raise serializers.ValidationError("Invalid order type.")
+        # Only delivery is supported.
+        if order_type != Order.OrderType.DELIVERY:
+            raise serializers.ValidationError("Only delivery orders are supported.")
+
+        missing = [f for f in required_delivery_fields if not address.get(f)]
+        if missing:
+            missing_fields = ", ".join(missing)
+            raise serializers.ValidationError(f"Delivery requires: {missing_fields}.")
 
         return attrs
 
@@ -149,6 +159,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     region = serializers.CharField(source="region.code", read_only=True)
     region_name = serializers.CharField(source="region.name", read_only=True)
+    expected_delivery_date = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -173,9 +184,27 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "stripe_payment_intent_id",
             "estimated_delivery_at",
             "delivered_at",
+            "expected_delivery_date",
             "region",
             "region_name",
             "items",
             "created_at",
         ]
         read_only_fields = fields
+
+    def get_expected_delivery_date(self, obj):
+        if not obj.region:
+            return None
+        target_weekday = obj.region.delivery_weekday
+        base = (obj.created_at or obj.estimated_delivery_at or None)
+        from django.utils import timezone
+        if base:
+            base_date = timezone.localdate(base)
+        else:
+            base_date = timezone.localdate()
+        if target_weekday is None:
+            return None
+        days_ahead = (target_weekday - base_date.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        return (base_date + timezone.timedelta(days=days_ahead)).isoformat()

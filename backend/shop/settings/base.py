@@ -18,6 +18,13 @@ def env_list(var_name: str, fallback=None):
         return [item.strip().rstrip("/") for item in raw_value.split(",") if item.strip()]
     return fallback or []
 
+
+def env_bool(var_name: str, default=False) -> bool:
+    raw_value = os.environ.get(var_name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() in ("1", "true", "yes", "on")
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 
@@ -170,13 +177,17 @@ STORAGES = {
 }
 
 # AWS / media storage
+USE_S3 = env_bool("USE_S3", True)
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "ca-central-1")
 AWS_MEDIA_LOCATION = os.environ.get("AWS_MEDIA_LOCATION", "media")
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
+AWS_S3_CONNECT_TIMEOUT = int(os.environ.get("AWS_S3_CONNECT_TIMEOUT", 5))
+AWS_S3_READ_TIMEOUT = int(os.environ.get("AWS_S3_READ_TIMEOUT", 10))
 
-if AWS_STORAGE_BUCKET_NAME:
+if USE_S3 and AWS_STORAGE_BUCKET_NAME:
     INSTALLED_APPS.append("storages")
     AWS_S3_CUSTOM_DOMAIN = os.environ.get(
         "AWS_S3_CUSTOM_DOMAIN",
@@ -185,6 +196,11 @@ if AWS_STORAGE_BUCKET_NAME:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     STORAGES["default"] = {"BACKEND": DEFAULT_FILE_STORAGE}
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}/"
+    AWS_S3_CONFIG = {
+        "connect_timeout": AWS_S3_CONNECT_TIMEOUT,
+        "read_timeout": AWS_S3_READ_TIMEOUT,
+        "retries": {"max_attempts": 2},
+    }
 else:
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     STORAGES["default"] = {"BACKEND": DEFAULT_FILE_STORAGE}

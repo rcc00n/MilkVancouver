@@ -4,7 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
 import CheckoutForm, { type CheckoutFormValues } from "../components/checkout/CheckoutForm";
-import { type OrderPayload } from "../api/orders";
+import { type OrderPayload, fetchRegions } from "../api/orders";
 import { createCheckout, fetchStripeConfig } from "../api/payments";
 import { useCart } from "../context/CartContext";
 
@@ -16,8 +16,32 @@ function CheckoutPageInner() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [regions, setRegions] = useState<{ code: string; name: string }[]>([]);
+  const [regionsError, setRegionsError] = useState<string | null>(null);
   const taxCents = Math.round(subtotalCents * 0.05);
   const totalCents = subtotalCents + taxCents;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRegions() {
+      try {
+        const data = await fetchRegions();
+        if (!cancelled) {
+          setRegions(data.map((region) => ({ code: region.code, name: region.name })));
+          setRegionsError(null);
+        }
+      } catch (err) {
+        console.error("Failed to load regions", err);
+        if (!cancelled) {
+          setRegionsError("We couldn't load regions. Please refresh and try again.");
+        }
+      }
+    }
+    loadRegions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (values: CheckoutFormValues) => {
     if (!items.length) return;
@@ -40,18 +64,15 @@ function CheckoutPageInner() {
       tax_cents: taxCents,
       total_cents: totalCents,
       address:
-        values.order_type === "delivery"
-          ? {
-              line1: values.address_line1,
-              line2: values.address_line2,
-              city: values.city,
-              postal_code: values.postal_code,
-              notes: values.notes,
-            }
-          : undefined,
+        {
+          line1: values.address_line1,
+          line2: values.address_line2,
+          city: values.city,
+          postal_code: values.postal_code,
+          notes: values.notes,
+        },
       notes: values.notes,
-      pickup_location: values.order_type === "pickup" ? values.pickup_location : undefined,
-      pickup_instructions: values.order_type === "pickup" ? values.pickup_instructions : undefined,
+      region_code: values.region_code,
     };
 
     try {
@@ -111,8 +132,10 @@ function CheckoutPageInner() {
           totalCents={totalCents}
           onSubmit={handleSubmit}
           submitting={submitting}
+          regions={regions}
         />
       )}
+      {regionsError && <p style={{ color: "#b91c1c" }}>{regionsError}</p>}
       {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
       {submitting && <p style={{ color: "#475569" }}>Processing payment...</p>}
     </div>

@@ -27,12 +27,6 @@ class CheckoutCreateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=50)
     order_type = serializers.ChoiceField(choices=Order.OrderType.choices)
     address = AddressSerializer(required=False, allow_null=True, default=dict)
-    pickup_location = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=""
-    )
-    pickup_instructions = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=""
-    )
     notes = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, default=""
     )
@@ -62,30 +56,23 @@ class CheckoutCreateSerializer(serializers.Serializer):
         errors: Dict[str, Dict[str, str]] = {}
         resolved_region = None
 
-        if order_type == Order.OrderType.DELIVERY:
-            required_fields = ("line1", "city", "postal_code")
-            missing_fields = [
-                field for field in required_fields if not (address.get(field) or "").strip()
-            ]
-            if missing_fields:
-                errors["address"] = {
-                    field: "This field is required for delivery."
-                    for field in missing_fields
-                }
-            if not region_code or not str(region_code).strip():
-                errors["region_code"] = ["This field is required for delivery orders."]
-            else:
-                resolved_region = Region.objects.filter(code__iexact=str(region_code).strip()).first()
-                if not resolved_region:
-                    errors["region_code"] = ["Unknown region code."]
+        if order_type != Order.OrderType.DELIVERY:
+            errors["order_type"] = ["Only delivery orders are supported."]
+        required_fields = ("line1", "city", "postal_code")
+        missing_fields = [
+            field for field in required_fields if not (address.get(field) or "").strip()
+        ]
+        if missing_fields:
+            errors["address"] = {
+                field: "This field is required for delivery."
+                for field in missing_fields
+            }
+        if not region_code or not str(region_code).strip():
+            errors["region_code"] = ["This field is required for delivery orders."]
         else:
-            if region_code and str(region_code).strip():
-                resolved_region = Region.objects.filter(code__iexact=str(region_code).strip()).first()
-
-        if order_type == Order.OrderType.PICKUP and not (
-            attrs.get("pickup_location") or ""
-        ).strip():
-            errors["pickup_location"] = "This field is required for pickup."
+            resolved_region = Region.objects.filter(code__iexact=str(region_code).strip()).first()
+            if not resolved_region:
+                errors["region_code"] = ["Unknown region code."]
 
         if errors:
             raise serializers.ValidationError(errors)

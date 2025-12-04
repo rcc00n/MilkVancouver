@@ -61,8 +61,7 @@ class CheckoutView(APIView):
             )
 
         if (
-            order_type == Order.OrderType.DELIVERY
-            and not profile.phone_verified_at
+            not profile.phone_verified_at
             and not allow_unverified
         ):
             return Response(
@@ -107,8 +106,6 @@ class CheckoutView(APIView):
             city=address.get("city", "") or "",
             postal_code=address.get("postal_code", "") or "",
             delivery_notes=address.get("notes", "") or "",
-            pickup_location=data.get("pickup_location") or "",
-            pickup_instructions=data.get("pickup_instructions") or "",
             notes=data.get("notes") or "",
             subtotal_cents=subtotal_cents,
             tax_cents=tax_cents,

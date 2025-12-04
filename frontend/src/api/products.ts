@@ -23,3 +23,15 @@ export async function getProduct(slug: string): Promise<Product> {
   const response = await api.get<Product>(`/products/${slug}/`);
   return response.data;
 }
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
+  const response = await api.get<Category[]>("/categories/", { signal });
+  return response.data;
+}

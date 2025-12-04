@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import CustomerProfile
-from .models import Order
-from .serializers import OrderCreateSerializer, OrderDetailSerializer
+from .models import Order, Region
+from .serializers import OrderCreateSerializer, OrderDetailSerializer, RegionSerializer
 
 
 class OrderListView(APIView):
@@ -79,3 +79,12 @@ class OrderDetailView(APIView):
             raise Http404
         serializer = OrderDetailSerializer(order)
         return Response(serializer.data)
+
+
+class RegionListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, _request):
+        regions = Region.objects.all().order_by("code")
+        data = RegionSerializer(regions, many=True).data
+        return Response(data)

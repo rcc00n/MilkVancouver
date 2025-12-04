@@ -172,7 +172,7 @@ function Home() {
                           <div className="font-semibold text-slate-900">{product.name}</div>
                           {product.category ? (
                             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                              {product.category}
+                              {product.category.name}
                             </div>
                           ) : null}
                         </div>

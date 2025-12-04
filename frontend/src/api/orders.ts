@@ -1,5 +1,5 @@
 import api from "./client";
-import type { OrderDetail, OrderStatus, OrderType } from "../types/orders";
+import type { OrderDetail, OrderStatus, OrderType, Region } from "../types/orders";
 
 export interface OrderItemPayload {
   product_id: number;
@@ -19,6 +19,7 @@ export interface OrderPayload {
   email: string;
   phone: string;
   order_type: OrderType;
+  region_code?: string;
   address?: AddressPayload;
   notes?: string;
   pickup_location?: string;
@@ -42,5 +43,10 @@ export async function createOrder(payload: OrderPayload): Promise<OrderResponse>
 
 export async function fetchOrders(): Promise<OrderDetail[]> {
   const response = await api.get<OrderDetail[]>("/orders/", { withCredentials: true });
+  return response.data;
+}
+
+export async function fetchRegions(): Promise<Region[]> {
+  const response = await api.get<Region[]>("/regions/");
   return response.data;
 }

@@ -220,7 +220,7 @@ function HomePage() {
                   >
                     <div>
                       <div className="font-semibold text-black">{product.name}</div>
-                      {product.category && <div className="text-xs text-gray-500">{product.category}</div>}
+                      {product.category && <div className="text-xs text-gray-500">{product.category.name}</div>}
                     </div>
                     <div className="text-sky-700 font-semibold">{formatPrice(product.price_cents)}</div>
                   </div>
@@ -404,7 +404,7 @@ function HomePage() {
                   key={product.id}
                   title={product.name}
                   price={formatPrice(product.price_cents)}
-                  description={product.description || product.category || "Popular pick from our shop."}
+                  description={product.description || product.category?.name || "Popular pick from our shop."}
                   image={getProductImageUrl(product)}
                   onAddToCart={() => handleAddToCart(product)}
                   onDetails={() => navigate(`/products/${product.slug}`)}

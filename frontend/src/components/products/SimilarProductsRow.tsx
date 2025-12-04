@@ -27,7 +27,7 @@ function SimilarProductsRow({ products }: SimilarProductsRowProps) {
             <Link to={`/products/${product.slug}`} style={{ fontWeight: 700 }}>
               {product.name}
             </Link>
-            {product.category && <span style={{ color: "#0f172a", fontSize: 12 }}>{product.category}</span>}
+            {product.category && <span style={{ color: "#0f172a", fontSize: 12 }}>{product.category.name}</span>}
             <div style={{ color: "#475569", fontSize: 14 }}>{product.description}</div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <strong>${(product.price_cents / 100).toFixed(2)}</strong>

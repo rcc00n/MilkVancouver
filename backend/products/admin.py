@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import Product, ProductImage
+from .models import Category, Product, ProductImage
 
 
 class ProductImageInline(admin.TabularInline):
@@ -21,10 +21,11 @@ class ProductAdmin(admin.ModelAdmin):
         "image_preview",
     )
     list_filter = ("category", "is_popular", "is_active")
-    search_fields = ("name", "slug", "category")
+    search_fields = ("name", "slug", "category__name")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("image_preview",)
     list_editable = ("is_popular", "is_active")
+    autocomplete_fields = ("category",)
     fields = (
         "name",
         "slug",
@@ -54,3 +55,10 @@ class ProductAdmin(admin.ModelAdmin):
 
     price_display.short_description = "Price"
     price_display.admin_order_field = "price_cents"
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug")
+    search_fields = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}

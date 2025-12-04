@@ -28,7 +28,7 @@ function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="product-card__tags">
-          {product.category && <span className="pill">{product.category}</span>}
+          {product.category && <span className="pill">{product.category.name}</span>}
           {isPopular && <span className="pill pill--accent">Trending</span>}
         </div>
 

@@ -122,7 +122,7 @@ function MenuPage() {
                   <li key={product.id} className="menu-hero__list-item">
                     <div>
                       <div className="menu-hero__list-name">{product.name}</div>
-                      {product.category && <div className="menu-hero__list-meta">{product.category}</div>}
+                      {product.category && <div className="menu-hero__list-meta">{product.category.name}</div>}
                     </div>
                     <span className="menu-hero__list-price">${(product.price_cents / 100).toFixed(2)}</span>
                   </li>

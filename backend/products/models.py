@@ -1,6 +1,18 @@
 from django.db import models
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -13,7 +25,13 @@ class Product(models.Model):
         help_text="Main product image (stored in S3 or local MEDIA_ROOT).",
     )
     main_image_url = models.URLField(blank=True)
-    category = models.CharField(max_length=100, blank=True)
+    category = models.ForeignKey(
+        Category,
+        null=True,
+        blank=True,
+        related_name="products",
+        on_delete=models.SET_NULL,
+    )
     is_popular = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True, db_index=True)
 

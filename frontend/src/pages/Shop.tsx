@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { cn } from "../components/ui/utils";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductsContext";
+import { getCategories, type Category } from "../api/products";
 
 type SortOption = "popular" | "price-asc" | "price-desc" | "name";
 
@@ -22,14 +23,6 @@ type CategoryOption = {
   label: string;
   value: string | null;
 };
-
-const BASE_CATEGORY_FILTERS: CategoryOption[] = [
-  { label: "All", value: null },
-  { label: "Whole", value: "whole" },
-  { label: "2%", value: "2%" },
-  { label: "Skim", value: "skim" },
-  { label: "Flavored", value: "flavored" },
-];
 
 const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "Popular first", value: "popular" },
@@ -45,6 +38,8 @@ function Shop() {
   const { items, subtotalCents } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>("popular");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const cartCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const isLoading = loading || !initialized;
@@ -53,31 +48,43 @@ function Shop() {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCategories() {
+      try {
+        const data = await getCategories();
+        if (!cancelled) {
+          setCategories(data);
+          setCategoryError(null);
+        }
+      } catch (catErr) {
+        console.error("Failed to load categories", catErr);
+        if (!cancelled) {
+          setCategoryError("We couldn't load categories. Please refresh.");
+        }
+      }
+    }
+    loadCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>();
-    const defaults = BASE_CATEGORY_FILTERS.map((option) => {
-      const key = option.value ?? "all";
+    const options: CategoryOption[] = [{ label: "All", value: null }];
+    categories.forEach((category) => {
+      const key = category.slug || category.name;
+      if (seen.has(key)) return;
       seen.add(key);
-      return option;
+      options.push({ label: category.name, value: category.slug });
     });
-
-    const extras: CategoryOption[] = [];
-    products.forEach((product) => {
-      const label = product.category?.trim();
-      if (!label) return;
-      const normalized = normalizeCategory(label);
-      if (seen.has(normalized) || !normalized) return;
-      seen.add(normalized);
-      extras.push({ label, value: normalized });
-    });
-
-    extras.sort((a, b) => a.label.localeCompare(b.label));
-    return [...defaults, ...extras];
-  }, [products]);
+    return options;
+  }, [categories]);
 
   const filteredProducts = useMemo(() => {
     const filtered = selectedCategory
-      ? products.filter((product) => normalizeCategory(product.category) === selectedCategory)
+      ? products.filter((product) => product.category?.slug === selectedCategory)
       : products;
 
     const sorted = [...filtered];
@@ -188,9 +195,9 @@ function Shop() {
           </div>
         </div>
 
-        {error && (
+        {(error || categoryError) && (
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
-            <span>{error}</span>
+            <span>{error || categoryError}</span>
             <Button variant="outline" size="sm" onClick={() => refresh({ force: true })}>
               Retry
             </Button>

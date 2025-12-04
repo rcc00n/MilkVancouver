@@ -8,6 +8,13 @@ export type OrderStatus =
   | "completed"
   | "cancelled";
 
+export type Region = {
+  code: string;
+  name: string;
+  delivery_weekday: number;
+  min_orders: number;
+};
+
 export type OrderItem = {
   id: number;
   product_id: number;

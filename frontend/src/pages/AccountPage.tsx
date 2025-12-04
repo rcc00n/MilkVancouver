@@ -206,15 +206,19 @@ function AccountPage() {
 
   const formatMoney = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-  const formatDate = (value?: string | null) => {
+  const formatDate = (value?: string | null, withTime = true) => {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
     return date.toLocaleString(undefined, {
       month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+      ...(withTime
+        ? {
+            hour: "numeric",
+            minute: "2-digit",
+          }
+        : {}),
     });
   };
 
@@ -538,7 +542,9 @@ function AccountPage() {
                             </div>
                             <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
                               <span>{formatMoney(order.total_cents)}</span>
-                              {order.estimated_delivery_at ? (
+                              {order.expected_delivery_date ? (
+                                <span>ETA {formatDate(order.expected_delivery_date, false)}</span>
+                              ) : order.estimated_delivery_at ? (
                                 <span>ETA {formatDate(order.estimated_delivery_at)}</span>
                               ) : null}
                             </div>
@@ -553,12 +559,24 @@ function AccountPage() {
                           <div className="mt-3 space-y-3 border-t pt-3 text-sm">
                             <div>
                               <div className="font-semibold">Items</div>
-                              <ul className="mt-1 space-y-1">
+                              <ul className="mt-1 space-y-2">
                                 {order.items.map((item) => (
-                                  <li key={item.id} className="flex justify-between">
-                                    <span>
-                                      {item.product_name} × {item.quantity}
-                                    </span>
+                                  <li key={item.id} className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                      {item.image_url ? (
+                                        <img
+                                          src={item.image_url}
+                                          alt={item.product_name}
+                                          className="h-12 w-12 rounded-md border object-cover"
+                                        />
+                                      ) : (
+                                        <div className="h-12 w-12 rounded-md border border-dashed border-slate-300 bg-white" />
+                                      )}
+                                      <div>
+                                        <div className="font-semibold text-slate-800">{item.product_name}</div>
+                                        <div className="text-xs text-slate-500">Qty {item.quantity}</div>
+                                      </div>
+                                    </div>
                                     <span>{formatMoney(item.total_cents)}</span>
                                   </li>
                                 ))}

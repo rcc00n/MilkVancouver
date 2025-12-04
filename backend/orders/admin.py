@@ -1,12 +1,10 @@
 from django.contrib import admin
-from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
-from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
+from datetime import timedelta
 from django.utils.html import format_html
-from django.utils.html import format_html_join
 
 from notifications.models import EmailNotification
 
@@ -20,12 +18,6 @@ STATUS_COLORS = {
     Order.Status.COMPLETED: ("#ecfdf3", "#15803d"),  # green
     Order.Status.CANCELLED: ("#fef2f2", "#b91c1c"),  # red
 }
-
-ORDER_TYPE_COLORS = {
-    Order.OrderType.PICKUP: ("#e0f2fe", "#0369a1"),
-    Order.OrderType.DELIVERY: ("#dcfce7", "#166534"),
-}
-
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -68,9 +60,8 @@ class OrderAdmin(admin.ModelAdmin):
         "id",
         "full_name",
         "region_display",
-        "order_type_badge",
-        "colored_status",
-        "status_shortcuts",
+        "delivery_state_badge",
+        "expected_delivery_display",
         "subtotal_display",
         "tax_display",
         "total_display",
@@ -79,15 +70,14 @@ class OrderAdmin(admin.ModelAdmin):
     )
     list_display_links = ("id", "full_name")
     list_filter = (
-        "status",
-        "order_type",
+        "delivered_at",
         ("created_at", admin.DateFieldListFilter),
         "region",
     )
     search_fields = ("full_name", "email", "id")
     readonly_fields = (
-        "order_type_badge",
-        "colored_status",
+        "delivery_state_badge",
+        "expected_delivery_display",
         "subtotal_display",
         "tax_display",
         "total_display",
@@ -104,10 +94,8 @@ class OrderAdmin(admin.ModelAdmin):
             "Order",
             {
                 "fields": (
-                    "order_type",
-                    "status",
-                    "order_type_badge",
-                    "colored_status",
+                    "delivery_state_badge",
+                    "expected_delivery_display",
                     "notes",
                 )
             },
@@ -125,15 +113,6 @@ class OrderAdmin(admin.ModelAdmin):
                     "city",
                     "postal_code",
                     "delivery_notes",
-                )
-            },
-        ),
-        (
-            "Pickup Details",
-            {
-                "fields": (
-                    "pickup_location",
-                    "pickup_instructions",
                 )
             },
         ),
@@ -163,37 +142,26 @@ class OrderAdmin(admin.ModelAdmin):
     )
     inlines = [OrderItemInline]
     actions = [
-        "mark_in_progress",
-        "mark_ready",
-        "mark_completed",
-        "mark_cancelled",
+        "mark_delivered",
+        "mark_not_delivered",
     ]
 
-    def order_type_badge(self, obj):
-        bg, color = ORDER_TYPE_COLORS.get(
-            obj.order_type, ("#e5e7eb", "#1f2937")
+    def delivery_state_badge(self, obj):
+        delivered = bool(obj.delivered_at)
+        bg, color, label = (
+            ("#ecfdf3", "#166534", "Delivered")
+            if delivered
+            else ("#f8fafc", "#475569", "Not delivered")
         )
         return format_html(
-            '<span style="padding:4px 8px;border-radius:999px;background:{};color:{};font-weight:700;">{}</span>',
+            '<span style="padding:4px 8px;border-radius:8px;background:{};color:{};font-weight:700;">{}</span>',
             bg,
             color,
-            obj.get_order_type_display(),
+            label,
         )
 
-    order_type_badge.short_description = "Order Type"
-    order_type_badge.admin_order_field = "order_type"
-
-    def colored_status(self, obj):
-        bg, color = STATUS_COLORS.get(obj.status, ("#e5e7eb", "#1f2937"))
-        return format_html(
-            '<span style="padding:4px 8px;border-radius:8px;background:{};color:{};font-weight:700;text-transform:capitalize;">{}</span>',
-            bg,
-            color,
-            obj.get_status_display(),
-        )
-
-    colored_status.short_description = "Status"
-    colored_status.admin_order_field = "status"
+    delivery_state_badge.short_description = "Delivery status"
+    delivery_state_badge.admin_order_field = "delivered_at"
 
     @staticmethod
     def _format_cents(value):
@@ -225,6 +193,15 @@ class OrderAdmin(admin.ModelAdmin):
     region_display.short_description = "Region"
     region_display.admin_order_field = "region__name"
 
+    def expected_delivery_display(self, obj):
+        expected_date = self._compute_expected_delivery_date(obj)
+        if not expected_date:
+            return "—"
+        return expected_date.strftime("%Y-%m-%d")
+
+    expected_delivery_display.short_description = "Expected delivery"
+    expected_delivery_display.admin_order_field = "estimated_delivery_at"
+
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
         for obj in formset.deleted_objects:
@@ -253,89 +230,35 @@ class OrderAdmin(admin.ModelAdmin):
             ]
         )
 
-    @admin.action(description="Mark as In Progress")
-    def mark_in_progress(self, request, queryset):
+    @admin.action(description="Mark as Delivered")
+    def mark_delivered(self, request, queryset):
+        now = timezone.now()
         updated = queryset.update(
-            status=Order.Status.IN_PROGRESS, updated_at=timezone.now()
+            status=Order.Status.COMPLETED,
+            delivered_at=now,
+            updated_at=now,
         )
-        self.message_user(request, f"{updated} order(s) marked In Progress.")
+        self.message_user(request, f"{updated} order(s) marked Delivered.")
 
-    @admin.action(description="Mark as Ready")
-    def mark_ready(self, request, queryset):
+    @admin.action(description="Mark as Not Delivered")
+    def mark_not_delivered(self, request, queryset):
         updated = queryset.update(
-            status=Order.Status.READY, updated_at=timezone.now()
+            delivered_at=None,
+            updated_at=timezone.now(),
         )
-        self.message_user(request, f"{updated} order(s) marked Ready.")
+        self.message_user(request, f"{updated} order(s) marked Not Delivered.")
 
-    @admin.action(description="Mark as Completed")
-    def mark_completed(self, request, queryset):
-        updated = queryset.update(
-            status=Order.Status.COMPLETED, updated_at=timezone.now()
-        )
-        self.message_user(request, f"{updated} order(s) marked Completed.")
-
-    @admin.action(description="Mark as Cancelled")
-    def mark_cancelled(self, request, queryset):
-        updated = queryset.update(
-            status=Order.Status.CANCELLED, updated_at=timezone.now()
-        )
-        self.message_user(request, f"{updated} order(s) marked Cancelled.")
-
-    def status_shortcuts(self, obj):
-        # Render a compact dropdown for changing status instead of multiple tiny buttons
-        options = [
-            format_html('<option value="">{}</option>', "Change status…"),
-        ]
-        for status_value, label, _, _ in [
-            (Order.Status.IN_PROGRESS, "In Progress", "#ede9fe", "#6b21a8"),
-            (Order.Status.READY, "Ready", "#fff7ed", "#c2410c"),
-            (Order.Status.COMPLETED, "Completed", "#ecfdf3", "#15803d"),
-            (Order.Status.CANCELLED, "Cancelled", "#fef2f2", "#b91c1c"),
-        ]:
-            if obj.status == status_value:
-                continue
-            url = reverse("admin:orders_order_set_status", args=[obj.pk, status_value])
-            options.append(format_html('<option value="{}">{}</option>', url, label))
-
-        return format_html(
-            '<select style="min-width:150px;padding:4px 8px;border-radius:8px;'
-            'border:1px solid #d1d5db;background:#0f172a;color:#e5e7eb;" '
-            'onchange="if(this.value){{window.location.href=this.value;this.selectedIndex=0;}}">'
-            "{}</select>",
-            format_html_join("", "{}", ((option,) for option in options)),
-        )
-
-    status_shortcuts.short_description = "Quick Status"
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                "<int:order_id>/set-status/<str:new_status>/",
-                self.admin_site.admin_view(self.set_status),
-                name="orders_order_set_status",
-            )
-        ]
-        return custom_urls + urls
-
-    def set_status(self, request, order_id, new_status):
-        if not request.user.has_perm("orders.change_order"):
-            raise PermissionDenied
-        if new_status not in Order.Status.values:
-            self.message_user(request, "Invalid status.", level="error")
-            return redirect("admin:orders_order_changelist")
-        order = get_object_or_404(Order, pk=order_id)
-        order.status = new_status
-        order.updated_at = timezone.now()
-        order.save(update_fields=["status", "updated_at"])
-        self.message_user(
-            request,
-            f"Order #{order.id} updated to {order.get_status_display()}.",
-        )
-        referer = request.META.get("HTTP_REFERER")
-        if referer:
-            return redirect(referer)
-        return redirect("admin:orders_order_changelist")
+    def _compute_expected_delivery_date(self, obj):
+        if not obj.region:
+            return None
+        target_weekday = obj.region.delivery_weekday
+        if target_weekday is None:
+            return None
+        base_date = timezone.localdate(obj.created_at or timezone.now())
+        days_ahead = (target_weekday - base_date.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        return base_date + timedelta(days=days_ahead)
 
     def latest_receipt_link(self, obj):
         notification = (

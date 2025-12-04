@@ -23,7 +23,6 @@ class Region(models.Model):
 
 class Order(models.Model):
     class OrderType(models.TextChoices):
-        PICKUP = "pickup", "Pickup"
         DELIVERY = "delivery", "Delivery"
 
     class Status(models.TextChoices):
@@ -54,7 +53,7 @@ class Order(models.Model):
         on_delete=models.SET_NULL,
     )
 
-    order_type = models.CharField(max_length=20, choices=OrderType.choices)
+    order_type = models.CharField(max_length=20, choices=OrderType.choices, default=OrderType.DELIVERY)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
     )

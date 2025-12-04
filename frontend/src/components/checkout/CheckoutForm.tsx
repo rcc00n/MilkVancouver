@@ -1,20 +1,19 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { CardElement } from "@stripe/react-stripe-js";
 
 import type { OrderType } from "../../types/orders";
 
 export interface CheckoutFormValues {
-  order_type: OrderType;
+  order_type: Extract<OrderType, "delivery">;
   full_name: string;
   email: string;
   phone: string;
+  region_code: string;
   address_line1: string;
   address_line2: string;
   city: string;
   postal_code: string;
   notes: string;
-  pickup_location: string;
-  pickup_instructions: string;
 }
 
 interface CheckoutFormProps {
@@ -22,24 +21,37 @@ interface CheckoutFormProps {
   taxCents: number;
   totalCents: number;
   submitting?: boolean;
+  regions: { code: string; name: string }[];
   onSubmit: (values: CheckoutFormValues) => void | Promise<void>;
 }
 
-function CheckoutForm({ subtotalCents, taxCents, totalCents, submitting = false, onSubmit }: CheckoutFormProps) {
+function CheckoutForm({
+  subtotalCents,
+  taxCents,
+  totalCents,
+  submitting = false,
+  regions,
+  onSubmit,
+}: CheckoutFormProps) {
   const [values, setValues] = useState<CheckoutFormValues>({
-    order_type: "pickup",
+    order_type: "delivery",
     full_name: "",
     email: "",
     phone: "",
+    region_code: "",
     address_line1: "",
     address_line2: "",
     city: "",
     postal_code: "",
     notes: "",
-    pickup_location: "",
-    pickup_instructions: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!values.region_code && regions.length > 0) {
+      setValues((prev) => ({ ...prev, region_code: regions[0].code }));
+    }
+  }, [regions, values.region_code]);
 
   const handleChange = (key: keyof CheckoutFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -47,7 +59,11 @@ function CheckoutForm({ subtotalCents, taxCents, totalCents, submitting = false,
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (values.order_type === "delivery" && (!values.address_line1 || !values.city || !values.postal_code)) {
+    if (!values.region_code) {
+      setFormError("Please select your region.");
+      return;
+    }
+    if (!values.address_line1 || !values.city || !values.postal_code) {
       setFormError("Delivery requires address, city, and postal code.");
       return;
     }
@@ -66,26 +82,27 @@ function CheckoutForm({ subtotalCents, taxCents, totalCents, submitting = false,
   return (
     <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
       <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
-        <div style={{ fontWeight: 800, marginBottom: 10 }}>Fulfillment</div>
-        <div style={{ display: "flex", gap: 10 }}>
-          {(["pickup", "delivery"] as OrderType[]).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handleChange("order_type", type)}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 12,
-                border: values.order_type === type ? "2px solid #16a34a" : "1px solid #e2e8f0",
-                background: values.order_type === type ? "#ecfdf3" : "#f8fafc",
-                fontWeight: 700,
-                color: "#0f172a",
-                flex: 1,
-              }}
+        <div style={{ fontWeight: 800, marginBottom: 12 }}>Region</div>
+        <div style={{ display: "grid", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontWeight: 600 }}>Select your region</label>
+            <select
+              required
+              value={values.region_code}
+              onChange={(event) => handleChange("region_code", event.target.value)}
+              style={{ ...fieldStyle, background: "#fff" }}
             >
-              {type === "pickup" ? "Pickup" : "Delivery"}
-            </button>
-          ))}
+              <option value="">Choose a region</option>
+              {regions.map((region) => (
+                <option key={region.code} value={region.code}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+            <p style={{ marginTop: 6, fontSize: 12, color: "#64748b" }}>
+              We use this to schedule the correct delivery window for your area.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -128,81 +145,53 @@ function CheckoutForm({ subtotalCents, taxCents, totalCents, submitting = false,
         </div>
       </div>
 
-      {values.order_type === "delivery" ? (
-        <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
-          <div style={{ fontWeight: 800, marginBottom: 12 }}>Delivery address</div>
-          <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
+        <div style={{ fontWeight: 800, marginBottom: 12 }}>Delivery address</div>
+        <div style={{ display: "grid", gap: 12 }}>
+          <div>
+            <label style={{ display: "block", fontWeight: 600 }}>Address line 1</label>
+            <input
+              required
+              type="text"
+              value={values.address_line1}
+              onChange={(event) => handleChange("address_line1", event.target.value)}
+              style={fieldStyle}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontWeight: 600 }}>Address line 2</label>
+            <input
+              type="text"
+              value={values.address_line2}
+              onChange={(event) => handleChange("address_line2", event.target.value)}
+              style={fieldStyle}
+              placeholder="Apartment, suite, etc."
+            />
+          </div>
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
             <div>
-              <label style={{ display: "block", fontWeight: 600 }}>Address line 1</label>
+              <label style={{ display: "block", fontWeight: 600 }}>City</label>
               <input
                 required
                 type="text"
-                value={values.address_line1}
-                onChange={(event) => handleChange("address_line1", event.target.value)}
+                value={values.city}
+                onChange={(event) => handleChange("city", event.target.value)}
                 style={fieldStyle}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontWeight: 600 }}>Address line 2</label>
+              <label style={{ display: "block", fontWeight: 600 }}>Postal code</label>
               <input
+                required
                 type="text"
-                value={values.address_line2}
-                onChange={(event) => handleChange("address_line2", event.target.value)}
+                value={values.postal_code}
+                onChange={(event) => handleChange("postal_code", event.target.value)}
                 style={fieldStyle}
-                placeholder="Apartment, suite, etc."
-              />
-            </div>
-            <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-              <div>
-                <label style={{ display: "block", fontWeight: 600 }}>City</label>
-                <input
-                  required
-                  type="text"
-                  value={values.city}
-                  onChange={(event) => handleChange("city", event.target.value)}
-                  style={fieldStyle}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontWeight: 600 }}>Postal code</label>
-                <input
-                  required
-                  type="text"
-                  value={values.postal_code}
-                  onChange={(event) => handleChange("postal_code", event.target.value)}
-                  style={fieldStyle}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
-          <div style={{ fontWeight: 800, marginBottom: 12 }}>Pickup details</div>
-          <div style={{ display: "grid", gap: 12 }}>
-            <div>
-              <label style={{ display: "block", fontWeight: 600 }}>Pickup location</label>
-              <input
-                type="text"
-                value={values.pickup_location}
-                onChange={(event) => handleChange("pickup_location", event.target.value)}
-                style={fieldStyle}
-                placeholder="Storefront or curbside"
-              />
-            </div>
-            <div>
-              <label style={{ display: "block", fontWeight: 600 }}>Pickup instructions</label>
-              <textarea
-                value={values.pickup_instructions}
-                onChange={(event) => handleChange("pickup_instructions", event.target.value)}
-                rows={3}
-                style={{ ...fieldStyle, resize: "vertical" }}
-                placeholder="Vehicle description, arrival window..."
               />
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <div style={{ background: "#fff", padding: 16, borderRadius: 16, border: "1px solid #e2e8f0" }}>
         <div style={{ fontWeight: 800, marginBottom: 8 }}>Notes</div>
