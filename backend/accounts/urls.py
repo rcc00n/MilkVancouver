@@ -8,8 +8,11 @@ from accounts.api import (
     ProfileView,
     RegisterView,
     RequestEmailVerificationView,
+    RequestPasswordResetView,
     RequestPhoneVerificationView,
+    ResetPasswordView,
     VerifyEmailView,
+    ValidatePasswordResetTokenView,
     VerifyPhoneView,
 )
 
@@ -25,4 +28,7 @@ urlpatterns = [
     path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),
     path("request-phone-verification/", RequestPhoneVerificationView.as_view(), name="request-phone-verification"),
     path("verify-phone/", VerifyPhoneView.as_view(), name="verify-phone"),
+    path("request-password-reset/", RequestPasswordResetView.as_view(), name="request-password-reset"),
+    path("reset-password/validate/", ValidatePasswordResetTokenView.as_view(), name="validate-password-reset"),
+    path("reset-password/", ResetPasswordView.as_view(), name="reset-password"),
 ]

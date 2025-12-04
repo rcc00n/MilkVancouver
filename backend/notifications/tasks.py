@@ -11,7 +11,7 @@ from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from accounts.models import EmailVerificationToken
+from accounts.models import EmailVerificationToken, PasswordResetToken
 from orders.models import Order
 from .models import EmailNotification
 from .services import generate_order_receipt_pdf
@@ -19,6 +19,7 @@ from .services import generate_order_receipt_pdf
 logger = logging.getLogger(__name__)
 
 EMAIL_VERIFICATION_KIND = "email_verification"
+PASSWORD_RESET_KIND = "password_reset"
 ORDER_RECEIPT_KIND = "order_receipt"
 DELIVERY_ETA_KIND = "delivery_eta"
 ORDER_DELIVERED_KIND = "order_delivered"
@@ -118,6 +119,18 @@ def build_email_verification_url(token: str) -> str:
     return f"{base.rstrip('/')}/verify-email?token={token}"
 
 
+def build_password_reset_url(token: str) -> str:
+    base = getattr(settings, "PASSWORD_RESET_BASE_URL", None)
+    if not base:
+        origins = getattr(settings, "FRONTEND_ORIGINS", [])
+        if origins:
+            base = origins[0]
+    if not base:
+        backend_host = getattr(settings, "BACKEND_HOST", "localhost")
+        base = f"https://{backend_host}"
+    return f"{base.rstrip('/')}/reset-password?token={token}"
+
+
 def send_email_verification_email(user, token: str) -> Optional[EmailNotification]:
     if not user or not getattr(user, "email", None):
         logger.warning(
@@ -137,6 +150,30 @@ def send_email_verification_email(user, token: str) -> Optional[EmailNotificatio
         body_html,
         user.email,
         EMAIL_VERIFICATION_KIND,
+        body_text=body_text,
+    )
+
+
+def send_password_reset_email(user, token: str) -> Optional[EmailNotification]:
+    if not user or not getattr(user, "email", None):
+        logger.warning(
+            "password_reset_missing_user_email",
+            extra={"user_id": getattr(user, "id", None)},
+        )
+        return None
+
+    reset_url = build_password_reset_url(token)
+    ttl_minutes = getattr(settings, "PASSWORD_RESET_TOKEN_TTL_MINUTES", 60)
+    context = {"user": user, "reset_url": reset_url, "ttl_minutes": ttl_minutes}
+    subject = "Reset your MilkVanq password"
+    body_text = render_to_string("notifications/password_reset_plain.txt", context)
+    body_html = render_to_string("emails/password_reset.html", context)
+
+    return _send_email_message(
+        subject,
+        body_html,
+        user.email,
+        PASSWORD_RESET_KIND,
         body_text=body_text,
     )
 
@@ -303,6 +340,39 @@ def send_email_verification_email_task(user_id: int, token: str) -> Optional[int
         return None
 
     notification = send_email_verification_email(user, token)
+    return notification.id if notification else None
+
+
+@shared_task(queue="emails")
+def send_password_reset_email_task(user_id: int, token: str) -> Optional[int]:
+    """
+    Send a password reset email if the user and token are still active.
+    """
+    User = get_user_model()
+    user = User.objects.filter(id=user_id).first()
+    if not user:
+        logger.warning("password_reset_user_not_found", extra={"user_id": user_id})
+        return None
+
+    if not user.email:
+        logger.warning("password_reset_missing_email", extra={"user_id": user_id})
+        return None
+
+    has_active_token = PasswordResetToken.objects.filter(
+        user=user,
+        token=token,
+        used_at__isnull=True,
+        expires_at__gt=timezone.now(),
+    ).exists()
+
+    if not has_active_token:
+        logger.warning(
+            "password_reset_token_inactive",
+            extra={"user_id": user_id},
+        )
+        return None
+
+    notification = send_password_reset_email(user, token)
     return notification.id if notification else None
 
 

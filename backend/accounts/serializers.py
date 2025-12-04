@@ -8,9 +8,10 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from rest_framework import serializers
 
-from accounts.models import CustomerProfile, PhoneVerification
+from accounts.models import CustomerProfile, PasswordResetToken, PhoneVerification
 from orders.models import Region
 from accounts.tasks import send_phone_verification_sms
+from notifications.tasks import send_password_reset_email_task
 
 
 User = get_user_model()
@@ -159,6 +160,70 @@ class ChangePasswordSerializer(serializers.Serializer):
         new_password = self.validated_data["new_password"]
         user.set_password(new_password)
         user.save(update_fields=["password"])
+        return user
+
+
+class RequestPasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def create(self, validated_data):
+        email = validated_data["email"].strip()
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            # Don't leak whether an account exists; exit quietly.
+            return None
+
+        token = PasswordResetToken.objects.create_for_user(user)
+        send_password_reset_email_task.delay(user.id, token.token)
+        return token
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        token_value = attrs.get("token", "").strip()
+        new_password = attrs.get("new_password")
+        new_password_confirm = attrs.get("new_password_confirm")
+
+        token = (
+            PasswordResetToken.objects.filter(token=token_value)
+            .select_related("user")
+            .first()
+        )
+
+        if not token or token.is_expired() or token.is_used():
+            raise serializers.ValidationError({"token": "This reset link is invalid or has expired."})
+
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+
+        password_validation.validate_password(new_password, user=token.user)
+
+        if token.user.check_password(new_password):
+            raise serializers.ValidationError({"new_password": "New password cannot match your current password."})
+
+        attrs["token_obj"] = token
+        return attrs
+
+    def create(self, validated_data):
+        token = validated_data["token_obj"]
+        user = token.user
+        new_password = validated_data["new_password"]
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+        now = timezone.now()
+        token.mark_used()
+        PasswordResetToken.objects.filter(
+            user=user,
+            used_at__isnull=True,
+            expires_at__gt=now,
+        ).exclude(id=token.id).update(used_at=now)
+
         return user
 
 

@@ -5,14 +5,23 @@ DELIVERY_ETA_KIND = task_helpers.DELIVERY_ETA_KIND
 EMAIL_VERIFICATION_KIND = task_helpers.EMAIL_VERIFICATION_KIND
 ORDER_DELIVERED_KIND = task_helpers.ORDER_DELIVERED_KIND
 ORDER_RECEIPT_KIND = task_helpers.ORDER_RECEIPT_KIND
+PASSWORD_RESET_KIND = task_helpers.PASSWORD_RESET_KIND
 
 
 def build_email_verification_url(token: str) -> str:
     return task_helpers.build_email_verification_url(token)
 
 
+def build_password_reset_url(token: str) -> str:
+    return task_helpers.build_password_reset_url(token)
+
+
 def send_email_verification_email(user, token: str):
     return task_helpers.send_email_verification_email(user, token)
+
+
+def send_password_reset_email(user, token: str):
+    return task_helpers.send_password_reset_email(user, token)
 
 
 def send_delivery_eta_email(order):
@@ -49,9 +58,12 @@ __all__ = [
     "EMAIL_VERIFICATION_KIND",
     "ORDER_DELIVERED_KIND",
     "ORDER_RECEIPT_KIND",
+    "PASSWORD_RESET_KIND",
     "build_email_verification_url",
+    "build_password_reset_url",
     "send_delivery_eta_email",
     "send_email_verification_email",
+    "send_password_reset_email",
     "send_order_delivered_email",
     "send_order_delivered_email_once",
     "send_order_receipt_email",

@@ -196,6 +196,7 @@ FRONTEND_ORIGINS = env_list(
     "DJANGO_FRONTEND_ORIGINS",
     ["http://milkvanq.duckdns.org", "https://milkvanq.duckdns.org"],
 )
+PASSWORD_RESET_BASE_URL = os.environ.get("PASSWORD_RESET_BASE_URL")
 CORS_ALLOWED_ORIGINS = env_list("DJANGO_CORS_ALLOWED_ORIGINS", FRONTEND_ORIGINS)
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
@@ -245,6 +246,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "accounts.tasks.cleanup_email_verification_tokens",
         "schedule": crontab(hour=3, minute=5),
     },
+    "cleanup_password_reset_tokens_daily": {
+        "task": "accounts.tasks.cleanup_password_reset_tokens",
+        "schedule": crontab(hour=3, minute=10),
+    },
     "expire_stale_pending_orders_hourly": {
         "task": "orders.tasks.expire_stale_pending_orders",
         "schedule": crontab(minute=0),
@@ -273,6 +278,7 @@ TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "")
 PHONE_VERIFICATION_MAX_ATTEMPTS = int(os.environ.get("PHONE_VERIFICATION_MAX_ATTEMPTS", 5))
 PHONE_VERIFICATION_MAX_PER_DAY = int(os.environ.get("PHONE_VERIFICATION_MAX_PER_DAY", 3))
 PHONE_VERIFICATION_TTL_MINUTES = int(os.environ.get("PHONE_VERIFICATION_TTL_MINUTES", 10))
+PASSWORD_RESET_TOKEN_TTL_MINUTES = int(os.environ.get("PASSWORD_RESET_TOKEN_TTL_MINUTES", 60))
 
 LOGGING = {
     "version": 1,

@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from accounts.models import CustomerProfile, EmailVerificationToken, PhoneVerification
+from accounts.models import (
+    CustomerProfile,
+    EmailVerificationToken,
+    PasswordResetToken,
+    PhoneVerification,
+)
 
 
 @admin.register(CustomerProfile)
@@ -61,3 +66,31 @@ class PhoneVerificationAdmin(admin.ModelAdmin):
     )
     search_fields = ("user__username", "user__email", "phone_number")
     list_select_related = ("user",)
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "truncated_token",
+        "created_at",
+        "expires_at",
+        "used_at",
+        "is_active",
+    )
+    list_filter = ("expires_at", "used_at", "user")
+    readonly_fields = ("token", "created_at", "used_at", "is_active")
+    search_fields = ("token", "user__username", "user__email")
+    list_select_related = ("user",)
+
+    @admin.display(description="Token", ordering="token")
+    def truncated_token(self, obj):
+        token = obj.token or ""
+        if len(token) <= 16:
+            return token
+        return f"{token[:8]}...{token[-4:]}"
+
+    @admin.display(boolean=True, description="Is active")
+    def is_active(self, obj):
+        return obj.is_active

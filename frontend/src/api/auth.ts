@@ -25,6 +25,18 @@ export interface ChangePasswordPayload {
   new_password_confirm: string;
 }
 
+export interface ResetPasswordPayload {
+  token: string;
+  new_password: string;
+  new_password_confirm: string;
+}
+
+export interface ValidateResetTokenResponse {
+  detail: string;
+  email: string;
+  expires_at: string;
+}
+
 export interface DetailResponse {
   detail: string;
 }
@@ -67,5 +79,22 @@ export async function verifyPhone(code: string): Promise<DetailResponse> {
 
 export async function changePassword(payload: ChangePasswordPayload): Promise<DetailResponse> {
   const { data } = await api.post<DetailResponse>("/auth/change-password/", payload);
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<DetailResponse> {
+  const { data } = await api.post<DetailResponse>("/auth/request-password-reset/", { email });
+  return data;
+}
+
+export async function validatePasswordResetToken(token: string): Promise<ValidateResetTokenResponse> {
+  const { data } = await api.get<ValidateResetTokenResponse>("/auth/reset-password/validate/", {
+    params: { token },
+  });
+  return data;
+}
+
+export async function resetPassword(payload: ResetPasswordPayload): Promise<DetailResponse> {
+  const { data } = await api.post<DetailResponse>("/auth/reset-password/", payload);
   return data;
 }

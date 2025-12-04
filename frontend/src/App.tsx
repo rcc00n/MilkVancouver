@@ -27,6 +27,7 @@ import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import AdminRouteDetailPage from "./pages/admin/AdminRouteDetailPage";
 import AdminRoutesPage from "./pages/admin/AdminRoutesPage";
 import AccountPage from "./pages/AccountPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DriverHomePage from "./pages/driver/DriverHomePage";
 import DriverRoutePage from "./pages/driver/DriverRoutePage";
 import DriverUpcomingPage from "./pages/driver/DriverUpcomingPage";
@@ -58,6 +59,7 @@ function App() {
           <Route path="pricing/legacy" element={<PricingPage />} />
           <Route path="about/legacy" element={<AboutPage />} />
           <Route path="home/legacy" element={<HomePage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="*" element={<Home />} />
         </Route>

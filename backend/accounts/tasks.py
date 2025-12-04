@@ -4,7 +4,7 @@ from celery import shared_task
 from django.db import models
 from django.utils import timezone
 
-from accounts.models import EmailVerificationToken, PhoneVerification
+from accounts.models import EmailVerificationToken, PasswordResetToken, PhoneVerification
 from sms.services import send_sms
 
 logger = logging.getLogger(__name__)
@@ -67,3 +67,12 @@ def send_phone_verification_sms(self, verification_id: int, code: str):
 def cleanup_expired_phone_verifications():
     deleted_count = PhoneVerification.objects.cleanup_expired(now=timezone.now())
     logger.info("Cleaned up %s phone verification records", deleted_count)
+
+
+@shared_task
+def cleanup_password_reset_tokens():
+    now = timezone.now()
+    deleted_count, _ = PasswordResetToken.objects.filter(
+        models.Q(expires_at__lte=now) | models.Q(used_at__isnull=False)
+    ).delete()
+    logger.info("Cleaned up %s password reset token(s)", deleted_count)

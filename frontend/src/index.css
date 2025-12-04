@@ -3824,7 +3824,14 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-left: auto;
+  margin-left: 0;
+}
+
+.nav-bar.nav-bar--full {
+  width: 100%;
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .nav-link {

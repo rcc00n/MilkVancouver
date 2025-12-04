@@ -163,26 +163,28 @@ function Header({ onCartClick }: HeaderProps) {
   return (
     <header className="site-header">
       <div className="nav-surface">
-        <div className="container nav-bar">
-          <Link to="/" className="nav-brand" onClick={closeMobileMenu}>
-            <span className="nav-brand__word">{brand.name}</span>
-            <span className="nav-brand__dot" aria-hidden="true">
-              ●
-            </span>
-            <span className="nav-brand__tagline">{brand.tagline}</span>
-          </Link>
+        <div className="container nav-bar nav-bar--full flex items-center justify-between gap-6">
+          <div className="flex items-center gap-6 flex-1 min-w-0">
+            <Link to="/" className="nav-brand shrink-0" onClick={closeMobileMenu}>
+              <span className="nav-brand__word">{brand.name}</span>
+              <span className="nav-brand__dot" aria-hidden="true">
+                ●
+              </span>
+              <span className="nav-brand__tagline">{brand.tagline}</span>
+            </Link>
 
-          <nav className="nav-links" aria-label="Primary navigation">
-            {navLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
+            <nav className="nav-links" aria-label="Primary navigation">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
           <div className="nav-actions">
             <button

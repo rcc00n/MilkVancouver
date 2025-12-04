@@ -15,6 +15,11 @@ def default_email_verification_expires_at():
     return timezone.now() + timedelta(hours=24)
 
 
+def default_password_reset_expires_at():
+    ttl_minutes = getattr(settings, "PASSWORD_RESET_TOKEN_TTL_MINUTES", 60)
+    return timezone.now() + timedelta(minutes=ttl_minutes)
+
+
 class EmailVerificationTokenManager(models.Manager):
     def create_for_user(self, user, expires_at=None):
         now = timezone.now()
@@ -80,6 +85,56 @@ class EmailVerificationToken(models.Model):
 
     def __str__(self) -> str:
         return f"EmailVerificationToken for {self.user_id}"
+
+    def is_expired(self) -> bool:
+        return timezone.now() >= self.expires_at
+
+    def is_used(self) -> bool:
+        return self.used_at is not None
+
+    @property
+    def is_active(self) -> bool:
+        return not self.is_used() and not self.is_expired()
+
+    def mark_used(self) -> None:
+        if self.is_used():
+            return
+        self.used_at = timezone.now()
+        self.save(update_fields=["used_at"])
+
+
+class PasswordResetTokenManager(models.Manager):
+    def create_for_user(self, user, expires_at=None):
+        now = timezone.now()
+        # Invalidate any active tokens for this user before creating a new one.
+        self.filter(user=user, used_at__isnull=True, expires_at__gt=now).update(used_at=now)
+        if expires_at is None:
+            expires_at = default_password_reset_expires_at()
+        return self.create(
+            user=user,
+            token=secrets.token_urlsafe(32),
+            expires_at=expires_at,
+        )
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="password_reset_tokens",
+        on_delete=models.CASCADE,
+    )
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=default_password_reset_expires_at)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    objects = PasswordResetTokenManager()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"PasswordResetToken for {self.user_id}"
 
     def is_expired(self) -> bool:
         return timezone.now() >= self.expires_at

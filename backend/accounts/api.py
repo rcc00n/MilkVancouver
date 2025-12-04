@@ -6,14 +6,16 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import CustomerProfile, EmailVerificationToken
+from accounts.models import CustomerProfile, EmailVerificationToken, PasswordResetToken
 from accounts.serializers import (
     ChangePasswordSerializer,
     CustomerProfileSerializer,
     LoginSerializer,
     MeSerializer,
+    RequestPasswordResetSerializer,
     RequestPhoneVerificationSerializer,
     RegisterSerializer,
+    ResetPasswordSerializer,
     UserSerializer,
     VerifyPhoneSerializer,
 )
@@ -183,3 +185,63 @@ class VerifyPhoneView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "Phone number verified successfully."}, status=status.HTTP_200_OK)
+
+
+class RequestPasswordResetView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = RequestPasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token = serializer.save()
+
+        if token:
+            logger.info(
+                "password_reset_requested",
+                extra={"user_id": token.user_id, "token_id": token.id},
+            )
+
+        return Response(
+            {"detail": "If your email is registered, we just sent a password reset link."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ValidatePasswordResetTokenView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        token_value = (request.query_params.get("token") or "").strip()
+        if not token_value:
+            return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = (
+            PasswordResetToken.objects.filter(token=token_value)
+            .select_related("user")
+            .first()
+        )
+        if not token or not token.is_active:
+            logger.info("password_reset_token_invalid", extra={"token_value": token_value})
+            return Response(
+                {"detail": "This reset link is invalid or has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "detail": "Token is valid.",
+                "email": token.user.email,
+                "expires_at": token.expires_at,
+            }
+        )
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        logger.info("password_reset_success", extra={"user_id": user.id})
+        return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
