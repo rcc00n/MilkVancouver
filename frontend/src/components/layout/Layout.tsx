@@ -25,8 +25,8 @@ function Layout() {
   return (
     <div className="layout-shell">
       <Header onCartClick={handleOpenCart} />
-      <main className={`site-main ${isHome ? "site-main--wide" : ""}`}>
-        <div className="site-main__inner">
+      <main className={`site-main ${isHome ? "site-main--wide site-main--banded" : ""}`}>
+        <div className={`site-main__inner ${isHome ? "site-main__inner--banded" : ""}`}>
           <div className="cart-link-mobile">
             <button type="button" onClick={handleOpenCart} aria-label="Open cart">
               Cart ({itemCount}) · ${(subtotalCents / 100).toFixed(2)}

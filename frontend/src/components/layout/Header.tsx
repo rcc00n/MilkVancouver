@@ -162,6 +162,12 @@ function Header({ onCartClick }: HeaderProps) {
 
   return (
     <header className="site-header">
+      <div className="site-header__ribbon">
+        <div className="container site-header__ribbon-inner">
+          <span className="site-header__ribbon-copy">Fresh before 8am · Vancouver &amp; North Shore</span>
+          <span className="site-header__ribbon-meta">{brand.supportHours}</span>
+        </div>
+      </div>
       <div className="nav-surface">
         <div className="container nav-bar nav-bar--full flex items-center justify-between gap-6">
           <div className="flex items-center gap-6 flex-1 min-w-0">
@@ -255,6 +261,7 @@ function Header({ onCartClick }: HeaderProps) {
           </div>
         </div>
       </div>
+      <div className="site-header__glow" aria-hidden />
 
       {portalTarget ? createPortal(mobileNavLayer, portalTarget) : mobileNavLayer}
       <AuthModal open={isAuthOpen} onClose={closeAuth} initialTab={initialAuthTab} />
