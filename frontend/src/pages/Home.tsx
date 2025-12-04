@@ -164,17 +164,17 @@ function Home() {
                 </Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur stat-card">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">From farm</p>
                   <p className="text-2xl font-semibold text-slate-900">24 hrs</p>
                   <p className="text-sm text-slate-600">Milked, bottled, and sealed fast.</p>
                 </div>
-                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur stat-card">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">Delivery</p>
                   <p className="text-2xl font-semibold text-slate-900">2–3x weekly</p>
                   <p className="text-sm text-slate-600">Routes across Vancouver & the North Shore.</p>
                 </div>
-                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur stat-card">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-800">Bottles</p>
                   <p className="text-2xl font-semibold text-slate-900">Returns easy</p>
                   <p className="text-sm text-slate-600">Leave glass out; deposits are tracked.</p>

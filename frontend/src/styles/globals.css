@@ -244,12 +244,19 @@
     font-weight: 800;
     letter-spacing: -0.01em;
     box-shadow: var(--shadow-elevated);
-    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.18s ease;
   }
 
   .pill-button:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-glow);
+    filter: saturate(1.05);
+  }
+
+  .pill-button:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22);
   }
 
   .pill-button--ghost {

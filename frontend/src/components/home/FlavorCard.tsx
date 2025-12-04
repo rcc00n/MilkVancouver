@@ -24,7 +24,8 @@ function FlavorCard({ title, subtitle, ctaLabel, imageKey, tone = "berry", onCta
 
   return (
     <article
-      className={`group relative h-full overflow-hidden rounded-[28px] p-[1px] shadow-[0_24px_64px_-34px_rgba(15,23,42,0.6)] transition-transform duration-200 hover:-translate-y-1.5 ${toneClass}`}
+      className={`flavor-card group relative h-full overflow-hidden rounded-[28px] p-[1px] shadow-[0_24px_64px_-34px_rgba(15,23,42,0.6)] transition-transform duration-200 hover:-translate-y-1.5 focus-within:-translate-y-1.5 ${toneClass}`}
+      tabIndex={-1}
     >
       <div className="relative flex h-full flex-col rounded-[26px] bg-white/92 px-4 pb-5 pt-14 text-slate-900 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.6)] backdrop-blur">
         <div className="absolute -top-10 left-1/2 h-20 w-20 -translate-x-1/2 overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_16px_40px_-26px_rgba(15,23,42,0.65)] transition-transform duration-200 group-hover:scale-[1.05]">
