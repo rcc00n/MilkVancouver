@@ -70,12 +70,18 @@
   --gradient-flavor-2: linear-gradient(135deg, #0ea5e9 0%, #6366f1 45%, #a855f7 100%);
   --gradient-flavor-3: linear-gradient(135deg, #f59e0b 0%, #f97316 48%, #ef4444 100%);
   --gradient-flavor-4: linear-gradient(140deg, #0f2f4d 0%, #2563eb 60%, #22d3ee 100%);
-  --gradient-lilac-band: radial-gradient(circle at 12% 30%, rgba(168, 85, 247, 0.16), transparent 32%),
-    radial-gradient(circle at 78% 10%, rgba(255, 237, 213, 0.9), transparent 42%),
-    linear-gradient(180deg, #f5f3ff 0%, #e0f2fe 100%);
-  --gradient-sunrise-band: radial-gradient(circle at 16% 18%, rgba(249, 115, 22, 0.16), transparent 32%),
-    radial-gradient(circle at 78% 24%, rgba(236, 72, 153, 0.16), transparent 36%),
-    linear-gradient(145deg, #fff7ed 0%, #ffe4e6 38%, #fef2c7 90%);
+  --surface-neon: radial-gradient(circle at 14% 18%, rgba(56, 189, 248, 0.22), transparent 34%),
+    radial-gradient(circle at 84% 14%, rgba(236, 72, 153, 0.22), transparent 38%),
+    radial-gradient(circle at 26% 82%, rgba(129, 140, 248, 0.2), transparent 38%),
+    linear-gradient(145deg, #f3e8ff 0%, #e1efff 48%, #d7fbff 100%);
+  --surface-glow-1: rgba(59, 130, 246, 0.38);
+  --surface-glow-2: rgba(236, 72, 153, 0.34);
+  --gradient-lilac-band: radial-gradient(circle at 12% 30%, rgba(59, 130, 246, 0.2), transparent 38%),
+    radial-gradient(circle at 78% 14%, rgba(236, 72, 153, 0.24), transparent 42%),
+    linear-gradient(180deg, #f4e8ff 0%, #e3edff 45%, #d8f8ff 100%);
+  --gradient-sunrise-band: radial-gradient(circle at 16% 18%, rgba(34, 211, 238, 0.18), transparent 34%),
+    radial-gradient(circle at 78% 24%, rgba(251, 191, 36, 0.16), transparent 40%),
+    linear-gradient(145deg, #f6eaff 0%, #e7f3ff 42%, #dffbff 94%);
 }
 
 .dark {
@@ -120,8 +126,18 @@
   --gradient-flavor-2: linear-gradient(135deg, #0ea5e9 0%, #4338ca 48%, #7c3aed 100%);
   --gradient-flavor-3: linear-gradient(135deg, #f59e0b 0%, #ea580c 48%, #b91c1c 100%);
   --gradient-flavor-4: linear-gradient(140deg, #0b1220 0%, #1d4ed8 60%, #06b6d4 100%);
-  --gradient-lilac-band: linear-gradient(180deg, #0f1724 0%, #111827 100%);
-  --gradient-sunrise-band: linear-gradient(160deg, #111827 0%, #0b1220 70%, #0f1724 100%);
+  --surface-neon: radial-gradient(circle at 14% 18%, rgba(56, 189, 248, 0.18), transparent 32%),
+    radial-gradient(circle at 82% 12%, rgba(236, 72, 153, 0.2), transparent 38%),
+    radial-gradient(circle at 28% 82%, rgba(94, 234, 212, 0.16), transparent 38%),
+    linear-gradient(145deg, #0b1224 0%, #111833 48%, #0c1f3a 100%);
+  --surface-glow-1: rgba(56, 189, 248, 0.32);
+  --surface-glow-2: rgba(236, 72, 153, 0.3);
+  --gradient-lilac-band: radial-gradient(circle at 12% 28%, rgba(88, 28, 135, 0.28), transparent 38%),
+    radial-gradient(circle at 78% 14%, rgba(59, 130, 246, 0.24), transparent 42%),
+    linear-gradient(180deg, #0b1224 0%, #111827 52%, #0b152c 100%);
+  --gradient-sunrise-band: radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.22), transparent 34%),
+    radial-gradient(circle at 78% 22%, rgba(251, 191, 36, 0.18), transparent 40%),
+    linear-gradient(160deg, #0c1b33 0%, #0f172a 60%, #0b1224 100%);
 }
 
 @layer base {
