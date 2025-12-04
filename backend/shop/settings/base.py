@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "contacts",
     "blog",
     "admin_api",
+    "content",
 ]
 
 MIDDLEWARE = [

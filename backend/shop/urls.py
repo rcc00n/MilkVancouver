@@ -39,6 +39,7 @@ urlpatterns = [
     path("api/", include("payments.urls")),
     path("api/", include("contacts.urls")),
     path("api/", include("blog.urls")),
+    path("api/", include("content.urls")),
     path("health/", health_check),
     # Serve the SPA for non-API routes
     re_path(r"^(?!admin/|api/|static/|health/).*$", TemplateView.as_view(template_name="index.html")),
