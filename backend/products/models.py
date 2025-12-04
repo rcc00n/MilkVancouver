@@ -43,7 +43,13 @@ class ProductImage(models.Model):
     product = models.ForeignKey(
         Product, related_name="images", on_delete=models.CASCADE
     )
-    image_url = models.URLField()
+    image = models.ImageField(
+        upload_to="products/gallery/",
+        null=True,
+        blank=True,
+        help_text="Gallery image stored in S3 or media.",
+    )
+    image_url = models.URLField(blank=True, help_text="Optional external image URL (legacy).")
     alt_text = models.CharField(max_length=255, blank=True)
     sort_order = models.PositiveIntegerField(default=0)
 

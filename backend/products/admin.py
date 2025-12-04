@@ -7,7 +7,18 @@ from .models import Category, Product, ProductImage
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
     extra = 1
-    fields = ("image_url", "alt_text", "sort_order")
+    fields = ("image_preview", "image", "image_url", "alt_text", "sort_order")
+    readonly_fields = ("image_preview",)
+
+    def image_preview(self, obj):
+        if obj.image:
+            try:
+                return format_html('<img src="{}" style="max-height: 80px;border-radius:8px;" />', obj.image.url)
+            except Exception:
+                return "—"
+        if obj.image_url:
+            return format_html('<img src="{}" style="max-height: 80px;border-radius:8px;" />', obj.image_url)
+        return "—"
 
 
 @admin.register(Product)
