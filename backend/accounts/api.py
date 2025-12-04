@@ -1,6 +1,6 @@
 import logging
 
-from django.contrib.auth import authenticate, get_user_model, login
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from accounts.models import CustomerProfile, EmailVerificationToken
 from accounts.serializers import (
+    ChangePasswordSerializer,
     CustomerProfileSerializer,
     LoginSerializer,
     MeSerializer,
@@ -59,6 +60,24 @@ class LoginView(APIView):
         me_data = {"user": UserSerializer(user).data, "profile": CustomerProfileSerializer(profile).data}
         response = MeSerializer(me_data)
         return Response(response.data, status=status.HTTP_200_OK)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return Response({"detail": "Logged out."}, status=status.HTTP_200_OK)
 
 
 class MeView(APIView):

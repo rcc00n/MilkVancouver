@@ -216,6 +216,15 @@ CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "False") == "Tr
 SESSION_COOKIE_SAMESITE = os.environ.get("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
 SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "False") == "True"
 
+# For local development we prefer host-only, non-secure cookies so sessions work on
+# http://localhost and 127.0.0.1 without needing HTTPS or a custom domain.
+if DEBUG:
+    COOKIE_DOMAIN = None
+    CSRF_COOKIE_DOMAIN = None
+    SESSION_COOKIE_DOMAIN = None
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_TIMEZONE = TIME_ZONE

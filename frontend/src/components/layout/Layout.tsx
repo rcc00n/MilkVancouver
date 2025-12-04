@@ -12,6 +12,7 @@ function Layout() {
   const location = useLocation();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const isHome = location.pathname === "/";
+  const showCartFab = isHome || location.pathname.startsWith("/shop");
 
   useEffect(() => {
     setIsCartOpen(false);
@@ -34,17 +35,19 @@ function Layout() {
           <Outlet />
         </div>
       </main>
-      <button
-        type="button"
-        className="cart-fab"
-        onClick={handleOpenCart}
-        aria-expanded={isCartOpen}
-      >
-        <div className="cart-fab__label">Cart</div>
-        <div className="cart-fab__meta">
-          {itemCount} item{itemCount === 1 ? "" : "s"} · ${(subtotalCents / 100).toFixed(2)}
-        </div>
-      </button>
+      {showCartFab && (
+        <button
+          type="button"
+          className="cart-fab"
+          onClick={handleOpenCart}
+          aria-expanded={isCartOpen}
+        >
+          <div className="cart-fab__label">Cart</div>
+          <div className="cart-fab__meta">
+            {itemCount} item{itemCount === 1 ? "" : "s"} · ${(subtotalCents / 100).toFixed(2)}
+          </div>
+        </button>
+      )}
       <CartSidebar open={isCartOpen} onClose={handleCloseCart} />
       <Footer />
     </div>

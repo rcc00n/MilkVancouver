@@ -3,7 +3,7 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 from rest_framework import serializers
@@ -132,6 +132,34 @@ class RegisterSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=1)
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        current_password = attrs.get("current_password")
+        new_password = attrs.get("new_password")
+        new_password_confirm = attrs.get("new_password_confirm")
+
+        if not user.check_password(current_password):
+            raise serializers.ValidationError({"current_password": "Current password is incorrect."})
+
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+
+        password_validation.validate_password(new_password, user=user)
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+        new_password = self.validated_data["new_password"]
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+        return user
 
 
 class MeSerializer(serializers.Serializer):

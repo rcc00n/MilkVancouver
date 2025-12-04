@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { CartProvider } from "./context/CartContext";
 import { ProductsProvider } from "./context/ProductsContext";
+import { AuthProvider } from "./context/AuthContext";
 import { SessionProvider } from "./context/SessionContext";
 import "./styles/globals.css";
 import "./index.css";
@@ -17,12 +18,14 @@ const root = createRoot(container);
 
 root.render(
   <StrictMode>
-    <SessionProvider>
-      <ProductsProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
-      </ProductsProvider>
-    </SessionProvider>
+    <AuthProvider>
+      <SessionProvider>
+        <ProductsProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </ProductsProvider>
+      </SessionProvider>
+    </AuthProvider>
   </StrictMode>,
 );

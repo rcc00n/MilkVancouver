@@ -1,10 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
+import { ShoppingCart } from "lucide-react";
 
-import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 import { brand } from "../../config/brand";
+import AuthModal from "../auth/AuthModal";
 import AreaSwitcher from "../internal/AreaSwitcher";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 type HeaderProps = {
   onCartClick?: () => void;
@@ -21,9 +31,10 @@ const navLinks = [
 
 function Header({ onCartClick }: HeaderProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { items, subtotalCents } = useCart();
-  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = (subtotalCents / 100).toFixed(2);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [initialAuthTab, setInitialAuthTab] = useState<"login" | "signup">("login");
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const { isAuthenticated, me, logout } = useAuth();
 
   useEffect(() => {
     document.body.classList.toggle("nav-open", isMobileOpen);
@@ -32,6 +43,29 @@ function Header({ onCartClick }: HeaderProps) {
 
   const toggleMobileMenu = () => setIsMobileOpen((open) => !open);
   const closeMobileMenu = () => setIsMobileOpen(false);
+  const openAuth = (tab: "login" | "signup") => {
+    setInitialAuthTab(tab);
+    setIsAuthOpen(true);
+    closeMobileMenu();
+  };
+  const closeAuth = () => setIsAuthOpen(false);
+  const closeAccountMenu = () => setAccountMenuOpen(false);
+
+  const accountLabel = useMemo(() => {
+    const firstName = me?.user.first_name?.trim();
+    if (firstName) return firstName;
+    const email = me?.user.email?.trim();
+    return email || "Account";
+  }, [me]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      closeAccountMenu();
+      closeMobileMenu();
+    }
+  };
 
   const handleCartClick = () => {
     onCartClick?.();
@@ -73,9 +107,49 @@ function Header({ onCartClick }: HeaderProps) {
           <Link to="/shop" className="nav-cta nav-cta--full" onClick={closeMobileMenu}>
             Shop Now
           </Link>
-          <button type="button" className="mobile-nav__cart" onClick={handleCartClick}>
-            Cart · {itemCount} item{itemCount === 1 ? "" : "s"} (${subtotal})
+          <button
+            type="button"
+            className="mobile-nav__cart"
+            onClick={handleCartClick}
+            aria-label="Open cart"
+            title="Cart"
+          >
+            <ShoppingCart className="size-5" aria-hidden="true" />
           </button>
+          {!isAuthenticated ? (
+            <>
+              <button
+                type="button"
+                className="nav-cta nav-cta--full"
+                onClick={() => openAuth("login")}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                className="nav-cta nav-cta--full"
+                onClick={() => openAuth("signup")}
+              >
+                Create account
+              </button>
+            </>
+          ) : (
+            <div className="mobile-nav__links">
+              <div className="mobile-nav__link">
+                <div className="font-semibold">{accountLabel}</div>
+                <div className="text-sm text-slate-600">{me?.user.email}</div>
+              </div>
+              <Link to="/account" className="mobile-nav__link" onClick={closeMobileMenu}>
+                My profile
+              </Link>
+              <Link to="/account?tab=orders" className="mobile-nav__link" onClick={closeMobileMenu}>
+                My orders
+              </Link>
+              <button type="button" className="nav-cta nav-cta--full" onClick={handleLogout}>
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div
@@ -110,18 +184,61 @@ function Header({ onCartClick }: HeaderProps) {
             ))}
           </nav>
 
-          <div className="hidden lg:block">
-            <AreaSwitcher size="sm" />
-          </div>
-
           <div className="nav-actions">
-            <button type="button" onClick={handleCartClick} className="nav-cart" aria-label="Open cart">
-              <span className="nav-cart__count">{itemCount}</span>
-              <span className="nav-cart__label">Cart · ${subtotal}</span>
+            <button
+              type="button"
+              onClick={handleCartClick}
+              className="nav-cart nav-cart--icon"
+              aria-label="Open cart"
+              title="Cart"
+            >
+              <ShoppingCart className="size-5" aria-hidden="true" />
             </button>
             <Link to="/shop" className="nav-cta">
               Shop Now
             </Link>
+            {!isAuthenticated ? (
+              <>
+                <button type="button" className="nav-link" onClick={() => openAuth("login")}>
+                  Sign in
+                </button>
+                <button type="button" className="nav-link" onClick={() => openAuth("signup")}>
+                  Create account
+                </button>
+              </>
+            ) : (
+              <DropdownMenu open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" className="nav-link">
+                    {accountLabel}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[180px]">
+                  <DropdownMenuLabel>
+                    Signed in as
+                    <br />
+                    <span className="font-semibold">{me?.user.email}</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/account">My profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/account?tab=orders">My orders</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      handleLogout();
+                    }}
+                    variant="destructive"
+                  >
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <button
               type="button"
               className={`nav-toggle ${isMobileOpen ? "is-active" : ""}`}
@@ -138,6 +255,7 @@ function Header({ onCartClick }: HeaderProps) {
       </div>
 
       {portalTarget ? createPortal(mobileNavLayer, portalTarget) : mobileNavLayer}
+      <AuthModal open={isAuthOpen} onClose={closeAuth} initialTab={initialAuthTab} />
     </header>
   );
 }

@@ -12,5 +12,6 @@ django-storages
 boto3
 Pillow
 python-dotenv
+redis
 twilio
 drf-spectacular

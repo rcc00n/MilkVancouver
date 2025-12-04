@@ -41,6 +41,6 @@ export async function createOrder(payload: OrderPayload): Promise<OrderResponse>
 }
 
 export async function fetchOrders(): Promise<OrderDetail[]> {
-  const response = await api.get<OrderDetail[]>("/orders/");
+  const response = await api.get<OrderDetail[]>("/orders/", { withCredentials: true });
   return response.data;
 }

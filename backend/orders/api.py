@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -11,8 +12,8 @@ from .serializers import OrderCreateSerializer, OrderDetailSerializer
 class OrderListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, _request):
-        orders = Order.objects.order_by("-created_at")[:20]
+    def get(self, request):
+        orders = Order.objects.filter(user=request.user).order_by("-created_at")[:50]
         serializer = OrderDetailSerializer(orders, many=True)
         return Response(serializer.data)
 
@@ -70,10 +71,11 @@ class OrderListView(APIView):
 
 
 class OrderDetailView(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, _request, pk):
+    def get(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
+        if order.user != request.user:
+            raise Http404
         serializer = OrderDetailSerializer(order)
         return Response(serializer.data)
