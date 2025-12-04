@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BadgeCheck,
@@ -9,17 +9,48 @@ import {
   Milk,
   ShieldCheck,
   Smile,
+  Star,
   Truck,
 } from "lucide-react";
 
+import FlavorCard from "../components/home/FlavorCard";
 import ProductCard from "../components/products/ProductCard";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { brand } from "../config/brand";
 import { useProducts } from "../context/ProductsContext";
+import { getImageSrc } from "../utils/imageLibrary";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=10";
+
+const flavors = [
+  { key: "home.flavor.berry_blast", title: "Berry Blast", subtitle: "Mixed berries & Greek yogurt", tone: "berry" as const },
+  { key: "home.flavor.honey_vanilla", title: "Honey Vanilla", subtitle: "Creamy vanilla with BC honey drizzle", tone: "sunrise" as const },
+  { key: "home.flavor.chocolate_swirl", title: "Chocolate Swirl", subtitle: "Cocoa-rich, silky, kid-approved", tone: "citrus" as const },
+  { key: "home.flavor.tropical_sunrise", title: "Tropical Sunrise", subtitle: "Mango, pineapple, kefir tang", tone: "cool" as const },
+];
+
+const storyImages = [
+  { key: "home.story.image_1", alt: "Fresh bottles on a bright table", offset: "lg:translate-y-6" },
+  { key: "home.story.image_2", alt: "Yogurt bowls and breakfast spread", offset: "" },
+  { key: "home.story.image_3", alt: "Cafe latte and croissant pairing", offset: "lg:-translate-y-6" },
+];
+
+const testimonialQuotes = [
+  { name: "Jess M.", role: "Busy mom", quote: "My fridge finally feels fun again. The kids steal the chocolate swirl first." },
+  { name: "Andre P.", role: "Home barista", quote: "Steams like velvet and still tastes like real milk. Latte art finally landed." },
+  { name: "Sophie L.", role: "Weekend host", quote: "The returns are easy and guests always ask where the yogurt came from." },
+];
+
+const communityShots = [
+  "home.community_1",
+  "home.community_2",
+  "home.community_3",
+  "home.community_4",
+  "home.community_5",
+  "home.community_6",
+];
 
 const howItWorks = [
   {
@@ -80,6 +111,8 @@ const testimonials = [
 function Home() {
   const { products, loading, error, initialized, refresh } = useProducts();
   const isLoadingProducts = loading || !initialized;
+  const navigate = useNavigate();
+  const shopSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!initialized) {
@@ -89,6 +122,13 @@ function Home() {
 
   const featuredProducts = useMemo(() => products.slice(0, 3), [products]);
   const popularProducts = useMemo(() => products.filter((product) => product.is_popular).slice(0, 3), [products]);
+  const scrollToShop = () => {
+    if (shopSectionRef.current) {
+      shopSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      navigate("/shop");
+    }
+  };
 
   return (
     <div className="home-page space-y-16 lg:space-y-20">
@@ -195,6 +235,29 @@ function Home() {
       </section>
 
       <section className="container space-y-6 lg:space-y-8">
+        <div className="space-y-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">New</p>
+          <h2 className="text-3xl font-semibold text-slate-900">Discover your flavor.</h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            Four playful bottles that feel like dessert, still made with our grass-fed dairy.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {flavors.map((flavor, index) => (
+            <FlavorCard
+              key={flavor.key}
+              title={flavor.title}
+              subtitle={flavor.subtitle}
+              ctaLabel={index % 2 === 0 ? "Try now" : "Shop flavor"}
+              imageKey={flavor.key}
+              tone={flavor.tone}
+              onCta={scrollToShop}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">How {brand.shortName} works</p>
@@ -226,7 +289,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="container space-y-6 lg:space-y-8">
+      <section className="container space-y-6 lg:space-y-8" ref={shopSectionRef}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Featured products</p>
@@ -296,6 +359,47 @@ function Home() {
         </div>
       </section>
 
+      <section className="landing-section">
+        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14">
+          <div className="overflow-hidden rounded-[28px] border border-amber-100 bg-sunrise-band p-8 shadow-[0_28px_72px_-40px_rgba(15,23,42,0.4)] md:p-10 lg:p-12">
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] items-start">
+              <div className="space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">
+                  Why should dairy be boring?
+                </p>
+                <h2 className="text-3xl font-semibold text-slate-900">We made every pour feel fun again.</h2>
+                <p className="text-slate-700">
+                  Creamy bottles, playful flavors, and breakfast-ready staples that make mornings feel bright. Returns are simple—just leave glass at the door.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button size="lg" className="pill-button !px-6 !py-3" asChild>
+                    <Link to="/shop">Shop the fridge</Link>
+                  </Button>
+                  <Button size="lg" variant="ghost" className="px-6 py-3 rounded-full border-slate-200" asChild>
+                    <Link to="/about">See how we bottle</Link>
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {storyImages.map((image) => (
+                  <div
+                    key={image.key}
+                    className={`overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] ${image.offset}`}
+                  >
+                    <img
+                      src={getImageSrc(image.key)}
+                      alt={image.alt}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="container space-y-6 lg:space-y-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
@@ -324,6 +428,52 @@ function Home() {
               </CardHeader>
             </Card>
           ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14">
+          <div className="rounded-[28px] border border-purple-100 bg-lilac-band p-8 shadow-[0_28px_72px_-40px_rgba(15,23,42,0.45)] md:p-10 lg:p-12 space-y-8">
+            <div className="space-y-2 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-purple-800">Loved locally</p>
+              <h2 className="text-3xl font-semibold text-slate-900">“It tastes like the milk we grew up with.”</h2>
+              <p className="text-slate-700 max-w-3xl mx-auto">
+                Proof points from Vancouver fridges, coffee bars, and busy households.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {testimonialQuotes.map((entry) => (
+                <div
+                  key={entry.name}
+                  className="rounded-2xl border border-white/70 bg-white/80 p-6 shadow-[0_20px_52px_-38px_rgba(15,23,42,0.55)] backdrop-blur"
+                >
+                  <div className="flex items-center gap-2 text-amber-500" aria-hidden>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <Star key={index} size={16} fill="#f59e0b" stroke="#f59e0b" />
+                    ))}
+                  </div>
+                  <p className="mt-3 text-slate-800 leading-relaxed">“{entry.quote}”</p>
+                  <div className="mt-4 font-semibold text-slate-900">{entry.name}</div>
+                  <div className="text-sm text-slate-600">{entry.role}</div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+              {communityShots.map((key, index) => (
+                <div
+                  key={key}
+                  className="relative aspect-square overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.45)]"
+                >
+                  <img
+                    src={getImageSrc(key)}
+                    alt={`Community moment ${index + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-200 hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

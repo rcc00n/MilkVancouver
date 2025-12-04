@@ -6,7 +6,7 @@
 - Primary marketing homepage to extend: `/` via `pages/Home.tsx` (router entry). Legacy marketing-heavy variant lives at `/home/legacy` (`HomePage.tsx`).
 
 ## Page structure at a glance
-- Home (`Home.tsx`): hero with stat pills + featured image, “How it works” 3-up, featured products grid, benefits grid, testimonials, dark CTA banner.
+- Home (`Home.tsx`): hero with stat pills + featured image, “Discover your flavor” gradient card row, “How it works” 3-up, featured products grid (shop anchor), benefits grid, sunrise story band with imagery, testimonials, lilac 5-star band + community strip, dark CTA banner.
 - Legacy Home (`HomePage.tsx`): hero with popular list, milk box trio, category cards (Fresh Milk, Yogurt & Kefir, Cheese & Butter, Coffee Bar), farm-to-glass two-column, about/testimonial band, standards grid, shop highlight cards + service cards driven by products.
 - Shop: intro/meta chips, category filter pills, sort dropdown, product grid (ProductCard).
 - Menu: hero with featured popular list, featured bundle cards, category tabs, search + filters, product grid.
@@ -48,6 +48,19 @@
 - `gallery.08.morningHerd`: https://images.unsplash.com/photo-1500534314209-a25ddb2bd429.
 - `gallery.09.hayfield`: https://images.unsplash.com/photo-1501004318641-b39e6451bec6.
 - `gallery.10.routeWall`: https://images.unsplash.com/photo-1517245386807-bb43f82c33c4.
+- `home.flavor.berry_blast`: https://images.unsplash.com/photo-1501004318641-b39e6451bec6.
+- `home.flavor.honey_vanilla`: https://images.unsplash.com/photo-1467003909585-2f8a72700288.
+- `home.flavor.chocolate_swirl`: https://images.unsplash.com/photo-1504674900247-0877df9cc836.
+- `home.flavor.tropical_sunrise`: https://images.unsplash.com/photo-1505250469679-203ad9ced0cb.
+- `home.story.image_1`: https://images.unsplash.com/photo-1514996937319-344454492b37.
+- `home.story.image_2`: https://images.unsplash.com/photo-1505250469679-203ad9ced0cb.
+- `home.story.image_3`: https://images.unsplash.com/photo-1509042239860-f550ce710b93.
+- `home.community_1`: https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b.
+- `home.community_2`: https://images.unsplash.com/photo-1504674900247-0877df9cc836.
+- `home.community_3`: https://images.unsplash.com/photo-1509042239860-f550ce710b93.
+- `home.community_4`: https://images.unsplash.com/photo-1505250469679-203ad9ced0cb.
+- `home.community_5`: https://images.unsplash.com/photo-1495474472287-4d71bcdd2085.
+- `home.community_6`: https://images.unsplash.com/photo-1486427944299-d1955d23e34d.
 - `about.hero.local`: src/assets/Whole-cow.webp (used in About hero card).
 - `about.story.bottling`: src/assets/half-cow.webp (story visual).
 - `assets.logo.svg/png`: available in src/assets but unused in UI.
