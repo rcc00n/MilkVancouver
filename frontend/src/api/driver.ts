@@ -11,6 +11,11 @@ export async function fetchDriverUpcomingRoutes() {
   return response.data;
 }
 
+export async function fetchDriverRoute(routeId: number) {
+  const response = await api.get<DriverRoute>(`/delivery/driver/routes/${routeId}/`);
+  return response.data;
+}
+
 export async function fetchRouteStops(routeId: number) {
   const response = await api.get<RouteStop[]>(`/delivery/routes/${routeId}/stops/`);
   return response.data;

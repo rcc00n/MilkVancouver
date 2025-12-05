@@ -57,6 +57,9 @@ class DeliveryRouteSerializer(serializers.ModelSerializer):
     driver_name = serializers.SerializerMethodField()
     stops = RouteStopSerializer(many=True, read_only=True)
     stops_count = serializers.IntegerField(read_only=True)
+    merged_into_id = serializers.IntegerField(read_only=True, allow_null=True)
+    merged_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    driver_preferences = serializers.SerializerMethodField()
 
     class Meta:
         model = DeliveryRoute
@@ -69,6 +72,9 @@ class DeliveryRouteSerializer(serializers.ModelSerializer):
             "driver_id",
             "driver_name",
             "is_completed",
+            "merged_into_id",
+            "merged_at",
+            "driver_preferences",
             "stops",
             "stops_count",
         ]
@@ -80,6 +86,19 @@ class DeliveryRouteSerializer(serializers.ModelSerializer):
         user = obj.driver.user
         full_name = user.get_full_name() if hasattr(user, "get_full_name") else ""
         return full_name or getattr(user, "email", "") or getattr(user, "username", "") or "Unassigned"
+
+    def get_driver_preferences(self, obj):
+        driver = obj.driver
+        if not driver:
+            return None
+        preferred_region = getattr(driver, "preferred_region", None)
+        return {
+            "operating_weekdays": driver.operating_weekdays or [],
+            "preferred_region_id": preferred_region.id if preferred_region else None,
+            "preferred_region_code": preferred_region.code if preferred_region else "",
+            "preferred_region_name": preferred_region.name if preferred_region else "",
+            "min_stops_for_dedicated_route": driver.min_stops_for_dedicated_route,
+        }
 
 
 class DriverRouteStopSerializer(serializers.ModelSerializer):
@@ -142,6 +161,7 @@ class DriverRouteSerializer(serializers.ModelSerializer):
     region_name = serializers.CharField(source="region.name", read_only=True)
     driver_name = serializers.SerializerMethodField()
     stops = DriverRouteStopSerializer(many=True, read_only=True)
+    merged_into_id = serializers.IntegerField(read_only=True, allow_null=True)
 
     class Meta:
         model = DeliveryRoute
@@ -153,6 +173,7 @@ class DriverRouteSerializer(serializers.ModelSerializer):
             "region_name",
             "driver_name",
             "is_completed",
+            "merged_into_id",
             "stops",
         ]
         read_only_fields = fields

@@ -13,7 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-import { fetchDriverTodayRoutes, markStopDelivered, markStopNoPickup } from "../../api/driver";
+import { fetchDriverRoute, markStopDelivered, markStopNoPickup } from "../../api/driver";
 import NoAccess from "../../components/internal/NoAccess";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -127,25 +127,30 @@ function DriverRoutePage() {
 
   const loadRoute = useCallback(
     async (showLoading = false) => {
+      if (!Number.isFinite(routeId) || routeId <= 0) {
+        setError("Invalid route id.");
+        setState("error");
+        return;
+      }
       if (showLoading) {
         setState("loading");
       }
       setError(null);
       try {
-        const todayRoutes = await fetchDriverTodayRoutes();
-        const found = todayRoutes.find((item) => item.id === routeId);
-        if (found) {
-          setRoute({ ...found, stops: sortStops(found.stops) });
-          setState("ready");
-        } else {
-          setError("This route is not assigned to you today.");
-          setState("error");
-        }
+        const data = await fetchDriverRoute(routeId);
+        setRoute({ ...data, stops: sortStops(data.stops) });
+        setState("ready");
       } catch (err) {
         if (axios.isAxiosError(err)) {
           const status = err.response?.status;
           if (status === 401 || status === 403) {
             setState("no-access");
+            return;
+          }
+          const detail = (err.response?.data as { detail?: string } | undefined)?.detail;
+          if (status === 404 && detail) {
+            setError(detail);
+            setState("error");
             return;
           }
         }

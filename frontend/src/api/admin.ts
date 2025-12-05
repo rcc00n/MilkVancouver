@@ -40,6 +40,20 @@ export async function reorderAdminRoute(routeId: number, stopIds: number[]) {
   return response.data;
 }
 
+type MergeRoutesResponse = {
+  merged_from_route_id: number;
+  moved_stops: number;
+  target_route: AdminRoute;
+};
+
+export async function mergeRoutes(sourceRouteId: number, targetRouteId: number) {
+  const response = await api.post<MergeRoutesResponse>(`/admin/routes/merge/`, {
+    source_route_id: sourceRouteId,
+    target_route_id: targetRouteId,
+  });
+  return response.data;
+}
+
 export async function fetchAdminClients() {
   const response = await api.get<ClientStats[]>("/admin/clients/");
   return response.data;

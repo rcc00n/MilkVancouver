@@ -5,6 +5,7 @@ from .api import (
     AdminDashboardView,
     AdminRouteDetailView,
     AdminRouteListView,
+    AdminRouteMergeView,
     AdminRouteReorderView,
 )
 
@@ -16,4 +17,5 @@ urlpatterns = [
     path("routes/", AdminRouteListView.as_view(), name="routes-list"),
     path("routes/<int:pk>/", AdminRouteDetailView.as_view(), name="routes-detail"),
     path("routes/<int:pk>/reorder/", AdminRouteReorderView.as_view(), name="routes-reorder"),
+    path("routes/merge/", AdminRouteMergeView.as_view(), name="routes-merge"),
 ]

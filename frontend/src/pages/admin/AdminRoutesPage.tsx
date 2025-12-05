@@ -59,6 +59,23 @@ function stopsCount(route: AdminRoute) {
   return typeof route.stops_count === "number" ? route.stops_count : route.stops.length;
 }
 
+function formatWeekdays(days: number[]) {
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return Array.from(new Set(days))
+    .sort((a, b) => a - b)
+    .map((day) => labels[day] ?? String(day))
+    .join(", ");
+}
+
+function mergeHint(route: AdminRoute) {
+  const prefs = route.driver_preferences;
+  const minStops = prefs?.min_stops_for_dedicated_route ?? 0;
+  if (!minStops) return null;
+  const total = stopsCount(route);
+  if (total >= minStops) return null;
+  return `Below min ${minStops} stops`;
+}
+
 function mergeFilterOptions(prev: FilterOptions, routes: AdminRoute[]): FilterOptions {
   const regionMap = new Map(prev.regions.map((region) => [region.code.toLowerCase(), region]));
   const driverMap = new Map(prev.drivers.map((driver) => [driver.id, driver]));
@@ -270,51 +287,73 @@ function AdminRoutesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {routes.map((route) => (
-                <TableRow key={route.id}>
-                  <TableCell className="font-semibold text-slate-900">
-                    <div className="flex items-center gap-2">
-                      <CalendarClock className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                      <span>{formatDateLabel(route.date)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-semibold text-slate-900">{route.region_name}</p>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
-                        {route.region_code}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <UserRound className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                      <div className="leading-tight">
-                        <p className="text-sm font-semibold text-slate-900">{route.driver_name}</p>
-                        <p className="text-xs text-slate-500">
-                          {route.driver_id ? `ID ${route.driver_id}` : "Unassigned"}
+              {routes.map((route) => {
+                const totalStops = stopsCount(route);
+                const preferredRegionCode = route.driver_preferences?.preferred_region_code;
+                const operatingDays = route.driver_preferences?.operating_weekdays || [];
+                const mergeSuggestion = mergeHint(route);
+
+                return (
+                  <TableRow key={route.id}>
+                    <TableCell className="font-semibold text-slate-900">
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                        <span>{formatDateLabel(route.date)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-semibold text-slate-900">{route.region_name}</p>
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          {route.region_code}
+                          {preferredRegionCode
+                            ? ` • Pref ${preferredRegionCode.toUpperCase()}`
+                            : ""}
                         </p>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700">
-                      <RouteIcon className="h-4 w-4" aria-hidden="true" />
-                      {stopsCount(route)} stops
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={route.is_completed ? "default" : "secondary"}>
-                      {route.is_completed ? "Completed" : "In progress"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/admin/routes/${route.id}`}>Open</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <UserRound className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                        <div className="leading-tight">
+                          <p className="text-sm font-semibold text-slate-900">{route.driver_name}</p>
+                          <p className="text-xs text-slate-500">
+                            {route.driver_id ? `ID ${route.driver_id}` : "Unassigned"}
+                          </p>
+                          {operatingDays.length ? (
+                            <p className="text-[11px] text-slate-500">
+                              Days: {formatWeekdays(operatingDays)}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-700">
+                        <RouteIcon className="h-4 w-4" aria-hidden="true" />
+                        {totalStops} stops
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={route.is_completed ? "default" : "secondary"}>
+                          {route.is_completed ? "Completed" : "In progress"}
+                        </Badge>
+                        {mergeSuggestion ? (
+                          <Badge className="border-amber-200 bg-amber-50 text-amber-800" variant="outline">
+                            {mergeSuggestion}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link to={`/admin/routes/${route.id}`}>Open</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>

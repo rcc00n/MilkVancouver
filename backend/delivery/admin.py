@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
@@ -46,6 +47,7 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
         "date",
         "region",
         "driver",
+        "merged_into",
         "stops_count",
         "is_completed",
         "created_at",
@@ -61,6 +63,7 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
     list_filter = (
         "region",
         "driver",
+        "merged_into",
         "is_completed",
         ("date", admin.DateFieldListFilter),
         ("stops__status", admin.ChoicesFieldListFilter),
@@ -69,23 +72,113 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.select_related("region", "driver", "driver__user")
+        return queryset.select_related("region", "driver", "driver__user", "driver__preferred_region")
 
     def stops_count(self, obj):
         return obj.stops.count()
 
     stops_count.short_description = "Stops"
 
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj and obj.merged_into_id:
+            readonly.extend(
+                [
+                    "driver",
+                    "region",
+                    "date",
+                ]
+            )
+        return readonly
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and getattr(obj, "merged_into_id", None):
+            return False
+        return super().has_delete_permission(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not getattr(obj, "is_merged", False):
+            obj.refresh_completion_status(save=True)
+
+
+WEEKDAY_CHOICES = (
+    (0, "Mon"),
+    (1, "Tue"),
+    (2, "Wed"),
+    (3, "Thu"),
+    (4, "Fri"),
+    (5, "Sat"),
+    (6, "Sun"),
+)
+
+
+class DriverAdminForm(forms.ModelForm):
+    operating_weekdays = forms.MultipleChoiceField(
+        choices=WEEKDAY_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Days this driver normally operates.",
+    )
+
+    class Meta:
+        model = Driver
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial_days = self.instance.operating_weekdays or []
+        self.fields["operating_weekdays"].initial = [
+            int(day) for day in initial_days if isinstance(day, (int, str))
+        ]
+
+    def clean_operating_weekdays(self):
+        value = self.cleaned_data.get("operating_weekdays") or []
+        normalized = sorted({int(day) for day in value})
+        return normalized
+
 
 @admin.register(Driver)
 class DriverAdmin(admin.ModelAdmin):
-    list_display = ("user", "phone", "short_notes", "active_routes_count")
+    form = DriverAdminForm
+    list_display = (
+        "user",
+        "phone",
+        "short_notes",
+        "formatted_weekdays",
+        "preferred_region",
+        "min_stops_for_dedicated_route",
+        "active_routes_count",
+    )
     search_fields = (
         "user__username",
         "user__email",
         "user__first_name",
         "user__last_name",
         "phone",
+    )
+    list_filter = ("preferred_region",)
+    fieldsets = (
+        (
+            "Identity",
+            {
+                "fields": (
+                    "user",
+                    "phone",
+                    "notes",
+                )
+            },
+        ),
+        (
+            "Dispatch preferences",
+            {
+                "fields": (
+                    "operating_weekdays",
+                    "preferred_region",
+                    "min_stops_for_dedicated_route",
+                ),
+            },
+        ),
     )
     list_select_related = ("user",)
 
@@ -95,6 +188,11 @@ class DriverAdmin(admin.ModelAdmin):
         return (obj.notes[:37] + "...") if len(obj.notes) > 40 else obj.notes
 
     short_notes.short_description = "Notes"
+
+    def formatted_weekdays(self, obj):
+        return obj.formatted_weekdays() or "—"
+
+    formatted_weekdays.short_description = "Days"
 
     def active_routes_count(self, obj):
         return obj.routes.filter(is_completed=False).count()

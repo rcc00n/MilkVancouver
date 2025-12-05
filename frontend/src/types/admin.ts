@@ -1,4 +1,4 @@
-import { RouteStop } from "./delivery";
+import { DriverPreferences, RouteStop } from "./delivery";
 
 export type AdminDashboard = {
   total_sales_cents: number;
@@ -22,6 +22,9 @@ export type AdminRoute = {
   driver_id: number | null;
   driver_name: string;
   is_completed: boolean;
+  merged_into_id: number | null;
+  merged_at?: string | null;
+  driver_preferences?: DriverPreferences | null;
   stops_count: number;
   stops: RouteStop[];
 };

@@ -12,6 +12,26 @@ class Driver(models.Model):
     )
     phone = models.CharField(max_length=50, blank=True)
     notes = models.TextField(blank=True)
+    operating_weekdays = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Weekdays the driver is normally available (0=Mon ... 6=Sun)",
+    )
+    preferred_region = models.ForeignKey(
+        Region,
+        null=True,
+        blank=True,
+        related_name="preferred_drivers",
+        on_delete=models.SET_NULL,
+        help_text="Recommended primary direction/region for this driver",
+    )
+    min_stops_for_dedicated_route = models.PositiveIntegerField(
+        default=0,
+        help_text=(
+            "Minimum stops before we keep this driver separate. "
+            "Below this, dispatch can merge with another route."
+        ),
+    )
 
     class Meta:
         ordering = ["user__id"]
@@ -26,6 +46,16 @@ class Driver(models.Model):
         )
         return f"Driver {identifier}"
 
+    def formatted_weekdays(self):
+        if not self.operating_weekdays:
+            return ""
+        weekday_map = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        labels = []
+        for value in sorted({int(day) for day in self.operating_weekdays}):
+            if 0 <= value < len(weekday_map):
+                labels.append(weekday_map[value])
+        return ", ".join(labels)
+
 
 class DeliveryRoute(models.Model):
     region = models.ForeignKey(
@@ -39,6 +69,14 @@ class DeliveryRoute(models.Model):
         related_name="routes",
         on_delete=models.SET_NULL,
     )
+    merged_into = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        related_name="merged_children",
+        on_delete=models.SET_NULL,
+    )
+    merged_at = models.DateTimeField(null=True, blank=True)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -63,7 +101,8 @@ class DeliveryRoute(models.Model):
                 or f"Driver {self.driver_id}"
             )
             driver_display = driver_identifier
-        return f"Route {self.region.code} on {self.date} - {driver_display}"
+        merged_hint = " (merged)" if self.merged_into_id else ""
+        return f"Route {self.region.code} on {self.date} - {driver_display}{merged_hint}"
 
     def refresh_completion_status(self, save: bool = True) -> None:
         """
@@ -88,6 +127,10 @@ class DeliveryRoute(models.Model):
     @stops_count.setter
     def stops_count(self, value):
         self._stops_count = value
+
+    @property
+    def is_merged(self) -> bool:
+        return bool(self.merged_into_id)
 
 
 class RouteStop(models.Model):

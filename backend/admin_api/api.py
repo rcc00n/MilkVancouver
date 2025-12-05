@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, F, Max, OuterRef, Prefetch, Q, Subquery, Sum
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
@@ -143,7 +144,9 @@ class AdminRouteListView(APIView):
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         queryset = (
-            DeliveryRoute.objects.select_related("region", "driver", "driver__user")
+            DeliveryRoute.objects.select_related(
+                "region", "driver", "driver__user", "driver__preferred_region"
+            )
             .prefetch_related(
                 Prefetch(
                     "stops",
@@ -154,6 +157,14 @@ class AdminRouteListView(APIView):
             )
             .order_by("-date", "region__code", "id")
         )
+
+        include_merged = request.query_params.get("include_merged", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if not include_merged:
+            queryset = queryset.filter(merged_into__isnull=True)
 
         date_param = request.query_params.get("date")
         if date_param:
@@ -184,7 +195,9 @@ class AdminRouteDetailView(APIView):
 
     def get(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         route = get_object_or_404(
-            DeliveryRoute.objects.select_related("region", "driver", "driver__user")
+            DeliveryRoute.objects.select_related(
+                "region", "driver", "driver__user", "driver__preferred_region"
+            )
             .prefetch_related(
                 Prefetch(
                     "stops",
@@ -244,7 +257,9 @@ class AdminRouteReorderView(APIView):
                 )
 
         refreshed_route = (
-            DeliveryRoute.objects.select_related("region", "driver", "driver__user")
+            DeliveryRoute.objects.select_related(
+                "region", "driver", "driver__user", "driver__preferred_region"
+            )
             .prefetch_related(
                 Prefetch(
                     "stops",
@@ -259,3 +274,100 @@ class AdminRouteReorderView(APIView):
             refreshed_route, context={"request": request}
         )
         return Response(response_serializer.data)
+
+
+class RouteMergeSerializer(serializers.Serializer):
+    source_route_id = serializers.IntegerField(min_value=1)
+    target_route_id = serializers.IntegerField(min_value=1)
+
+
+class AdminRouteMergeView(APIView):
+    permission_classes = [AdminPermission]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = RouteMergeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        source_id = serializer.validated_data["source_route_id"]
+        target_id = serializer.validated_data["target_route_id"]
+
+        if source_id == target_id:
+            return Response(
+                {"detail": "source_route_id and target_route_id must be different."},
+                status=400,
+            )
+
+        routes_qs = (
+            DeliveryRoute.objects.select_for_update()
+            .select_related("region", "driver", "driver__user", "driver__preferred_region")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            )
+            .filter(id__in=[source_id, target_id], merged_into__isnull=True)
+        )
+        routes = list(routes_qs)
+
+        if len(routes) != 2:
+            return Response(
+                {"detail": "One or both routes not found or already merged."}, status=404
+            )
+
+        source = next(route for route in routes if route.id == source_id)
+        target = next(route for route in routes if route.id == target_id)
+
+        if source.date != target.date:
+            return Response(
+                {"detail": "Routes must be on the same date to merge."},
+                status=400,
+            )
+
+        with transaction.atomic():
+            stops = list(source.stops.all().order_by("sequence", "id"))
+            starting_sequence = (
+                target.stops.aggregate(max_seq=Max("sequence")).get("max_seq") or 0
+            )
+
+            for index, stop in enumerate(stops, start=1):
+                stop.route_id = target.id
+                stop.sequence = starting_sequence + index
+
+            if stops:
+                RouteStop.objects.bulk_update(stops, ["route", "sequence"])
+
+            DeliveryRoute.objects.filter(pk=source.id).update(
+                merged_into=target,
+                merged_at=timezone.now(),
+                driver=None,
+                is_completed=True,
+            )
+
+            refreshed_target = (
+                DeliveryRoute.objects.select_related(
+                    "region", "driver", "driver__user", "driver__preferred_region"
+                )
+                .prefetch_related(
+                    Prefetch(
+                        "stops",
+                        queryset=RouteStop.objects.select_related("order").order_by(
+                            "sequence", "id"
+                        ),
+                    )
+                )
+                .get(pk=target.id)
+            )
+            refreshed_target.refresh_completion_status(save=True)
+
+        response_serializer = DeliveryRouteSerializer(
+            refreshed_target, context={"request": request}
+        )
+        return Response(
+            {
+                "merged_from_route_id": source.id,
+                "moved_stops": len(stops),
+                "target_route": response_serializer.data,
+            }
+        )

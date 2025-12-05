@@ -1,9 +1,18 @@
 import axios from "axios";
-import { Eye, GripVertical, Image as ImageIcon, Loader2, MapPin, Phone, RefreshCw } from "lucide-react";
+import {
+  Eye,
+  GitMerge,
+  GripVertical,
+  Image as ImageIcon,
+  Loader2,
+  MapPin,
+  Phone,
+  RefreshCw,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { fetchAdminRoute, reorderAdminRoute } from "../../api/admin";
+import { fetchAdminRoute, fetchAdminRoutes, mergeRoutes, reorderAdminRoute } from "../../api/admin";
 import NoAccess from "../../components/internal/NoAccess";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -23,6 +32,14 @@ import {
   TableHeader,
   TableRow,
 } from "../../components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { toast } from "sonner";
 import { AdminRoute } from "../../types/admin";
 import { RouteStop } from "../../types/delivery";
 import { stopStatusStyles } from "../../utils/stop-status-styles";
@@ -32,6 +49,7 @@ type LoadState = "loading" | "ready" | "error" | "no-access";
 function AdminRouteDetailPage() {
   const params = useParams();
   const routeId = Number(params.routeId);
+  const navigate = useNavigate();
   const [route, setRoute] = useState<AdminRoute | null>(null);
   const [state, setState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,6 +59,10 @@ function AdminRouteDetailPage() {
   const [savingOrder, setSavingOrder] = useState(false);
   const [reorderError, setReorderError] = useState<string | null>(null);
   const [proofUrl, setProofUrl] = useState<string | null>(null);
+  const [mergeOptions, setMergeOptions] = useState<AdminRoute[]>([]);
+  const [mergeTargetId, setMergeTargetId] = useState<string>("");
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  const [merging, setMerging] = useState(false);
 
   const loadRoute = useCallback(
     async (showLoading = true) => {
@@ -84,6 +106,29 @@ function AdminRouteDetailPage() {
     }
   }, [isReorderMode, stops]);
 
+  useEffect(() => {
+    const loadMergeOptions = async () => {
+      if (!route?.date || !Number.isFinite(routeId)) return;
+      try {
+        const sameDayRoutes = await fetchAdminRoutes({ date: route.date });
+        setMergeOptions(
+          sameDayRoutes.filter(
+            (candidate) => candidate.id !== routeId && !candidate.merged_into_id,
+          ),
+        );
+      } catch (err) {
+        console.error("Failed to load merge candidates", err);
+      }
+    };
+    loadMergeOptions();
+  }, [route?.date, routeId]);
+
+  useEffect(() => {
+    if (!mergeTargetId && mergeOptions.length) {
+      setMergeTargetId(String(mergeOptions[0].id));
+    }
+  }, [mergeOptions, mergeTargetId]);
+
   const displayStops = isReorderMode ? draftStops : stops;
 
   const totals = useMemo(() => {
@@ -93,7 +138,7 @@ function AdminRouteDetailPage() {
     return { delivered, noPickup, pending };
   }, [stops]);
 
-  const canReorder = Boolean(route && !route.is_completed && stops.length > 0);
+  const canReorder = Boolean(route && !route.is_completed && !route.merged_into_id && stops.length > 0);
 
   const startReorder = () => {
     if (!canReorder) return;
@@ -107,6 +152,25 @@ function AdminRouteDetailPage() {
     setDraftStops([]);
     setDraggingId(null);
     setReorderError(null);
+  };
+
+  const handleMerge = async () => {
+    if (!route || !mergeTargetId) return;
+    setMerging(true);
+    setMergeError(null);
+    try {
+      const targetId = Number(mergeTargetId);
+      const result = await mergeRoutes(route.id, targetId);
+      toast.success(
+        `Merged ${result.moved_stops} stop${result.moved_stops === 1 ? "" : "s"} into route #${result.target_route.id}`,
+      );
+      navigate(`/admin/routes/${result.target_route.id}`, { replace: true });
+    } catch (err) {
+      const message = extractErrorMessage(err, "Unable to merge routes.");
+      setMergeError(message);
+    } finally {
+      setMerging(false);
+    }
   };
 
   const handleSaveOrder = async () => {
@@ -198,6 +262,109 @@ function AdminRouteDetailPage() {
         <Badge variant="secondary">Pending: {totals.pending}</Badge>
       </div>
 
+      {route ? (
+        <Card className="border-slate-200 bg-white shadow-sm">
+          <div className="grid gap-4 p-4 md:grid-cols-2 md:gap-6">
+            <div className="space-y-2">
+              <h2 className="text-sm font-semibold text-slate-900">Driver preferences</h2>
+              <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Operating days</span>
+                  <span className="font-semibold">
+                    {formatWeekdays(route.driver_preferences?.operating_weekdays || []) || "Not set"}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-slate-500">Preferred direction</span>
+                  <span className="font-semibold">
+                    {route.driver_preferences?.preferred_region_code
+                      ? `${route.driver_preferences.preferred_region_code.toUpperCase()} · ${
+                          route.driver_preferences.preferred_region_name || ""
+                        }`
+                      : "Not set"}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-slate-500">Min stops to keep solo</span>
+                  <span className="font-semibold">
+                    {route.driver_preferences?.min_stops_for_dedicated_route ?? "Not set"}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <GitMerge className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                  Merge routes
+                </h2>
+                {route.merged_into_id ? (
+                  <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">
+                    Already merged
+                  </Badge>
+                ) : null}
+              </div>
+              {route.merged_into_id ? (
+                <p className="text-sm text-slate-700">
+                  This route was merged into route #{route.merged_into_id}. Open the destination route to manage
+                  the combined stops.
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-600">
+                    Combine this route with another on the same date. We&apos;ll append stops and keep their order.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+                    <Select
+                      value={mergeTargetId}
+                      onValueChange={(value) => {
+                        setMergeError(null);
+                        setMergeTargetId(value);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select target route" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mergeOptions.map((candidate) => (
+                          <SelectItem key={candidate.id} value={String(candidate.id)}>
+                            #{candidate.id} · {candidate.region_code} · {candidate.driver_name} (
+                            {candidate.stops_count ?? candidate.stops.length} stops)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleMerge}
+                      disabled={merging || !mergeTargetId || mergeOptions.length === 0}
+                      className="w-full sm:w-auto"
+                    >
+                      {merging ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                          Merging…
+                        </>
+                      ) : (
+                        <>
+                          <GitMerge className="mr-2 h-4 w-4" aria-hidden="true" />
+                          Merge into target
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {mergeOptions.length === 0 ? (
+                    <p className="text-xs text-slate-500">No other active routes on this date.</p>
+                  ) : null}
+                  {mergeError ? (
+                    <p className="text-sm font-semibold text-destructive">{mergeError}</p>
+                  ) : null}
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       {state === "loading" ? <div className="text-sm text-slate-500">Loading route…</div> : null}
       {state === "error" && errorMessage ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -263,6 +430,11 @@ function AdminRouteDetailPage() {
           {route.is_completed ? (
             <div className="border-b border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
               Route is completed; reordering is disabled.
+            </div>
+          ) : null}
+          {route.merged_into_id ? (
+            <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
+              Stops moved to route #{route.merged_into_id}. Editing is locked here.
             </div>
           ) : null}
 
@@ -429,6 +601,15 @@ function extractErrorMessage(err: unknown, fallback: string) {
     }
   }
   return fallback;
+}
+
+function formatWeekdays(days: number[]) {
+  if (!Array.isArray(days) || days.length === 0) return "";
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return Array.from(new Set(days))
+    .sort((a, b) => a - b)
+    .map((day) => labels[day] ?? String(day))
+    .join(", ");
 }
 
 export default AdminRouteDetailPage;

@@ -55,8 +55,12 @@ class MyRoutesView(APIView):
             date_value = timezone.now().date()
 
         routes = (
-            DeliveryRoute.objects.filter(driver=driver, date=date_value)
-            .select_related("region", "driver", "driver__user")
+            DeliveryRoute.objects.filter(
+                driver=driver,
+                date=date_value,
+                merged_into__isnull=True,
+            )
+            .select_related("region", "driver", "driver__user", "driver__preferred_region")
             .prefetch_related(
                 Prefetch(
                     "stops",
@@ -89,8 +93,10 @@ class DriverTodayRoutesView(APIView):
 
         today = timezone.now().date()
         routes = (
-            DeliveryRoute.objects.filter(driver=driver, date=today)
-            .select_related("region", "driver", "driver__user")
+            DeliveryRoute.objects.filter(
+                driver=driver, date=today, merged_into__isnull=True
+            )
+            .select_related("region", "driver", "driver__user", "driver__preferred_region")
             .prefetch_related(
                 Prefetch(
                     "stops",
@@ -128,8 +134,9 @@ class DriverUpcomingRoutesView(APIView):
                 driver=driver,
                 date__gt=today,
                 is_completed=False,
+                merged_into__isnull=True,
             )
-            .select_related("region")
+            .select_related("region", "driver", "driver__preferred_region")
             .annotate(stops_count=Count("stops"))
             .order_by("date", "region__code", "id")
         )
@@ -144,6 +151,11 @@ class RouteStopsView(APIView):
         route = get_object_or_404(
             DeliveryRoute.objects.select_related("driver__user"), pk=route_id
         )
+        if route.merged_into_id:
+            return Response(
+                {"detail": "This route was merged into another route."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if not (
             request.user.is_staff
             or (route.driver and route.driver.user_id == request.user.id)
@@ -219,6 +231,41 @@ class MarkStopDeliveredView(APIView):
 
         serializer = RouteStopSerializer(stop, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DriverRouteDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsDriver]
+
+    def get(self, request, route_id, *args, **kwargs):
+        driver = Driver.objects.filter(user=request.user).first()
+        if not driver:
+            return Response(
+                {"detail": IsDriver.message},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        route = get_object_or_404(
+            DeliveryRoute.objects.filter(merged_into__isnull=True)
+            .select_related("region", "driver", "driver__user", "driver__preferred_region")
+            .prefetch_related(
+                Prefetch(
+                    "stops",
+                    queryset=RouteStop.objects.select_related("order").order_by(
+                        "sequence", "id"
+                    ),
+                )
+            ),
+            pk=route_id,
+        )
+
+        if route.driver_id != driver.id:
+            return Response(
+                {"detail": "You do not have permission to view this route."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = DriverRouteSerializer(route, context={"request": request})
+        return Response(serializer.data)
 
 
 class MarkStopNoPickupView(APIView):
