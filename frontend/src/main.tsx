@@ -1,9 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { AuthProvider } from "./context/AuthContext";
 import App from "./App";
 import { CartProvider } from "./context/CartContext";
 import { ProductsProvider } from "./context/ProductsContext";
-import { AuthProvider } from "./context/AuthContext";
+import { SiteImagesProvider } from "./context/SiteImagesContext";
 import { SessionProvider } from "./context/SessionContext";
 import "./styles/globals.css";
 import "./index.css";
@@ -18,14 +19,16 @@ const root = createRoot(container);
 
 root.render(
   <StrictMode>
-    <AuthProvider>
-      <SessionProvider>
-        <ProductsProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </ProductsProvider>
-      </SessionProvider>
-    </AuthProvider>
+    <SiteImagesProvider>
+      <AuthProvider>
+        <SessionProvider>
+          <ProductsProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </ProductsProvider>
+        </SessionProvider>
+      </AuthProvider>
+    </SiteImagesProvider>
   </StrictMode>,
 );

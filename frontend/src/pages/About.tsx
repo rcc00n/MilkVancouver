@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import heroImage from "../assets/Whole-cow.webp";
 import storyImage from "../assets/half-cow.webp";
 import { brand } from "../config/brand";
+import { useSiteImage } from "../hooks/useSiteImage";
 
 type SectionProps = {
   id?: string;
@@ -88,6 +89,15 @@ function ValueCard({ icon, title, copy }: ValueCardProps) {
 }
 
 function About() {
+  const heroVisual = useSiteImage("about.hero.local", {
+    fallbackUrl: heroImage,
+    alt: "Yummee bottles ready for delivery",
+  });
+  const storyVisual = useSiteImage("about.story.bottling", {
+    fallbackUrl: storyImage,
+    alt: "Yummee team preparing bottles for delivery",
+  });
+
   return (
     <div className="about-page-v2">
       <section className="about-hero-v2">
@@ -137,7 +147,7 @@ function About() {
           <div className="about-hero-v3__card">
             <div className="about-hero-v3__stamp">Vancouver bottled · {brand.name}</div>
             <div className="about-hero-v3__image">
-              <img src={heroImage} alt="Yummee bottles ready for delivery" loading="lazy" />
+              <img src={heroVisual.url} alt={heroVisual.alt} loading="lazy" />
             </div>
             <div className="about-hero-v3__stats">
               <div className="about-hero-v3__metric">
@@ -191,7 +201,7 @@ function About() {
           right={
             <div className="story-visual">
               <div className="story-visual__image">
-                <img src={storyImage} alt="Yummee team preparing bottles for delivery" loading="lazy" />
+                <img src={storyVisual.url} alt={storyVisual.alt} loading="lazy" />
               </div>
               <div className="story-visual__caption">
                 Small batches, clear labels, and a quick rinse-and-return loop to keep glass in use.

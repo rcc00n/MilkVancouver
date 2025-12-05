@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 
-import { getImageSrc } from "../../utils/imageLibrary";
+import { useSiteImage } from "../../hooks/useSiteImage";
 
 type FlavorCardProps = {
   title: string;
@@ -21,6 +21,7 @@ const toneClasses: Record<NonNullable<FlavorCardProps["tone"]>, string> = {
 
 function FlavorCard({ title, subtitle, ctaLabel, imageKey, tone = "berry", onCta, footer }: FlavorCardProps) {
   const toneClass = toneClasses[tone] || toneClasses.berry;
+  const { url: imageUrl, alt } = useSiteImage(imageKey, { alt: title });
 
   return (
     <article
@@ -30,8 +31,8 @@ function FlavorCard({ title, subtitle, ctaLabel, imageKey, tone = "berry", onCta
       <div className="relative flex h-full flex-col rounded-[26px] bg-white/92 px-4 pb-5 pt-14 text-slate-900 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.6)] backdrop-blur">
         <div className="absolute -top-10 left-1/2 h-20 w-20 -translate-x-1/2 overflow-hidden rounded-full border-4 border-white bg-white shadow-[0_16px_40px_-26px_rgba(15,23,42,0.65)] transition-transform duration-200 group-hover:scale-[1.05]">
           <img
-            src={getImageSrc(imageKey)}
-            alt={title}
+            src={imageUrl}
+            alt={alt}
             className="h-full w-full object-cover"
             loading="lazy"
           />

@@ -22,6 +22,7 @@ export type OrderItem = {
   quantity: number;
   unit_price_cents: number;
   total_cents: number;
+  image_url?: string | null;
 };
 
 export type OrderDetail = {
@@ -43,6 +44,7 @@ export type OrderDetail = {
   pickup_location: string;
   pickup_instructions: string;
   stripe_payment_intent_id: string;
+  expected_delivery_date?: string | null;
   estimated_delivery_at: string | null;
   delivered_at: string | null;
   region: string | null;

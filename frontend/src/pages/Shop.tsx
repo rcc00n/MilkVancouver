@@ -31,8 +31,6 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
   { label: "Name A–Z", value: "name" },
 ];
 
-const normalizeCategory = (value?: string | null) => value?.toLowerCase().replace(/\s+/g, " ").trim() ?? "";
-
 function Shop() {
   const { products, loading, error, initialized, refresh } = useProducts();
   const { items, subtotalCents } = useCart();

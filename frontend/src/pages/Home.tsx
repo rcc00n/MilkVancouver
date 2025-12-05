@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -18,6 +18,7 @@ import ProductCard from "../components/products/ProductCard";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { brand } from "../config/brand";
+import { useSiteImages } from "../context/SiteImagesContext";
 import { useProducts } from "../context/ProductsContext";
 import { getImageSrc } from "../utils/imageLibrary";
 
@@ -108,10 +109,22 @@ const testimonials = [
 ];
 
 function Home() {
+  const { images } = useSiteImages();
   const { products, loading, error, initialized, refresh } = useProducts();
   const isLoadingProducts = loading || !initialized;
   const navigate = useNavigate();
   const shopSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const resolveImage = useCallback(
+    (key: string, fallbackUrl?: string) => images[key]?.url || fallbackUrl || getImageSrc(key),
+    [images],
+  );
+
+  const resolveAlt = useCallback(
+    (key: string, fallbackAlt?: string) =>
+      images[key]?.alt || fallbackAlt || key.replace(/[._]/g, " "),
+    [images],
+  );
 
   useEffect(() => {
     if (!initialized) {
@@ -128,6 +141,29 @@ function Home() {
       navigate("/shop");
     }
   };
+
+  const heroImageUrl = resolveImage("home.hero.main", HERO_IMAGE);
+  const heroImageAlt = resolveAlt("home.hero.main", "Milk bottles and glasses on a bright table");
+
+  const resolvedStoryImages = useMemo(
+    () =>
+      storyImages.map((image) => ({
+        ...image,
+        url: resolveImage(image.key),
+        alt: resolveAlt(image.key, image.alt),
+      })),
+    [resolveAlt, resolveImage],
+  );
+
+  const resolvedCommunityShots = useMemo(
+    () =>
+      communityShots.map((key) => ({
+        key,
+        url: resolveImage(key),
+        alt: resolveAlt(key, "Community photo"),
+      })),
+    [resolveAlt, resolveImage],
+  );
 
   return (
     <div className="home-page space-y-16 lg:space-y-20">
@@ -184,8 +220,8 @@ function Home() {
             <div className="space-y-4">
               <div className="overflow-hidden rounded-2xl border border-sky-100 bg-white/80 shadow-xl backdrop-blur">
                 <img
-                  src={HERO_IMAGE}
-                  alt="Milk bottles and glasses on a bright table"
+                  src={heroImageUrl}
+                  alt={heroImageAlt}
                   className="h-full w-full min-h-[280px] object-cover"
                   loading="lazy"
                 />
@@ -242,17 +278,20 @@ function Home() {
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {flavors.map((flavor, index) => (
-            <FlavorCard
-              key={flavor.key}
-              title={flavor.title}
-              subtitle={flavor.subtitle}
-              ctaLabel={index % 2 === 0 ? "Try now" : "Shop flavor"}
-              imageKey={flavor.key}
-              tone={flavor.tone}
-              onCta={scrollToShop}
-            />
-          ))}
+          {flavors.map((flavor, index) => {
+            const isShopFlavor = index % 2 !== 0;
+            return (
+              <FlavorCard
+                key={flavor.key}
+                title={flavor.title}
+                subtitle={flavor.subtitle}
+                ctaLabel={isShopFlavor ? "Shop flavor" : "Try now"}
+                imageKey={flavor.key}
+                tone={flavor.tone}
+                onCta={isShopFlavor ? () => navigate("/shop") : scrollToShop}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -380,13 +419,13 @@ function Home() {
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                {storyImages.map((image) => (
+                {resolvedStoryImages.map((image) => (
                   <div
                     key={image.key}
                     className={`overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] ${image.offset}`}
                   >
                     <img
-                      src={getImageSrc(image.key)}
+                      src={image.url}
                       alt={image.alt}
                       className="h-full w-full object-cover"
                       loading="lazy"
@@ -458,14 +497,14 @@ function Home() {
               ))}
             </div>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-              {communityShots.map((key, index) => (
+              {resolvedCommunityShots.map((image, index) => (
                 <div
-                  key={key}
+                  key={image.key}
                   className="relative aspect-square overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.45)]"
                 >
                   <img
-                    src={getImageSrc(key)}
-                    alt={`Community moment ${index + 1}`}
+                    src={image.url}
+                    alt={image.alt || `Community moment ${index + 1}`}
                     className="h-full w-full object-cover transition-transform duration-200 hover:scale-[1.04]"
                     loading="lazy"
                   />

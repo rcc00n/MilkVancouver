@@ -1,15 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { useSiteImages } from "../context/SiteImagesContext";
+
 type GalleryTag = "Store interior" | "Products" | "Events" | "Farm";
 
 type GalleryItem = {
   id: number;
   title: string;
   caption: string;
-  imageUrl: string;
+  imageKey: string;
+  fallbackUrl: string;
   tag: GalleryTag;
   sortOrder: number;
   imageHeight?: number;
+};
+
+type ResolvedGalleryItem = GalleryItem & {
+  imageUrl: string;
+  imageAlt: string;
 };
 
 const galleryItems: GalleryItem[] = [
@@ -17,7 +25,8 @@ const galleryItems: GalleryItem[] = [
     id: 1,
     title: "Front counter at golden hour",
     caption: "Neighbors sampling chocolate milk and kefir while we pack deliveries.",
-    imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.01.frontCounter",
+    fallbackUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80",
     tag: "Store interior",
     sortOrder: 1,
     imageHeight: 320,
@@ -26,7 +35,8 @@ const galleryItems: GalleryItem[] = [
     id: 2,
     title: "Bottling line",
     caption: "Glass bottles getting rinsed, sanitized, and filled within 24 hours of milking.",
-    imageUrl: "https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.02.bottling",
+    fallbackUrl: "https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b?auto=format&fit=crop&w=1200&q=80",
     tag: "Products",
     sortOrder: 2,
   },
@@ -34,7 +44,8 @@ const galleryItems: GalleryItem[] = [
     id: 3,
     title: "Latte art station",
     caption: "Barista milk steaming glossy for a weekend pop-up with local roasters.",
-    imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.03.lattemilk",
+    fallbackUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
     tag: "Events",
     sortOrder: 3,
     imageHeight: 300,
@@ -43,7 +54,8 @@ const galleryItems: GalleryItem[] = [
     id: 4,
     title: "Yogurt & berry bar",
     caption: "Greek yogurt and kefir laid out for a community breakfast tasting.",
-    imageUrl: "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.04.yogurtBar",
+    fallbackUrl: "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=1200&q=80",
     tag: "Events",
     sortOrder: 4,
   },
@@ -51,7 +63,8 @@ const galleryItems: GalleryItem[] = [
     id: 5,
     title: "Cheese & butter board",
     caption: "Cultured butter, soft cheese, and cheddar ready for pickup and hosting nights.",
-    imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.05.cheeseBoard",
+    fallbackUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
     tag: "Products",
     sortOrder: 5,
   },
@@ -59,7 +72,8 @@ const galleryItems: GalleryItem[] = [
     id: 6,
     title: "Delivery crates",
     caption: "Cold-packed bottles queued for Vancouver and North Shore routes with ice liners.",
-    imageUrl: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.06.deliveryCrates",
+    fallbackUrl: "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1200&q=80",
     tag: "Store interior",
     sortOrder: 6,
   },
@@ -67,7 +81,8 @@ const galleryItems: GalleryItem[] = [
     id: 7,
     title: "Pasture partners",
     caption: "Dairy cows on grass rotations—why the flavor stays clean and naturally sweet.",
-    imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.07.pasture",
+    fallbackUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
     tag: "Farm",
     sortOrder: 7,
   },
@@ -75,7 +90,8 @@ const galleryItems: GalleryItem[] = [
     id: 8,
     title: "Morning herd check",
     caption: "Walking the herd before milking—calm animals make better milk.",
-    imageUrl: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.08.morningHerd",
+    fallbackUrl: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
     tag: "Farm",
     sortOrder: 8,
     imageHeight: 320,
@@ -84,7 +100,8 @@ const galleryItems: GalleryItem[] = [
     id: 9,
     title: "Sunrise over the hayfield",
     caption: "Hay cut ready for winter feed—keeps the grass-fed program consistent year round.",
-    imageUrl: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.09.hayfield",
+    fallbackUrl: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80",
     tag: "Farm",
     sortOrder: 9,
   },
@@ -92,7 +109,8 @@ const galleryItems: GalleryItem[] = [
     id: 10,
     title: "Route planning wall",
     caption: "Delivery windows mapped for Vancouver, Burnaby, and North Shore customers.",
-    imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
+    imageKey: "gallery.10.routeWall",
+    fallbackUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80",
     tag: "Store interior",
     sortOrder: 10,
   },
@@ -101,12 +119,26 @@ const galleryItems: GalleryItem[] = [
 const galleryTags: GalleryTag[] = ["Store interior", "Products", "Events", "Farm"];
 
 function GalleryPage() {
+  const { images } = useSiteImages();
   const [activeTag, setActiveTag] = useState<GalleryTag | "All">("All");
-  const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
+  const [lightboxItem, setLightboxItem] = useState<ResolvedGalleryItem | null>(null);
+
+  const resolvedItems = useMemo<ResolvedGalleryItem[]>(
+    () =>
+      galleryItems.map((item) => {
+        const entry = images[item.imageKey];
+        return {
+          ...item,
+          imageUrl: entry?.url || item.fallbackUrl,
+          imageAlt: entry?.alt || item.title,
+        };
+      }),
+    [images],
+  );
 
   const sortedItems = useMemo(
-    () => [...galleryItems].sort((a, b) => a.sortOrder - b.sortOrder),
-    [],
+    () => [...resolvedItems].sort((a, b) => a.sortOrder - b.sortOrder),
+    [resolvedItems],
   );
 
   const filteredItems = useMemo(() => {
@@ -142,7 +174,7 @@ function GalleryPage() {
               <span className="pill pill--accent">Farm-direct partners</span>
             </div>
             <div className="gallery-hero__legend">
-              <span className="pill pill--small">{galleryItems.length} photos</span>
+              <span className="pill pill--small">{resolvedItems.length} photos</span>
               <span className="muted">Sorted by shop → product → events → farm order.</span>
             </div>
           </div>
@@ -158,7 +190,7 @@ function GalleryPage() {
             <div className="gallery-hero__panel-grid">
               {sortedItems.slice(0, 3).map((item) => (
                 <div key={item.id} className="gallery-hero__thumb">
-                  <img src={item.imageUrl} alt={item.title} />
+                  <img src={item.imageUrl} alt={item.imageAlt} />
                   <div className="gallery-hero__thumb-label">{item.tag}</div>
                 </div>
               ))}
@@ -212,7 +244,7 @@ function GalleryPage() {
               >
                 <img
                   src={item.imageUrl}
-                  alt={item.title}
+                  alt={item.imageAlt}
                   className="gallery-card__image"
                   style={{ height: item.imageHeight || 260 }}
                 />
@@ -248,7 +280,7 @@ function GalleryPage() {
                 Close ✕
               </button>
             </div>
-            <img src={lightboxItem.imageUrl} alt={lightboxItem.title} className="gallery-lightbox__image" />
+            <img src={lightboxItem.imageUrl} alt={lightboxItem.imageAlt} className="gallery-lightbox__image" />
             <div className="gallery-lightbox__body">
               <h3>{lightboxItem.title}</h3>
               <p className="muted">{lightboxItem.caption}</p>
