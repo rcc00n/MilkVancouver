@@ -1,45 +1,37 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Filter, ShoppingCart } from "lucide-react";
 
-import ProductGrid from "../components/products/ProductGrid";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { Button } from "../components/ui/button";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "../components/ui/breadcrumb";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { cn } from "../components/ui/utils";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductsContext";
 import { getCategories, type Category } from "../api/products";
-
-type SortOption = "popular" | "price-asc" | "price-desc" | "name";
+import type { Product } from "../types";
 
 type CategoryOption = {
   label: string;
   value: string | null;
+  color: string;
 };
 
-const SORT_OPTIONS: { label: string; value: SortOption }[] = [
-  { label: "Popular first", value: "popular" },
-  { label: "Price: Low to High", value: "price-asc" },
-  { label: "Price: High to Low", value: "price-desc" },
-  { label: "Name A–Z", value: "name" },
-];
+const CATEGORY_COLORS = ["#6A0DAD", "#A57CFF", "#FFE74C", "#FF9770", "#9CF6F6", "#A57CFF"];
+
+function getColorForCategory(index: number): string {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+}
+
+function normalizeCategory(value?: string | null): string {
+  return value?.trim().toLowerCase() ?? "";
+}
 
 function Shop() {
   const { products, loading, error, initialized, refresh } = useProducts();
-  const { items, subtotalCents } = useCart();
+  const { addItem } = useCart();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortOption>("popular");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const cartCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const isLoading = loading || !initialized;
 
   useEffect(() => {
@@ -70,141 +62,188 @@ function Shop() {
 
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>();
-    const options: CategoryOption[] = [{ label: "All", value: null }];
-    categories.forEach((category) => {
-      const key = category.slug || category.name;
+    const options: CategoryOption[] = [
+      { label: "All Products", value: null, color: CATEGORY_COLORS[0] },
+    ];
+    categories.forEach((category, index) => {
+      const key = normalizeCategory(category.slug || category.name);
       if (seen.has(key)) return;
       seen.add(key);
-      options.push({ label: category.name, value: category.slug });
+      options.push({
+        label: category.name,
+        value: category.slug,
+        color: getColorForCategory(index + 1),
+      });
     });
     return options;
   }, [categories]);
 
-  const filteredProducts = useMemo(() => {
-    const filtered = selectedCategory
-      ? products.filter((product) => product.category?.slug === selectedCategory)
-      : products;
-
-    const sorted = [...filtered];
-    sorted.sort((a, b) => {
-      switch (sort) {
-        case "price-asc":
-          return a.price_cents - b.price_cents;
-        case "price-desc":
-          return b.price_cents - a.price_cents;
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "popular":
-        default:
-          if (a.is_popular === b.is_popular) return a.name.localeCompare(b.name);
-          return a.is_popular ? -1 : 1;
+  const categoryColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    categoryOptions.forEach((option) => {
+      if (option.value) {
+        map.set(option.value, option.color);
       }
     });
-    return sorted;
-  }, [products, selectedCategory, sort]);
+    return map;
+  }, [categoryOptions]);
 
-  const activeCategoryLabel =
-    categoryOptions.find((option) => option.value === selectedCategory)?.label || "All";
-  const sortLabel = SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "Popular first";
+  const filteredProducts = useMemo(() => {
+    if (!selectedCategory) return products;
+    const normalized = normalizeCategory(selectedCategory);
+    return products.filter((product) => normalizeCategory(product.category?.slug) === normalized);
+  }, [products, selectedCategory]);
+
+  const handleAddToCart = (product: Product) => {
+    addItem(product, 1);
+  };
+
+  const renderCategoryButton = (option: CategoryOption, isActive: boolean) => (
+    <button
+      key={option.value ?? "all"}
+      onClick={() => {
+        setSelectedCategory(option.value);
+        setMobileFiltersOpen(false);
+      }}
+      className={`w-full text-left px-4 py-3 rounded-full transition-all text-sm font-semibold ${
+        isActive ? "text-white shadow-lg" : "bg-white text-[#1a0a2e] hover:bg-white/90"
+      }`}
+      style={{ backgroundColor: isActive ? option.color : "#F3F0FB" }}
+    >
+      {option.label}
+    </button>
+  );
 
   return (
-    <div className="shop-page space-y-6 md:space-y-8">
-      <section className="container space-y-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Shop</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Shop</p>
-          <h1 className="text-4xl font-semibold text-slate-900">Shop Yummee milk</h1>
-          <p className="max-w-3xl text-slate-600">
-            Fresh Vancouver milk, flavored sips, and cafe staples. Browse, add to cart, and checkout in a few taps.
+    <section
+      className="pt-20 pb-16 min-h-screen"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10 space-y-2">
+          <h1 className="text-3xl font-medium text-[#6A0DAD]">Our Products</h1>
+          <p className="text-base text-gray-600 max-w-2xl mx-auto">
+            Discover our delicious range of healthy dairy products for the whole family!
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1 font-semibold text-slate-800 shadow-sm">
-            {isLoading ? "Loading catalog..." : `${products.length} products`}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1">
-            Category: {activeCategoryLabel}
-          </span>
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1">Sort: {sortLabel}</span>
-          <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 font-semibold text-slate-800 shadow-sm">
-            <span>{cartCount ? `${cartCount} in cart` : "Cart empty"}</span>
-            <span className="text-slate-500">· ${(subtotalCents / 100).toFixed(2)}</span>
-            <Button
-              asChild
-              size="sm"
-              variant="secondary"
-              className="h-8 rounded-full px-3 text-xs font-semibold"
-            >
-              <Link to="/checkout">Checkout</Link>
-            </Button>
-          </div>
+        <div className="lg:hidden mb-6">
+          <button
+            onClick={() => setMobileFiltersOpen((open) => !open)}
+            className="flex items-center gap-2 px-6 py-3 bg-[#6A0DAD] text-white rounded-full hover:bg-[#5b0b99] transition-colors"
+          >
+            <Filter className="w-5 h-5" />
+            Filters
+          </button>
         </div>
-      </section>
 
-      <section className="container space-y-4">
-        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm md:grid-cols-[1fr_auto] md:items-center">
-          <div className="flex flex-wrap gap-2">
-            {categoryOptions.map((option) => (
-              <button
-                key={option.value ?? "all"}
-                type="button"
-                onClick={() => setSelectedCategory(option.value)}
-                className={cn(
-                  "rounded-full border px-3 py-2 text-sm font-semibold transition-colors",
-                  selectedCategory === option.value
-                    ? "border-sky-500 bg-sky-50 text-sky-900 shadow-sm"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          <aside className={`${mobileFiltersOpen ? "block" : "hidden"} lg:block w-full lg:w-64 flex-shrink-0`}>
+            <div className="bg-white rounded-3xl p-6 shadow-lg sticky top-24 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-[#6A0DAD] text-xl font-semibold">Categories</h3>
+                <div className="space-y-3">
+                  {categoryOptions.map((option) =>
+                    renderCategoryButton(option, selectedCategory === option.value),
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-[#A57CFF]/10 to-[#FFE74C]/10 border border-[#6A0DAD]/10">
+                <p className="text-sm text-gray-700">
+                  Showing{" "}
+                  <span className="text-[#6A0DAD] font-semibold">
+                    {isLoading ? "..." : filteredProducts.length}
+                  </span>{" "}
+                  products
+                </p>
+                {(error || categoryError) && (
+                  <p className="mt-2 text-sm text-red-500">
+                    {error || categoryError}
+                  </p>
                 )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 md:text-sm">
-              Sort
-            </span>
-            <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
-              <SelectTrigger className="w-full md:w-56">
-                <SelectValue placeholder="Sort products" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </div>
+          </aside>
+
+          <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(isLoading ? Array.from({ length: 6 }) : filteredProducts).map((product, index) => {
+                const key = isLoading ? `placeholder-${index}` : product.id;
+                const categorySlug = isLoading ? null : product.category?.slug ?? null;
+                const color =
+                  categorySlug && categoryColorMap.get(categorySlug)
+                    ? categoryColorMap.get(categorySlug)!
+                    : getColorForCategory(index);
+
+                if (isLoading) {
+                  return (
+                    <div
+                      key={key}
+                      className="bg-white rounded-3xl overflow-hidden shadow-lg animate-pulse h-[360px]"
+                    >
+                      <div className="h-48 bg-gray-100" />
+                      <div className="p-6 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                        <div className="h-3 bg-gray-100 rounded w-3/4" />
+                        <div className="h-4 bg-gray-200 rounded w-1/3" />
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={key}
+                    className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 group h-[320px]"
+                  >
+                    <div
+                      className="relative h-48 overflow-hidden"
+                      style={{ backgroundColor: `${color}20` }}
+                    >
+                      <ImageWithFallback
+                        src={product.main_image_url || product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+
+                    <div className="p-5 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6A0DAD]">
+                        <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                        <span>{product.category?.name ?? "Featured"}</span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#6A0DAD]">{product.name}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-2xl font-semibold text-[#6A0DAD]">
+                          ${(product.price_cents / 100).toFixed(2)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleAddToCart(product)}
+                          className="flex items-center gap-2 px-6 py-3 rounded-full text-white font-semibold hover:shadow-xl transition-all hover:scale-105"
+                          style={{ backgroundColor: color }}
+                        >
+                          <ShoppingCart className="w-5 h-5" aria-hidden="true" />
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!isLoading && filteredProducts.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-xl text-gray-500">No products found in this category.</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {(error || categoryError) && (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
-            <span>{error || categoryError}</span>
-            <Button variant="outline" size="sm" onClick={() => refresh({ force: true })}>
-              Retry
-            </Button>
-          </div>
-        )}
-
-        <ProductGrid products={filteredProducts} loading={isLoading} />
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }
 

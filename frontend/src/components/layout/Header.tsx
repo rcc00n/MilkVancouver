@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import { Menu, ShoppingCart, User, X } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 import { brand } from "../../config/brand";
 import AuthModal from "../auth/AuthModal";
 import AreaSwitcher from "../internal/AreaSwitcher";
@@ -21,12 +22,10 @@ type HeaderProps = {
 };
 
 const navLinks = [
-  { label: "Home", to: "/" },
+  { label: "Products", to: "/shop" },
+  { label: "School Delivery", to: "/pricing" },
   { label: "Shop", to: "/shop" },
-  { label: "Pricing", to: "/pricing" },
-  { label: "About", to: "/about" },
-  { label: "Blog", to: "/blog" },
-  { label: "Contact", to: "/contact" },
+  { label: "Our Story", to: "/about" },
 ];
 
 function Header({ onCartClick }: HeaderProps) {
@@ -35,6 +34,9 @@ function Header({ onCartClick }: HeaderProps) {
   const [initialAuthTab, setInitialAuthTab] = useState<"login" | "signup">("login");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const { isAuthenticated, me, logout } = useAuth();
+  const { items } = useCart();
+
+  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     document.body.classList.toggle("nav-open", isMobileOpen);
@@ -74,194 +76,244 @@ function Header({ onCartClick }: HeaderProps) {
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
 
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    [
+      "text-sm font-semibold tracking-wide transition-colors",
+      isActive ? "text-[#5b0b99]" : "text-[#6A0DAD]/90 hover:text-[#5b0b99]",
+    ].join(" ");
+
   const mobileNavLayer = (
     <>
-      <div className={`mobile-nav ${isMobileOpen ? "is-open" : ""}`} aria-hidden={!isMobileOpen}>
-        <div className="mobile-nav__header">
-          <Link to="/" className="nav-brand nav-brand--mobile" onClick={closeMobileMenu}>
-            <span className="nav-brand__word">{brand.name}</span>
-          </Link>
-          <button type="button" className="mobile-nav__close" aria-label="Close menu" onClick={closeMobileMenu}>
-            ✕
-          </button>
-        </div>
-
-        <div className="mobile-nav__links">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) => `mobile-nav__link ${isActive ? "is-active" : ""}`}
-              onClick={closeMobileMenu}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="mobile-nav__links">
-          <AreaSwitcher align="start" size="sm" />
-        </div>
-
-        <div className="mobile-nav__cta">
-          <Link to="/shop" className="nav-cta nav-cta--full" onClick={closeMobileMenu}>
-            Shop Now
+      <div
+        className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ${
+          isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={closeMobileMenu}
+        aria-hidden
+      />
+      <div
+        className={`fixed inset-y-0 left-0 right-0 bg-[#FFE74C] text-[#1a0a2e] shadow-2xl transition-transform duration-300 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between h-16 px-4 border-b border-[#6A0DAD]/15">
+          <Link
+            to="/"
+            className="text-2xl font-bold text-[#6A0DAD] drop-shadow-lg"
+            onClick={closeMobileMenu}
+          >
+            {brand.name}
           </Link>
           <button
             type="button"
-            className="mobile-nav__cart"
-            onClick={handleCartClick}
-            aria-label="Open cart"
-            title="Cart"
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/50 text-[#6A0DAD] shadow"
+            onClick={closeMobileMenu}
+            aria-label="Close menu"
           >
-            <ShoppingCart className="size-5" aria-hidden="true" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
-          {!isAuthenticated ? (
-            <>
-              <button
-                type="button"
-                className="nav-cta nav-cta--full"
-                onClick={() => openAuth("login")}
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                className="nav-cta nav-cta--full"
-                onClick={() => openAuth("signup")}
-              >
-                Create account
-              </button>
-            </>
-          ) : (
-            <div className="mobile-nav__links">
-              <div className="mobile-nav__link">
-                <div className="font-semibold">{accountLabel}</div>
-                <div className="text-sm text-slate-600">{me?.user.email}</div>
-              </div>
-              <Link to="/account" className="mobile-nav__link" onClick={closeMobileMenu}>
-                My profile
-              </Link>
-              <Link to="/account?tab=orders" className="mobile-nav__link" onClick={closeMobileMenu}>
-                My orders
-              </Link>
-              <button type="button" className="nav-cta nav-cta--full" onClick={handleLogout}>
-                Sign out
-              </button>
-            </div>
-          )}
         </div>
-      </div>
-      <div
-        className={`mobile-nav__backdrop ${isMobileOpen ? "is-visible" : ""}`}
-        onClick={closeMobileMenu}
-        role="presentation"
-      />
-    </>
-  );
 
-  return (
-    <header className="site-header">
-      <div className="site-header__ribbon">
-        <div className="container site-header__ribbon-inner">
-          <span className="site-header__ribbon-copy">Fresh before 8am · Vancouver &amp; North Shore</span>
-          <span className="site-header__ribbon-meta">{brand.supportHours}</span>
-        </div>
-      </div>
-      <div className="nav-surface">
-        <div className="container nav-bar nav-bar--full flex items-center justify-between gap-6">
-          <div className="flex items-center gap-6 flex-1 min-w-0">
-            <Link to="/" className="nav-brand shrink-0" onClick={closeMobileMenu}>
-              <span className="nav-brand__word">{brand.name}</span>
-              <span className="nav-brand__dot" aria-hidden="true">
-                ●
-              </span>
-              <span className="nav-brand__tagline">{brand.tagline}</span>
-            </Link>
+        <div className="px-4 py-6 space-y-6 overflow-y-auto pb-10">
+          <nav className="space-y-3">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) =>
+                  `block rounded-xl bg-white/70 px-4 py-3 text-sm font-semibold tracking-wide text-[#6A0DAD] shadow-md transition hover:bg-white ${
+                    isActive ? "ring-2 ring-[#6A0DAD]" : ""
+                  }`
+                }
+                onClick={closeMobileMenu}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
 
-            <nav className="nav-links" aria-label="Primary navigation">
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
+          <div className="grid gap-3">
+            <AreaSwitcher align="start" size="sm" />
 
-          <div className="nav-actions">
             <button
               type="button"
               onClick={handleCartClick}
-              className="nav-cart nav-cart--icon"
-              aria-label="Open cart"
-              title="Cart"
+              className="flex items-center justify-between rounded-full bg-[#6A0DAD] px-4 py-3 text-[#FFE74C] font-semibold shadow-lg"
             >
-              <ShoppingCart className="size-5" aria-hidden="true" />
+              <span className="flex items-center gap-3">
+                <ShoppingCart className="w-5 h-5" aria-hidden="true" />
+                Cart
+              </span>
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#FFE74C] text-[#6A0DAD]">
+                {cartCount}
+              </span>
             </button>
-            <Link to="/shop" className="nav-cta">
-              Shop Now
-            </Link>
+
             {!isAuthenticated ? (
               <>
-                <button type="button" className="nav-link" onClick={() => openAuth("login")}>
+                <button
+                  type="button"
+                  className="w-full rounded-full bg-white/80 px-4 py-3 text-sm font-semibold text-[#6A0DAD] shadow"
+                  onClick={() => openAuth("login")}
+                >
                   Sign in
                 </button>
-                <button type="button" className="nav-link" onClick={() => openAuth("signup")}>
+                <button
+                  type="button"
+                  className="w-full rounded-full bg-[#6A0DAD] px-4 py-3 text-sm font-semibold text-[#FFE74C] shadow-lg"
+                  onClick={() => openAuth("signup")}
+                >
                   Create account
                 </button>
               </>
             ) : (
-              <DropdownMenu open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <button type="button" className="nav-link">
-                    {accountLabel}
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[180px]">
-                  <DropdownMenuLabel>
-                    Signed in as
-                    <br />
-                    <span className="font-semibold">{me?.user.email}</span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/account">My profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/account?tab=orders">My orders</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      handleLogout();
-                    }}
-                    variant="destructive"
-                  >
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="grid gap-3 rounded-2xl bg-white/80 p-4 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[#FFE74C] text-[#6A0DAD] font-black uppercase">
+                    {accountLabel.charAt(0)}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-[#6A0DAD]">{accountLabel}</span>
+                    <span className="text-xs text-[#6A0DAD]/80">{me?.user.email}</span>
+                  </div>
+                </div>
+                <Link
+                  to="/account"
+                  onClick={closeMobileMenu}
+                  className="rounded-full bg-[#6A0DAD]/10 px-4 py-2 text-sm font-semibold text-[#6A0DAD] hover:bg-[#6A0DAD]/15"
+                >
+                  Account
+                </Link>
+                <Link
+                  to="/account?tab=orders"
+                  onClick={closeMobileMenu}
+                  className="rounded-full bg-[#6A0DAD]/10 px-4 py-2 text-sm font-semibold text-[#6A0DAD] hover:bg-[#6A0DAD]/15"
+                >
+                  My orders
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-full bg-[#6A0DAD] px-4 py-2 text-sm font-semibold text-[#FFE74C] shadow"
+                >
+                  Sign out
+                </button>
+              </div>
             )}
-            <button
-              type="button"
-              className={`nav-toggle ${isMobileOpen ? "is-active" : ""}`}
-              aria-expanded={isMobileOpen}
-              aria-label="Toggle navigation menu"
-              onClick={toggleMobileMenu}
-            >
-              <span />
-              <span />
-              <span />
-            </button>
           </div>
         </div>
       </div>
-      <div className="site-header__glow" aria-hidden />
+    </>
+  );
+
+  return (
+    <header className="site-header sticky top-0 z-50">
+      <div className="bg-[#FFE74C] border-b border-[#6A0DAD]/20 shadow-[0_18px_48px_-28px_rgba(106,13,173,0.55)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20 gap-4">
+            <div className="flex items-center gap-8">
+              <Link
+                to="/"
+                className="text-3xl font-bold text-[#6A0DAD] drop-shadow-md font-[var(--font-heading)]"
+                onClick={closeMobileMenu}
+              >
+                {brand.name}
+              </Link>
+
+              <nav className="hidden md:flex items-center gap-8" aria-label="Primary navigation">
+                {navLinks.map((link) => (
+                  <NavLink key={link.to} to={link.to} className={navLinkClass}>
+                    {link.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* <div className="hidden lg:block">
+                <AreaSwitcher />
+              </div> */}
+
+              {isAuthenticated ? (
+                <DropdownMenu open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[#6A0DAD] transition hover:text-[#5b0b99]"
+                    >
+                      <User className="h-5 w-5" aria-hidden="true" />
+                      <span className="hidden md:inline">{accountLabel}</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[200px]">
+                    <DropdownMenuLabel>
+                      Signed in as
+                      <br />
+                      <span className="font-semibold">{me?.user.email}</span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/account">My profile</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/account?tab=orders">My orders</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        handleLogout();
+                      }}
+                    >
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="hidden md:flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full px-3 py-2 text-sm font-semibold text-[#6A0DAD] transition hover:text-[#5b0b99]"
+                    onClick={() => openAuth("login")}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full px-3 py-2 text-sm font-semibold text-[#6A0DAD] transition hover:text-[#5b0b99]"
+                    onClick={() => openAuth("signup")}
+                  >
+                    Create account
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleCartClick}
+                className="relative flex h-11 w-11 items-center justify-center rounded-full text-[#6A0DAD] transition hover:text-[#5b0b99]"
+                aria-label="Open cart"
+                title="Cart"
+              >
+                <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+                <span className="absolute -top-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-[#6A0DAD] px-1 text-[11px] font-semibold text-[#FFE74C] shadow">
+                  {cartCount}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-[#6A0DAD] md:hidden"
+                aria-label="Open menu"
+                onClick={toggleMobileMenu}
+              >
+                <Menu className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+      </div>
 
       {portalTarget ? createPortal(mobileNavLayer, portalTarget) : mobileNavLayer}
       <AuthModal open={isAuthOpen} onClose={closeAuth} initialTab={initialAuthTab} />
