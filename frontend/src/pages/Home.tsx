@@ -21,8 +21,7 @@ import { brand } from "../config/brand";
 import { useProducts } from "../context/ProductsContext";
 import { getImageSrc } from "../utils/imageLibrary";
 
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=10";
+const HERO_IMAGE = "/images/home/hero.jpg";
 
 const flavors = [
   { key: "home.flavor.berry_blast", title: "Berry Blast", subtitle: "Mixed berries & Greek yogurt", tone: "berry" as const },

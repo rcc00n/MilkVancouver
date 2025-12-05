@@ -1,22 +1,25 @@
 import { brand } from "../config/brand";
 
+const homeImagesBase = "/images/home";
+
+// Store homepage artwork locally (Dokku-friendly) to avoid hotlink 404s.
 const imageLibrary: Record<string, string> = {
   // Flavor cards
-  "home.flavor.berry_blast": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=800&q=80",
-  "home.flavor.honey_vanilla": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80",
-  "home.flavor.chocolate_swirl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-  "home.flavor.tropical_sunrise": "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=800&q=80",
+  "home.flavor.berry_blast": `${homeImagesBase}/flavors/flavor-berry-blast.jpg`,
+  "home.flavor.honey_vanilla": `${homeImagesBase}/flavors/flavor-honey-vanilla.jpg`,
+  "home.flavor.chocolate_swirl": `${homeImagesBase}/flavors/flavor-chocolate-swirl.jpg`,
+  "home.flavor.tropical_sunrise": `${homeImagesBase}/flavors/flavor-tropical-sunrise.jpg`,
   // Story band
-  "home.story.image_1": "https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=1200&q=80",
-  "home.story.image_2": "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=1200&q=80",
-  "home.story.image_3": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+  "home.story.image_1": `${homeImagesBase}/story/story-1.jpg`,
+  "home.story.image_2": `${homeImagesBase}/story/story-2.jpg`,
+  "home.story.image_3": `${homeImagesBase}/story/story-3.jpg`,
   // Community strip
-  "home.community_1": "https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b?auto=format&fit=crop&w=800&q=80",
-  "home.community_2": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-  "home.community_3": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80",
-  "home.community_4": "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=800&q=80",
-  "home.community_5": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80",
-  "home.community_6": "https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=800&q=80",
+  "home.community_1": `${homeImagesBase}/community/community-1.jpg`,
+  "home.community_2": `${homeImagesBase}/community/community-2.jpg`,
+  "home.community_3": `${homeImagesBase}/community/community-3.jpg`,
+  "home.community_4": `${homeImagesBase}/community/community-4.jpg`,
+  "home.community_5": `${homeImagesBase}/community/community-5.jpg`,
+  "home.community_6": `${homeImagesBase}/community/community-6.jpg`,
 };
 
 export function getImageSrc(key: string) {
