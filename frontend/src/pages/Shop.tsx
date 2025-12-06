@@ -194,7 +194,7 @@ function Shop() {
                 return (
                   <div
                     key={key}
-                    className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 group h-[320px]"
+                    className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 group h-[400px]"
                   >
                     <div
                       className="relative h-48 overflow-hidden"
