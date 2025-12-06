@@ -29,6 +29,7 @@ class RouteStopSerializer(serializers.ModelSerializer):
             "id",
             "sequence",
             "status",
+            "no_pickup_reason",
             "delivered_at",
             "has_proof",
             "proof_photo_url",
@@ -115,6 +116,7 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             "id",
             "sequence",
             "status",
+            "no_pickup_reason",
             "delivered_at",
             "has_proof",
             "proof_photo_url",
@@ -126,6 +128,7 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "sequence",
+            "no_pickup_reason",
             "order_id",
             "client_name",
             "client_phone",

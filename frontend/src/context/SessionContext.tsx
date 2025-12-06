@@ -23,6 +23,7 @@ type SessionUser = {
 };
 
 type SessionProfile = {
+  email?: string;
   firstName: string;
   lastName: string;
   phone: string;
@@ -63,6 +64,7 @@ type AuthMeResponse = {
     is_staff?: boolean;
   };
   profile: {
+    email?: string;
     first_name: string;
     last_name: string;
     phone: string;
@@ -96,6 +98,7 @@ function mapUser(user: AuthMeResponse["user"]): SessionUser {
 
 function mapProfile(profile: AuthMeResponse["profile"]): SessionProfile {
   return {
+    email: profile.email || undefined,
     firstName: profile.first_name,
     lastName: profile.last_name,
     phone: profile.phone,

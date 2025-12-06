@@ -207,7 +207,8 @@ class MarkStopDeliveredView(APIView):
 
         stop.status = RouteStop.Status.DELIVERED
         stop.delivered_at = timezone.now()
-        stop.save(update_fields=["status", "delivered_at"])
+        stop.no_pickup_reason = ""
+        stop.save(update_fields=["status", "delivered_at", "no_pickup_reason"])
 
         order = stop.order
         order.status = Order.Status.COMPLETED
@@ -290,9 +291,17 @@ class MarkStopNoPickupView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        reason = ""
+        if request.data:
+            reason = request.data.get("reason", "") or ""
+        reason = str(reason).strip()
+        if len(reason) > 255:
+            reason = reason[:255]
+
         stop.status = RouteStop.Status.NO_PICKUP
         stop.delivered_at = timezone.now()
-        stop.save(update_fields=["status", "delivered_at"])
+        stop.no_pickup_reason = reason
+        stop.save(update_fields=["status", "delivered_at", "no_pickup_reason"])
 
         order = stop.order
         order.status = Order.Status.IN_PROGRESS

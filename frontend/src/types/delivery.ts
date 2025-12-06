@@ -4,6 +4,7 @@ export type DriverStop = {
   id: number;
   sequence: number;
   status: RouteStopStatus;
+  no_pickup_reason?: string | null;
   delivered_at?: string | null;
   has_proof: boolean;
   proof_photo_url?: string;
@@ -50,6 +51,7 @@ export type RouteStop = {
   id: number;
   sequence: number;
   status: RouteStopStatus;
+  no_pickup_reason?: string | null;
   delivered_at?: string | null;
   has_proof: boolean;
   proof_photo_url?: string;

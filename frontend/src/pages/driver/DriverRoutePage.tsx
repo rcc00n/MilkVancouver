@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 import { fetchDriverRoute, markStopDelivered, markStopNoPickup } from "../../api/driver";
 import NoAccess from "../../components/internal/NoAccess";
@@ -35,16 +36,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../components/ui/dialog";
+import { Textarea } from "../../components/ui/textarea";
 import { DriverRoute, DriverStop, RouteStop, RouteStopStatus } from "../../types/delivery";
+import { sortDriverStops, toDriverStop } from "../../utils/driver-route";
 import {
   completedStopStatuses,
   countCompletedStops,
   stopStatusStyles,
 } from "../../utils/stop-status-styles";
-import { toast } from "sonner";
 
-type LoadState = "loading" | "ready" | "error" | "no-access";
+type LoadState = "idle" | "loading" | "ready" | "error" | "no-access";
 type MutatingAction = "deliver" | "no_pickup" | null;
+
+type DriverRouteDetailProps = {
+  routeId?: number | null;
+  initialRoute?: DriverRoute | null;
+  onBack?: () => void;
+  embedded?: boolean;
+  onRouteUpdated?: (route: DriverRoute) => void;
+};
 
 const stopToneClasses: Record<RouteStopStatus, string> = {
   pending: "border-amber-100 bg-amber-50/70",
@@ -87,23 +97,31 @@ function getErrorMessage(err: unknown, fallback: string) {
   return fallback;
 }
 
-function DriverRoutePage() {
-  const params = useParams();
-  const routeId = Number(params.routeId);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const routeFromState = (location.state as { route?: DriverRoute } | undefined)?.route;
+function DriverRouteDetail({
+  routeId: routeIdProp,
+  initialRoute: initialRouteProp,
+  onBack,
+  embedded = false,
+  onRouteUpdated,
+}: DriverRouteDetailProps) {
+  const routeId =
+    typeof routeIdProp === "number" && Number.isFinite(routeIdProp) ? routeIdProp : null;
 
   const initialRoute = useMemo(
     () =>
-      routeFromState && routeFromState.stops
-        ? { ...routeFromState, stops: sortStops(routeFromState.stops) }
+      initialRouteProp && initialRouteProp.stops
+        ? { ...initialRouteProp, stops: sortDriverStops(initialRouteProp.stops) }
         : null,
-    [routeFromState],
+    [initialRouteProp],
   );
 
-  const [route, setRoute] = useState<DriverRoute | null>(initialRoute);
-  const [state, setState] = useState<LoadState>(initialRoute ? "ready" : "loading");
+  const [route, setRoute] = useState<DriverRoute | null>(
+    routeId && initialRoute && initialRoute.id === routeId ? initialRoute : null,
+  );
+  const [state, setState] = useState<LoadState>(() => {
+    if (!routeId) return "idle";
+    return initialRoute && initialRoute.id === routeId ? "ready" : "loading";
+  });
   const [error, setError] = useState<string | null>(null);
   const [stopFilter, setStopFilter] = useState<"all" | "remaining" | "done">("all");
   const [mutatingStopId, setMutatingStopId] = useState<number | null>(null);
@@ -115,6 +133,8 @@ function DriverRoutePage() {
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
   const [confirmStopId, setConfirmStopId] = useState<number | null>(null);
   const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
+  const [noPickupReason, setNoPickupReason] = useState("");
+  const [noPickupError, setNoPickupError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -127,9 +147,9 @@ function DriverRoutePage() {
 
   const loadRoute = useCallback(
     async (showLoading = false) => {
-      if (!Number.isFinite(routeId) || routeId <= 0) {
-        setError("Invalid route id.");
-        setState("error");
+      if (!routeId) {
+        setRoute(null);
+        setState("idle");
         return;
       }
       if (showLoading) {
@@ -138,8 +158,10 @@ function DriverRoutePage() {
       setError(null);
       try {
         const data = await fetchDriverRoute(routeId);
-        setRoute({ ...data, stops: sortStops(data.stops) });
+        const nextRoute = { ...data, stops: sortDriverStops(data.stops) };
+        setRoute(nextRoute);
         setState("ready");
+        onRouteUpdated?.(nextRoute);
       } catch (err) {
         if (axios.isAxiosError(err)) {
           const status = err.response?.status;
@@ -158,14 +180,26 @@ function DriverRoutePage() {
         setState("error");
       }
     },
-    [routeId],
+    [routeId, onRouteUpdated],
   );
 
   useEffect(() => {
-    loadRoute(!initialRoute);
-  }, [loadRoute, initialRoute]);
+    if (!routeId) {
+      setRoute(null);
+      setState("idle");
+      return;
+    }
+    setError(null);
+    setStopFilter("all");
+    if (initialRoute && initialRoute.id === routeId) {
+      setRoute(initialRoute);
+      setState("ready");
+      return;
+    }
+    loadRoute(true);
+  }, [routeId, initialRoute, loadRoute]);
 
-  const stops = useMemo(() => sortStops(route?.stops || []), [route?.stops]);
+  const stops = useMemo(() => sortDriverStops(route?.stops || []), [route?.stops]);
   const filteredStops = useMemo(() => {
     if (stopFilter === "remaining") {
       return stops.filter((stop) => stop.status === "pending");
@@ -190,18 +224,25 @@ function DriverRoutePage() {
   const deliveringStopId = activeStop?.id;
   const isDeliveringActive = deliveringStopId ? isActionBusy(deliveringStopId, "deliver") : false;
 
-  const updateStopState = useCallback((stopId: number, driverStop: DriverStop) => {
-    setRoute((prev) => {
-      if (!prev) return prev;
-      const nextStops = sortStops(prev.stops.map((stop) => (stop.id === stopId ? driverStop : stop)));
-      const allCompleted = nextStops.every((stop) => completedStopStatuses.includes(stop.status));
-      return {
-        ...prev,
-        is_completed: allCompleted,
-        stops: nextStops,
-      };
-    });
-  }, []);
+  const updateStopState = useCallback(
+    (stopId: number, driverStop: DriverStop) => {
+      setRoute((prev) => {
+        if (!prev) return prev;
+        const nextStops = sortDriverStops(
+          prev.stops.map((stop) => (stop.id === stopId ? driverStop : stop)),
+        );
+        const allCompleted = nextStops.every((stop) => completedStopStatuses.includes(stop.status));
+        const nextRoute = {
+          ...prev,
+          is_completed: allCompleted,
+          stops: nextStops,
+        };
+        onRouteUpdated?.(nextRoute);
+        return nextRoute;
+      });
+    },
+    [onRouteUpdated],
+  );
 
   const openDeliveryDialog = (stop: DriverStop) => {
     if (photoPreview) {
@@ -240,14 +281,20 @@ function DriverRoutePage() {
     setDeliveryError(null);
   };
 
-  const handleNoPickup = async (stopId: number) => {
+  const handleNoPickup = async (stopId: number, reason: string) => {
+    const trimmed = reason.trim();
+    if (!trimmed) {
+      setNoPickupError("Add a short reason before marking not delivered.");
+      return;
+    }
     setMutatingStopId(stopId);
     setMutatingAction("no_pickup");
+    setNoPickupError(null);
     try {
-      const updated = await markStopNoPickup(stopId);
+      const updated = await markStopNoPickup(stopId, trimmed);
       const driverStop = normalizeStop(updated);
       updateStopState(stopId, driverStop);
-      toast.success("Marked as no pickup");
+      toast.success("Marked as not delivered");
     } catch (err) {
       const message = getErrorMessage(err, postErrorToast);
       console.error("Failed to mark no pickup:", message);
@@ -256,6 +303,7 @@ function DriverRoutePage() {
       setMutatingStopId(null);
       setMutatingAction(null);
       setConfirmStopId(null);
+      setNoPickupReason("");
     }
   };
 
@@ -287,6 +335,14 @@ function DriverRoutePage() {
     return <NoAccess role="driver" />;
   }
 
+  if (!routeId) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
+        Select a route on the left to see its stops and update deliveries.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -300,7 +356,8 @@ function DriverRoutePage() {
             {route?.region_code ? `· ${route.region_code}` : ""}
           </h1>
           <p className="text-sm text-slate-600">
-            {route?.date ? new Date(route.date).toLocaleDateString() : "Today"} • {stops.length} stops
+            {route?.date ? new Date(route.date).toLocaleDateString() : "Today"} • {stops.length}{" "}
+            stops
           </p>
           <p className="text-sm font-semibold text-slate-800">
             {completedCount} of {stops.length} stops completed
@@ -310,10 +367,12 @@ function DriverRoutePage() {
           <Badge variant={route?.is_completed ? "default" : "secondary"}>
             {route?.is_completed ? "Completed" : "In progress"}
           </Badge>
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-            Back
-          </Button>
+          {onBack ? (
+            <Button variant="ghost" size="sm" onClick={onBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+              {embedded ? "Close" : "Back"}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -423,8 +482,15 @@ function DriverRoutePage() {
                   ) : (
                     <BadgeCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
                   )}
-                  {status === "no_pickup" ? "No pickup recorded" : "Delivered"}
+                  {status === "no_pickup" ? "Not delivered" : "Delivered"}
                   {deliveredTime ? ` at ${deliveredTime}` : ""}
+                </div>
+              ) : null}
+
+              {status === "no_pickup" && stop.no_pickup_reason ? (
+                <div className="mt-2 rounded-xl border border-orange-200 bg-white/80 px-3 py-2 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-800">Reason</p>
+                  <p className="text-sm text-slate-700">{stop.no_pickup_reason}</p>
                 </div>
               ) : null}
 
@@ -474,7 +540,11 @@ function DriverRoutePage() {
                 <Button
                   variant="outline"
                   disabled={!isPending || isMarkingNoPickup}
-                  onClick={() => setConfirmStopId(stop.id)}
+                  onClick={() => {
+                    setConfirmStopId(stop.id);
+                    setNoPickupReason(stop.no_pickup_reason || "");
+                    setNoPickupError(null);
+                  }}
                   className="h-12 w-full text-base"
                 >
                   {isMarkingNoPickup ? (
@@ -485,13 +555,13 @@ function DriverRoutePage() {
                   ) : (
                     <>
                       <AlertTriangle className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Mark no pickup
+                      Not delivered (add reason)
                     </>
                   )}
                 </Button>
               </div>
               <p className="mt-1 text-xs text-slate-600">
-                Use this if the client wasn&apos;t home or refused pickup.
+                Use this when the client was not available or the stop could not be completed.
               </p>
             </div>
           );
@@ -621,19 +691,37 @@ function DriverRoutePage() {
         onOpenChange={(open) => {
           if (!open) {
             setConfirmStopId(null);
+            setNoPickupReason("");
+            setNoPickupError(null);
           }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mark as no pickup?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-1">
-              <span>Are you sure there was no pickup at this address?</span>
+            <AlertDialogTitle>Mark as not delivered?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span>Give a quick note for why the stop couldn&apos;t be delivered.</span>
               {stopForConfirm ? (
-                <span className="block text-sm font-semibold text-slate-800">{stopForConfirm.address}</span>
+                <span className="block text-sm font-semibold text-slate-800">
+                  {stopForConfirm.address}
+                </span>
               ) : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Nobody home, gate locked, etc."
+              value={noPickupReason}
+              onChange={(event) => {
+                setNoPickupReason(event.target.value);
+                setNoPickupError(null);
+              }}
+              rows={3}
+            />
+            {noPickupError ? (
+              <p className="text-sm font-semibold text-destructive">{noPickupError}</p>
+            ) : null}
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={confirmStopId ? isActionBusy(confirmStopId, "no_pickup") : false}
@@ -643,17 +731,42 @@ function DriverRoutePage() {
             <AlertDialogAction
               onClick={() => {
                 if (confirmStopId) {
-                  handleNoPickup(confirmStopId);
+                  handleNoPickup(confirmStopId, noPickupReason);
                 }
               }}
               disabled={confirmStopId ? isActionBusy(confirmStopId, "no_pickup") : false}
             >
-              {confirmStopId && isActionBusy(confirmStopId, "no_pickup") ? "Updating…" : "Confirm no pickup"}
+              {confirmStopId && isActionBusy(confirmStopId, "no_pickup") ? "Updating…" : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+function DriverRoutePage() {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routeIdFromParams = Number(params.routeId);
+  const routeId = Number.isFinite(routeIdFromParams) ? routeIdFromParams : null;
+  const routeFromState = (location.state as { route?: DriverRoute } | undefined)?.route;
+
+  const initialRoute = useMemo(
+    () =>
+      routeFromState && routeFromState.stops
+        ? { ...routeFromState, stops: sortDriverStops(routeFromState.stops) }
+        : null,
+    [routeFromState],
+  );
+
+  return (
+    <DriverRouteDetail
+      routeId={routeId}
+      initialRoute={initialRoute}
+      onBack={() => navigate(-1)}
+    />
   );
 }
 
@@ -680,29 +793,8 @@ function StatusSummaryChip({ status, value }: { status: RouteStopStatus; value: 
 }
 
 function normalizeStop(stop: RouteStop): DriverStop {
-  const order = stop.order;
-  const addressParts = [order.address_line1, order.city, order.postal_code].filter(Boolean);
-  return {
-    id: stop.id,
-    sequence: stop.sequence,
-    status: stop.status,
-    delivered_at: stop.delivered_at,
-    has_proof: stop.has_proof,
-    proof_photo_url: stop.proof_photo_url,
-    order_id: order.id,
-    client_name: order.full_name,
-    client_phone: order.phone,
-    address: addressParts.join(", "),
-  };
+  return toDriverStop(stop);
 }
 
-function sortStops(stops: DriverStop[]) {
-  return [...stops].sort((a, b) => {
-    if (a.sequence === b.sequence) {
-      return a.id - b.id;
-    }
-    return a.sequence - b.sequence;
-  });
-}
-
+export { DriverRouteDetail };
 export default DriverRoutePage;

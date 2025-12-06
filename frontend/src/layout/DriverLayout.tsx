@@ -5,8 +5,8 @@ import { Outlet, NavLink } from "react-router-dom";
 import AreaSwitcher from "../components/internal/AreaSwitcher";
 
 const tabs = [
-  { label: "Today", to: "/driver" },
-  { label: "Upcoming", to: "/driver/upcoming" },
+  { label: "Routes", to: "/driver" },
+  { label: "Profile", to: "/driver/profile" },
 ];
 
 function DriverLayout() {

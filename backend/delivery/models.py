@@ -152,6 +152,7 @@ class RouteStop(models.Model):
         max_length=20, choices=Status.choices, default=Status.PENDING
     )
     delivered_at = models.DateTimeField(null=True, blank=True)
+    no_pickup_reason = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["sequence"]

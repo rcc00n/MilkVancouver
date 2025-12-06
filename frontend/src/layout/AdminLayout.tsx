@@ -3,6 +3,7 @@ import { Gauge, HelpCircle, LayoutDashboard, Menu, Receipt, Route, UsersRound } 
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 import AreaSwitcher from "../components/internal/AreaSwitcher";
+import NoAccess from "../components/internal/NoAccess";
 import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import {
@@ -38,8 +39,22 @@ const navItems = [
 
 function AdminLayout() {
   const { pathname } = useLocation();
-  const { user } = useSession();
+  const { user, status, capabilities, checkingAccess } = useSession();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  if (status === "loading" || checkingAccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+          Checking admin access…
+        </div>
+      </div>
+    );
+  }
+
+  if (!capabilities.canAccessAdmin) {
+    return <NoAccess role="admin" />;
+  }
 
   return (
     <SidebarProvider>

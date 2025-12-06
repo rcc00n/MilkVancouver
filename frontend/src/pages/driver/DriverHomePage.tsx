@@ -1,315 +1,405 @@
 import axios from "axios";
-import { Clock, Leaf, MapPin, RefreshCw, Truck } from "lucide-react";
+import { CalendarClock, Clock, RefreshCw, Route as RouteIcon, Truck } from "lucide-react";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 
-import { fetchDriverTodayRoutes, fetchDriverUpcomingRoutes } from "../../api/driver";
+import {
+  fetchDriverRoutesByDate,
+  fetchDriverTodayRoutes,
+  fetchDriverUpcomingRoutes,
+} from "../../api/driver";
 import NoAccess from "../../components/internal/NoAccess";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
 import { Skeleton } from "../../components/ui/skeleton";
-import { DriverRoute, DriverUpcomingRoute, RouteStopStatus } from "../../types/delivery";
-import { countCompletedStops, stopStatusStyles } from "../../utils/stop-status-styles";
+import { DriverRouteDetail } from "./DriverRoutePage";
+import { DriverRoute, DriverUpcomingRoute } from "../../types/delivery";
+import { countCompletedStops } from "../../utils/stop-status-styles";
 
-type LoadState = "idle" | "loading" | "error" | "ready" | "no-access";
-const HOW_IT_WORKS_KEY = "driver-how-it-works";
+type LoadState = "loading" | "ready" | "error" | "no-access";
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
+function getInitialPastDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date.toISOString().slice(0, 10);
+}
+
 function DriverHomePage() {
+  const [state, setState] = useState<LoadState>("loading");
+  const [error, setError] = useState<string | null>(null);
   const [todayRoutes, setTodayRoutes] = useState<DriverRoute[]>([]);
   const [upcomingRoutes, setUpcomingRoutes] = useState<DriverUpcomingRoute[]>([]);
-  const [state, setState] = useState<LoadState>("idle");
-  const [error, setError] = useState<string | null>(null);
-  const [showIntro, setShowIntro] = useState(false);
+  const [pastRoutes, setPastRoutes] = useState<DriverRoute[]>([]);
+  const [pastDate, setPastDate] = useState<string>(getInitialPastDate);
+  const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<DriverRoute | null>(null);
 
-  const loadRoutes = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const [today, upcoming] = await Promise.all([
-        fetchDriverTodayRoutes(),
-        fetchDriverUpcomingRoutes(),
-      ]);
-      setTodayRoutes(today);
-      setUpcomingRoutes(upcoming);
-      setState("ready");
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        if (status === 401 || status === 403) {
-          setState("no-access");
-          return;
+  const findRouteWithStops = useCallback(
+    (id: number | null) => {
+      if (!id) return null;
+      return todayRoutes.find((route) => route.id === id) || pastRoutes.find((route) => route.id === id) || null;
+    },
+    [todayRoutes, pastRoutes],
+  );
+
+  const loadRoutes = useCallback(
+    async (targetPastDate: string = pastDate) => {
+      setState("loading");
+      setError(null);
+      try {
+        const [today, upcoming, past] = await Promise.all([
+          fetchDriverTodayRoutes(),
+          fetchDriverUpcomingRoutes(),
+          fetchDriverRoutesByDate(targetPastDate),
+        ]);
+
+        setTodayRoutes(today);
+        setUpcomingRoutes(upcoming);
+        setPastRoutes(past);
+        setPastDate(targetPastDate);
+        setState("ready");
+
+        setSelectedRouteId((current) => {
+          const exists =
+            (current && today.some((route) => route.id === current)) ||
+            (current && upcoming.some((route) => route.id === current)) ||
+            (current && past.some((route) => route.id === current));
+          if (exists) return current;
+          return today[0]?.id ?? upcoming[0]?.id ?? past[0]?.id ?? null;
+        });
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          if (status === 401 || status === 403) {
+            setState("no-access");
+            return;
+          }
         }
+        setError("Couldn't load your routes. Try again.");
+        setState("error");
       }
-      setError("Couldn't load routes. Try again.");
-      setState("error");
-    }
-  }, []);
+    },
+    [pastDate],
+  );
 
   useEffect(() => {
     loadRoutes();
   }, [loadRoutes]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const seen = window.localStorage.getItem(HOW_IT_WORKS_KEY);
-    if (!seen) {
-      setShowIntro(true);
+    if (!selectedRouteId) {
+      setSelectedRoute(null);
+      return;
     }
-  }, []);
+    const found = findRouteWithStops(selectedRouteId);
+    setSelectedRoute(found);
+  }, [selectedRouteId, findRouteWithStops]);
 
-  const upcomingSorted = useMemo(
-    () =>
-      [...upcomingRoutes].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-      ),
+  const handleRouteUpdated = (updatedRoute: DriverRoute) => {
+    setTodayRoutes((prev) =>
+      prev.map((route) => (route.id === updatedRoute.id ? updatedRoute : route)),
+    );
+    setPastRoutes((prev) =>
+      prev.map((route) => (route.id === updatedRoute.id ? updatedRoute : route)),
+    );
+    setSelectedRoute(updatedRoute);
+  };
+
+  const todayTotals = useMemo(() => {
+    const stops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);
+    const completed = todayRoutes.reduce((sum, route) => sum + countCompletedStops(route.stops), 0);
+    const pending = stops - completed;
+    return { stops, completed, pending };
+  }, [todayRoutes]);
+
+  const upcomingStops = useMemo(
+    () => upcomingRoutes.reduce((sum, route) => sum + (route.stops_count || 0), 0),
     [upcomingRoutes],
   );
 
-  const summary = useMemo(() => {
-    const totalStops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);
-    const delivered = todayRoutes.reduce(
-      (sum, route) => sum + route.stops.filter((stop) => stop.status === "delivered").length,
-      0,
-    );
-    const pending = todayRoutes.reduce(
-      (sum, route) => sum + route.stops.filter((stop) => stop.status === "pending").length,
-      0,
-    );
-    return { totalStops, delivered, pending };
-  }, [todayRoutes]);
+  const pastRouteCount = pastRoutes.length;
 
   if (state === "no-access") {
     return <NoAccess role="driver" />;
   }
 
-  const dismissIntro = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(HOW_IT_WORKS_KEY, "seen");
-    }
-    setShowIntro(false);
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-slate-900">Today&apos;s routes</h1>
+          <h1 className="text-xl font-semibold text-slate-900">My routes</h1>
           <p className="text-sm text-slate-600">
-            Check in, call clients, and update stops. Built for quick thumb-friendly actions.
+            Quick list of every route assigned to you. Pick a route to see stops and update deliveries.
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setShowIntro(true)}>
-          How it works
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => loadRoutes()}
+          disabled={state === "loading"}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
+          Refresh
         </Button>
       </div>
 
       <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
-        <Stat title="Total stops" value={summary.totalStops} icon={<Truck className="h-4 w-4" />} />
         <Stat
-          title="Delivered"
-          value={summary.delivered}
-          tone="success"
-          icon={<Leaf className="h-4 w-4" />}
+          title="Stops today"
+          value={todayTotals.stops}
+          tone="default"
+          icon={<Truck className="h-4 w-4" />}
+          helper={`${todayTotals.completed} done, ${todayTotals.pending} left`}
         />
         <Stat
-          title="Pending"
-          value={summary.pending}
+          title="Upcoming routes"
+          value={upcomingRoutes.length}
           tone="muted"
+          icon={<CalendarClock className="h-4 w-4" />}
+          helper={`${upcomingStops} stops scheduled`}
+        />
+        <Stat
+          title="Past (selected day)"
+          value={pastRouteCount}
+          tone="default"
           icon={<Clock className="h-4 w-4" />}
+          helper={`Date: ${pastDate}`}
         />
       </div>
 
-      <section className="space-y-3">
-        <header className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Assigned today</h2>
-          <Button variant="ghost" size="sm" onClick={loadRoutes} disabled={state === "loading"}>
-            <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
-            Refresh
+      {state === "error" && error ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>{error}</span>
+          <Button size="sm" variant="outline" onClick={() => loadRoutes()}>
+            Retry
           </Button>
-        </header>
-
-        {state === "loading" ? <RouteSkeletons /> : null}
-
-        {state === "error" && error ? (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <span>{error}</span>
-            <Button size="sm" variant="outline" onClick={loadRoutes}>
-              Retry
-            </Button>
-          </div>
-        ) : null}
-
-        {state === "ready" && todayRoutes.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
-            You have no routes for today.
-          </div>
-        ) : null}
-
-        {state === "ready" && todayRoutes.length > 0 ? (
-          <div className="space-y-3">
-            {todayRoutes.map((route) => (
-              <RouteCard key={route.id} route={route} />
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Upcoming</h2>
-          <Link to="/driver/upcoming" className="text-sm font-semibold text-primary">
-            View all
-          </Link>
         </div>
-        {state === "ready" && upcomingSorted.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-600">
-            No upcoming routes yet.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {upcomingSorted.slice(0, 3).map((route) => (
-              <div
-                key={route.id}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {route.region_name} · {route.region_code}
-                  </p>
-                  <p className="text-xs text-slate-600">{formatDate(route.date)}</p>
-                </div>
-                <div className="text-xs font-semibold text-slate-600">{route.stops_count} stops</div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[360px,1fr]">
+        <div className="space-y-3">
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Today
+                </p>
+                <p className="text-sm text-slate-600">Routes assigned for today.</p>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-      <Dialog
-        open={showIntro}
-        onOpenChange={(open) => {
-          if (!open) {
-            dismissIntro();
-          } else {
-            setShowIntro(true);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>How the driver console works</DialogTitle>
-            <DialogDescription>Quick reminders for first-time visits.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 text-sm text-slate-700">
-            <p>1) Refresh to pull today&apos;s routes assigned to you.</p>
-            <p>2) Open a route to call clients, open maps, and upload delivery proof.</p>
-            <p>3) Mark deliveries with a photo; use &ldquo;No pickup&rdquo; when nobody is home.</p>
-            <p>4) Upcoming tab shows the next few days so you can plan ahead.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={dismissIntro}>
-              Close
-            </Button>
-            <Button onClick={dismissIntro}>Got it</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+            {state === "loading" ? (
+              <RoutesSkeleton />
+            ) : todayRoutes.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">
+                No routes for today.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {todayRoutes.map((route) => (
+                  <RouteListCard
+                    key={route.id}
+                    route={route}
+                    label="Today"
+                    selected={selectedRouteId === route.id}
+                    onSelect={() => setSelectedRouteId(route.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="space-y-3 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Upcoming
+                </p>
+                <p className="text-sm text-slate-600">Plan ahead for future days.</p>
+              </div>
+            </div>
+            {state === "loading" ? (
+              <RoutesSkeleton />
+            ) : upcomingRoutes.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">
+                No upcoming routes yet.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {upcomingRoutes.map((route) => (
+                  <UpcomingRouteCard
+                    key={route.id}
+                    route={route}
+                    selected={selectedRouteId === route.id}
+                    onSelect={() => setSelectedRouteId(route.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+
+          <Card className="space-y-3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Past routes
+                </p>
+                <p className="text-sm text-slate-600">Pick a date to review completed routes.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={pastDate}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value) {
+                      loadRoutes(value);
+                    }
+                  }}
+                  className="h-10 w-36"
+                />
+                <Button size="sm" variant="outline" onClick={() => loadRoutes(pastDate)}>
+                  Go
+                </Button>
+              </div>
+            </div>
+            {state === "loading" ? (
+              <RoutesSkeleton />
+            ) : pastRoutes.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-600">
+                No routes found for this date.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pastRoutes.map((route) => (
+                  <RouteListCard
+                    key={route.id}
+                    route={route}
+                    label="Past"
+                    selected={selectedRouteId === route.id}
+                    onSelect={() => setSelectedRouteId(route.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          {state === "loading" && !selectedRouteId ? (
+            <div className="space-y-3">
+              <Skeleton className="h-5 w-48 rounded-full bg-slate-200/70" />
+              <Skeleton className="h-24 w-full rounded-2xl bg-slate-200/60" />
+            </div>
+          ) : (
+            <DriverRouteDetail
+              routeId={selectedRouteId}
+              initialRoute={selectedRoute || undefined}
+              embedded
+              onRouteUpdated={handleRouteUpdated}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-const statusOrder: RouteStopStatus[] = ["delivered", "pending", "no_pickup"];
-
-function RouteCard({ route }: { route: DriverRoute }) {
-  const statusCounts: Record<RouteStopStatus, number> = {
-    delivered: 0,
-    pending: 0,
-    no_pickup: 0,
-  };
-
-  route.stops.forEach((stop) => {
-    statusCounts[stop.status] += 1;
-  });
-
+function RouteListCard({
+  route,
+  label,
+  selected,
+  onSelect,
+}: {
+  route: DriverRoute;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const completed = countCompletedStops(route.stops);
-
   return (
-    <Link
-      to={`/driver/route/${route.id}`}
-      state={{ route }}
-      className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-xl border bg-white px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+        selected ? "border-slate-900 ring-2 ring-slate-900/10" : "border-slate-200"
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            <MapPin className="h-4 w-4" aria-hidden="true" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+          <p className="text-sm font-semibold text-slate-900">
             {route.region_name} · {route.region_code}
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900">{formatDate(route.date)}</h3>
-          <p className="text-sm text-slate-600">{route.stops.length} stops assigned</p>
+          </p>
+          <p className="text-xs text-slate-600">{formatDate(route.date)}</p>
         </div>
-        <div className="flex flex-col items-end gap-2 text-right">
-          <Badge variant={route.is_completed ? "default" : "secondary"}>
-            {route.is_completed ? "Completed" : "In progress"}
-          </Badge>
-          <div className="rounded-full bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
-            {completed} of {route.stops.length} stops completed
-          </div>
-        </div>
+        <Badge variant={route.is_completed ? "default" : "secondary"}>
+          {route.is_completed ? "Completed" : "In progress"}
+        </Badge>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-        {statusOrder.map((status) => (
-          <StatusPill key={status} status={status} value={statusCounts[status]} />
-        ))}
+      <div className="mt-2 flex items-center justify-between text-xs font-semibold text-slate-700">
+        <span>{route.stops.length} stops</span>
+        <span>
+          {completed} done · {route.stops.length - completed} left
+        </span>
       </div>
-    </Link>
+    </button>
   );
 }
 
-function StatusPill({ status, value }: { status: RouteStopStatus; value: number }) {
-  const styles = stopStatusStyles[status];
+function UpcomingRouteCard({
+  route,
+  selected,
+  onSelect,
+}: {
+  route: DriverUpcomingRoute;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 ${styles.badgeClass}`}
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-xl border bg-white px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+        selected ? "border-slate-900 ring-2 ring-slate-900/10" : "border-slate-200"
+      }`}
     >
-      <span className={`h-2 w-2 rounded-full ${styles.dotClass}`} />
-      {styles.label}: {value}
-    </span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Upcoming</p>
+          <p className="text-sm font-semibold text-slate-900">
+            {route.region_name} · {route.region_code}
+          </p>
+          <p className="text-xs text-slate-600">{formatDate(route.date)}</p>
+        </div>
+        <Badge variant="outline" className="gap-1">
+          <RouteIcon className="h-4 w-4 text-slate-500" aria-hidden="true" /> {route.stops_count} stops
+        </Badge>
+      </div>
+    </button>
   );
 }
 
-function RouteSkeletons() {
+function RoutesSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {[1, 2].map((item) => (
         <div
           key={item}
-          className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-28 rounded-full bg-slate-200/70" />
-              <Skeleton className="h-5 w-40 rounded-full bg-slate-200/70" />
-              <Skeleton className="h-3 w-24 rounded-full bg-slate-200/70" />
-            </div>
-            <Skeleton className="h-6 w-24 rounded-full bg-slate-200/70" />
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-3 w-24 rounded-full bg-slate-200/70" />
+            <Skeleton className="h-6 w-20 rounded-full bg-slate-200/70" />
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Skeleton className="h-7 w-24 rounded-full bg-slate-200/70" />
-            <Skeleton className="h-7 w-20 rounded-full bg-slate-200/70" />
-            <Skeleton className="h-7 w-28 rounded-full bg-slate-200/70" />
+          <div className="mt-2 flex items-center justify-between">
+            <Skeleton className="h-4 w-28 rounded-full bg-slate-200/70" />
+            <Skeleton className="h-4 w-24 rounded-full bg-slate-200/70" />
           </div>
         </div>
       ))}
@@ -322,18 +412,18 @@ function Stat({
   value,
   tone = "default",
   icon,
+  helper,
 }: {
   title: string;
   value: number;
-  tone?: "default" | "success" | "muted";
+  tone?: "default" | "muted";
   icon?: ReactNode;
+  helper?: string;
 }) {
   const toneClasses =
-    tone === "success"
-      ? "bg-emerald-50 text-emerald-700"
-      : tone === "muted"
-        ? "bg-slate-50 text-slate-600"
-        : "bg-slate-100 text-slate-800";
+    tone === "muted"
+      ? "bg-slate-50 text-slate-600"
+      : "bg-slate-100 text-slate-800";
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2">
@@ -343,6 +433,7 @@ function Stat({
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
         <p className={`text-xl font-bold ${toneClasses}`}>{value}</p>
+        {helper ? <p className="text-xs font-semibold text-slate-500">{helper}</p> : null}
       </div>
     </div>
   );

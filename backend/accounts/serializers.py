@@ -27,10 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     region_name = serializers.CharField(source="region.name", read_only=True)
+    email = serializers.EmailField(source="user.email", required=False)
 
     class Meta:
         model = CustomerProfile
         fields = [
+            "email",
             "first_name",
             "last_name",
             "phone",
@@ -45,11 +47,28 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["email_verified_at", "phone_verified_at", "region_name"]
 
+    def validate_email(self, value):
+        email = value.strip()
+        if not email:
+            raise serializers.ValidationError("Email cannot be blank.")
+
+        user = getattr(getattr(self, "instance", None), "user", None)
+        existing = (
+            User.objects.filter(email__iexact=email)
+            .exclude(id=user.id if user else None)
+            .exists()
+        )
+        if existing:
+            raise serializers.ValidationError("A user with that email already exists.")
+        return email
+
     def update(self, instance, validated_data):
         user = instance.user
+        user_data = validated_data.pop("user", {}) if validated_data else {}
         first_name = validated_data.get("first_name")
         last_name = validated_data.get("last_name")
         region_code = validated_data.get("region_code", None)
+        new_email = user_data.get("email")
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -72,6 +91,10 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         if last_name is not None and last_name != user.last_name:
             user.last_name = last_name
             user_update_fields.append("last_name")
+        if new_email is not None and new_email != user.email:
+            user.email = new_email
+            user.username = new_email
+            user_update_fields.extend(["email", "username"])
 
         if user_update_fields:
             user.save(update_fields=user_update_fields)
