@@ -166,7 +166,7 @@ function Shop() {
           </aside>
 
           <div className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {(isLoading ? Array.from({ length: 6 }) : filteredProducts).map((product, index) => {
                 const key = isLoading ? `placeholder-${index}` : product.id;
                 const categorySlug = isLoading ? null : product.category?.slug ?? null;
