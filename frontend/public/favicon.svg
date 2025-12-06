@@ -1,20 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title>Vancouver Milk Co. favicon</title>
+  <title>Hedgehog favicon</title>
   <defs>
-    <linearGradient id="milkDrop" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#c8e9ff"/>
-      <stop offset="100%" stop-color="#67b7f7"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#15294d"/>
+      <stop offset="100%" stop-color="#0b1a32"/>
     </linearGradient>
-    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.2"/>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f2c899"/>
+      <stop offset="100%" stop-color="#c78347"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe6c8"/>
+      <stop offset="100%" stop-color="#e2b681"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="#0d1f38"/>
-  <path
-    d="M32 56c-8.5 0-15-6.6-15-15.2C17 29 32 10 32 10s15 19 15 30.8C47 49.4 40.5 56 32 56Z"
-    fill="url(#milkDrop)"/>
-  <path
-    d="M32 48c-5.2 0-9.5-4.3-9.5-9.6C22.5 31.8 32 21 32 21s9.5 10.8 9.5 17.4C41.5 43.7 37.2 48 32 48Z"
-    fill="url(#shine)"/>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <path d="M14 38c0-11.2 10.2-21 22.5-21H42c9.2 0 16.5 7 16.5 16v4c0 10.2-8 18-18.2 18H30c-8.8 0-16-7-16-17Z" fill="url(#body)"/>
+  <path d="M31 22h10c8.2 0 14 6 14 14v5.5C55 51 48 56 40.2 56H34c-8 0-12-6-12-14.5v-3C22 29 26.8 22 31 22Z" fill="url(#face)"/>
+  <g stroke="#2b1a0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+    <path d="M16 34 12 22"/>
+    <path d="M22 32 18 18"/>
+    <path d="M28 30 26 16"/>
+    <path d="M34 28 34 14"/>
+    <path d="M40 30 42 16"/>
+    <path d="M46 32 50 18"/>
+  </g>
+  <path d="M20 44c-1.4 0-2.6-1.2-2.6-2.6 0-2.8 2-6.2 5-6.2 2.6 0 4.6 2.4 4.6 5 0 2.2-1.8 3.8-3.8 3.8Z" fill="#8b5126" opacity="0.8"/>
+  <circle cx="46" cy="34" r="2" fill="#0c0c0c"/>
+  <circle cx="52.5" cy="38.5" r="1.6" fill="#1d140c"/>
+  <path d="M44 40c1.4 1.2 2.8 1.4 4.2 1" stroke="#1d140c" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M24 49c4.6 3.6 11.6 4.6 18 3.2" stroke="#9b602c" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
 </svg>
