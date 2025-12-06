@@ -6,6 +6,8 @@ import { Menu, ShoppingCart, User, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { brand } from "../../config/brand";
+import { useSiteImage } from "../../hooks/useSiteImage";
+import logoAsset from "../../assets/logo.svg";
 import AuthModal from "../auth/AuthModal";
 import AreaSwitcher from "../internal/AreaSwitcher";
 import {
@@ -35,6 +37,10 @@ function Header({ onCartClick }: HeaderProps) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const { isAuthenticated, me, logout } = useAuth();
   const { items } = useCart();
+  const brandLogo = useSiteImage("brand.logo", {
+    fallbackUrl: logoAsset,
+    alt: brand.name,
+  });
 
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -99,10 +105,16 @@ function Header({ onCartClick }: HeaderProps) {
         <div className="flex items-center justify-between h-16 px-4 border-b border-[#6A0DAD]/15">
           <Link
             to="/"
-            className="text-2xl font-bold text-[#6A0DAD] drop-shadow-lg"
+            className="flex items-center"
             onClick={closeMobileMenu}
           >
-            {brand.name}
+            <span className="sr-only">{brand.name}</span>
+            <img
+              src={brandLogo.url}
+              alt={brandLogo.alt}
+              className="h-10 w-auto drop-shadow-lg"
+              loading="eager"
+            />
           </Link>
           <button
             type="button"
@@ -214,10 +226,16 @@ function Header({ onCartClick }: HeaderProps) {
             <div className="flex items-center gap-8">
               <Link
                 to="/"
-                className="text-3xl font-bold text-[#6A0DAD] drop-shadow-md font-[var(--font-heading)]"
+                className="flex items-center"
                 onClick={closeMobileMenu}
               >
-                {brand.name}
+                <span className="sr-only">{brand.name}</span>
+                <img
+                  src={brandLogo.url}
+                  alt={brandLogo.alt}
+                  className="h-10 w-auto drop-shadow-md"
+                  loading="eager"
+                />
               </Link>
 
               <nav className="hidden md:flex items-center gap-8" aria-label="Primary navigation">

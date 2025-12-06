@@ -1,424 +1,445 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Droplet, Leaf, Package } from "lucide-react";
-
-import { getProducts } from "../api/products";
-import { CategoryCard } from "../components/CategoryCard";
-import { FeatureCard } from "../components/FeatureCard";
-import { ProductCard } from "../components/ProductCard";
-import { ServiceCard } from "../components/ServiceCard";
-import { useCart } from "../context/CartContext";
+import { useRef } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Droplet, Droplets, Leaf, Milk, ShieldCheck, Smile, Truck } from "lucide-react";
 import { brand } from "../config/brand";
-import type { Product } from "../types";
-import { getProductImageUrl } from "../utils/products";
 
-const formatPrice = (priceCents: number) => `$${(priceCents / 100).toFixed(2)}`;
+const HERO_IMAGE =
+  "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=15";
 
-const categoryShowcase = [
+const HERO_FEATURE_TILES = [
   {
-    title: "Fresh Milk",
-    image:
-      "https://images.unsplash.com/photo-1514996937319-344454492b37?auto=format&fit=crop&w=1200&q=80",
-    links: ["Whole", "2%", "Chocolate", "Non-homogenized"],
-    description: "Grass-fed BC herds bottled within 24 hours and delivered cold across Vancouver.",
+    title: "High-Protein Yogurts",
+    copy: "Protein-packed cups that keep up with school, sports, and everything in between.",
+    Icon: Droplet,
+    bg: "bg-[#ffe75e]",
+    text: "text-[#6b21ff]",
   },
   {
-    title: "Yogurt & Kefir",
-    image:
-      "https://images.unsplash.com/photo-1505250469679-203ad9ced0cb?auto=format&fit=crop&w=1200&q=80",
-    links: ["Greek", "Plain", "Drinkable", "Kefir"],
-    description: "Slow-cultured dairy with live probiotics for breakfasts, smoothies, and baking.",
+    title: "Natural Ingredients Only",
+    copy: "Simple recipes made with real fruit, live cultures, and milk you can pronounce.",
+    Icon: Leaf,
+    bg: "bg-[#a5f3fc]",
+    text: "text-[#0f172a]",
   },
   {
-    title: "Cheese & Butter",
-    image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    links: ["Soft cheese", "Cheddar", "Paneer", "Cultured butter"],
-    description: "Coastal creamery favorites, ready for snacking boards or weeknight cooking.",
+    title: "School & Home Delivery",
+    copy: "Convenient routes that keep every snack chilled from our fridge to yours.",
+    Icon: Truck,
+    bg: "bg-[#fed7aa]",
+    text: "text-[#7c2d12]",
   },
   {
-    title: "Coffee Bar",
-    image:
-      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
-    links: ["Barista milk", "Half & half", "Whipping cream", "Chocolate milk"],
-    description: "Latte-ready proteins that steam glossy and taste sweet without extra syrups.",
+    title: "No Additives, No Fake Flavors",
+    copy: "Just bright, bold taste from real ingredients. That's it.",
+    Icon: ShieldCheck,
+    bg: "bg-[#e9d5ff]",
+    text: "text-[#4c1d95]",
   },
 ];
 
-const featureHighlights = [
-  { title: "Fraser Valley milked at dawn", description: "Grass-fed herds, bottled and sealed before sunrise." },
-  { title: "Pasteurized & cold-held", description: "Cold-chain readings ride with every delivery route." },
-  { title: "Reusable glass bottles", description: "Deposit system with doorstep pickups on your next order." },
-  { title: "Barista texture", description: "Higher protein milk that stretches and pours like velvet." },
-  { title: "Local delivery windows", description: "Vancouver & North Shore routes with SMS updates." },
-];
-
-const milkBoxes = [
+const FLAVORS = [
   {
-    title: "Barista Essentials",
-    price: "$28 / week",
-    image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80",
+    name: "Berry Blast",
+    tag: "Mixed berries & Greek yogurt",
+    image:
+      "https://images.unsplash.com/photo-1511918984145-48de785d4c4d?auto=format&fit=crop&w=900&q=80",
+    gradient: "from-[#7c3aed] to-[#5b21ff]",
   },
   {
-    title: "Family Fridge Crate",
-    price: "$42 / week",
-    image: "https://images.unsplash.com/photo-1510626176961-4b37d0ae5b2b?auto=format&fit=crop&w=1200&q=80",
+    name: "Mango Magic",
+    tag: "Tropical mango paradise",
+    image:
+      "https://images.unsplash.com/photo-1505253181491-580b10ae1535?auto=format&fit=crop&w=900&q=80",
+    gradient: "from-[#f97316] to-[#facc15]",
   },
   {
-    title: "Cheese + Butter Selects",
-    price: "$36 / week",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-  },
-];
-
-const productHighlights = [
-  {
-    name: "Milk & Cream",
-    description: "Whole, 2%, skim, chocolate, barista milk, half & half, and whipping cream.",
-    icon: Droplet,
+    name: "Protein Power",
+    tag: "Extra protein, zero guilt",
+    image:
+      "https://images.unsplash.com/photo-1511910849309-0dffb8785146?auto=format&fit=crop&w=900&q=80",
+    gradient: "from-[#06b6d4] to-[#6366f1]",
   },
   {
-    name: "Yogurt & Kefir",
-    description: "Greek, plain, drinkable, and cultured kefir with live probiotics.",
-    icon: Leaf,
-  },
-  {
-    name: "Cheese & Pantry",
-    description: "Cultured butter, soft cheese, paneer, and pantry staples for quick hosting.",
-    icon: Package,
+    name: "Granola Crunch",
+    tag: "Crunchy granola perfection",
+    image:
+      "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=80",
+    gradient: "from-[#fb923c] to-[#facc15]",
   },
 ];
 
-const heroStats = [
-  { label: "Milking → bottle", value: "24 hrs" },
-  { label: "Delivery windows", value: "3x weekly" },
-  { label: "Bottle returns", value: "Included" },
+const STORY_IMAGES = [
+  "https://images.unsplash.com/photo-1571687949920-1a810e9a4108?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1516886635086-2b3c423c0943?auto=format&fit=crop&w=900&q=80",
+];
+
+const ABOUT_FEATURES = [
+  {
+    title: "For Active Lives",
+    copy: "Designed for athletes, students, and families on the go.",
+    bg: "bg-[#fff7ed]",
+  },
+  {
+    title: "Clean & Simple",
+    copy: "No artificial anything. Just pure, wholesome ingredients.",
+    bg: "bg-[#fefce8]",
+  },
+  {
+    title: "Taste The Joy",
+    copy: "Every spoonful is packed with flavor and happiness.",
+    bg: "bg-[#ecfeff]",
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    quote:
+      "Yogurt that actually tastes fun. My kids ask for it by flavor name instead of candy.",
+    name: "Jordan",
+    role: "Busy Parent",
+  },
+  {
+    quote:
+      "Post-workout snack, school snack, midnight snack... we keep the fridge stocked.",
+    name: "Maya",
+    role: "Fitness Enthusiast",
+  },
+  {
+    quote:
+      "Bright flavors, nothing fake. It feels like dessert but fits my goals.",
+    name: "Eli",
+    role: "College Student",
+  },
+];
+
+const COMMUNITY_PHOTOS = [
+  "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1484981184820-2e84ea0af0cc?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1552767059-ce182ead6c1b?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1506086679524-493c64fdfaa6?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=900&q=80",
 ];
 
 function HomePage() {
-  const { addItem } = useCart();
-  const navigate = useNavigate();
-  const shopSectionRef = useRef<HTMLDivElement | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const flavorsRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
-    getProducts(undefined, controller.signal)
-      .then((result) => setProducts(result))
-      .catch((fetchError) => {
-        if (controller.signal.aborted) return;
-        console.error("Failed to fetch products", fetchError);
-        setError("Unable to load products right now. Please try again.");
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, []);
-
-  const popularProducts = useMemo(
-    () => products.filter((product) => product.is_popular).slice(0, 4),
-    [products],
-  );
-
-  const shopHighlights = useMemo(() => (products.length ? products.slice(0, 4) : []), [products]);
-
-  const scrollToShop = () => {
-    shopSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToFlavors = () => {
+    flavorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const handleAddToCart = (product: Product) => addItem(product, 1);
-
   return (
-    <div className="landing-page space-y-0 text-slate-900">
-      <section className="landing-section relative overflow-hidden py-16 text-slate-900 bg-gradient-to-br from-[#eaf5ff] via-[#f6fbff] to-white border-b border-sky-100">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -left-10 -top-16 h-64 w-64 rounded-full bg-sky-200/40 blur-3xl" />
-          <div className="absolute right-4 top-10 h-72 w-72 rounded-full bg-blue-300/30 blur-3xl" />
-          <div className="absolute left-12 bottom-0 h-60 w-60 rounded-full bg-amber-100/50 blur-3xl" />
+    <div className="yummee-home text-slate-900">
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#5b21ff] via-[#a855f7] to-[#22c1c3] text-white">
+        <div className="pointer-events-none absolute inset-0 opacity-70">
+          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-white/20 blur-3xl" />
+          <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-[#facc15]/20 blur-3xl" />
+          <div className="absolute left-10 bottom-0 h-64 w-64 rounded-full bg-[#22c1c3]/30 blur-3xl" />
         </div>
-        <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/80 backdrop-blur border border-sky-100 shadow-sm">
-              <span className="text-sky-800 text-xs font-semibold tracking-[0.2em] uppercase">
-                Grass-fed BC dairy
-              </span>
-              <span className="text-slate-500 text-sm">Bottled in Vancouver · Cold chain 0–4°C</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-semibold leading-tight text-slate-900">
-              Vancouver&apos;s milk, yogurt, and cream bottled at dawn.
-            </h1>
-            <p className="text-slate-700 max-w-2xl">
-              {brand.name} partners with Fraser Valley dairies, fills reusable glass bottles, and delivers across
-              Vancouver and the North Shore with cold-chain tracking.
+
+        <div className="relative mx-auto flex max-w-[1180px] flex-col gap-12 px-4 py-20 md:flex-row md:items-center md:py-24 lg:px-8">
+          {/* Left copy */}
+          <div className="flex-1 space-y-7">
+            <p className="inline-flex items-center rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+              {brand.name} - Active families, young lifestyles
             </p>
-            <div className="flex flex-wrap gap-3 pt-1">
-              <button
-                type="button"
-                onClick={scrollToShop}
-                className="bg-[#0b4f88] text-white px-6 py-3 rounded-lg shadow-md hover:bg-sky-800 transition-colors font-semibold"
-              >
-                Shop dairy
-              </button>
+
+            <h1 className="text-[2.7rem] leading-[1.05] font-semibold sm:text-[3.2rem] lg:text-[3.6rem]">
+              <span className="block">feels</span>
+              <span className="block">
+                <span className="text-[#ffe75e]">fun</span>,{" "}
+                <span className="text-[#bbf7d0]">fresh</span> and{" "}
+                <span className="text-[#fed7ff]">real</span>.
+              </span>
+            </h1>
+
+            <p className="max-w-xl text-base md:text-lg text-slate-50/90">
+              Healthy dairy that's bright, bold, and never boring. Think
+              high-protein yogurts, smoothie bowls, and snackable cups that fit
+              busy days.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-1">
               <Link
-                to="/contact"
-                className="border-2 border-slate-900 text-slate-900 px-6 py-3 rounded-lg bg-white/70 hover:bg-white transition-colors"
+                to="/shop"
+                className="inline-flex items-center justify-center rounded-full bg-[#ffe75e] px-8 py-3 text-sm font-semibold text-[#5b21ff] shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5"
               >
-                See delivery map
+                Shop Now
               </Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {categoryShowcase.slice(0, 3).map((item) => (
-                <span
-                  key={item.title}
-                  className="border border-sky-100 bg-white/80 px-4 py-2 rounded-full text-sm text-slate-800 shadow-sm"
-                >
-                  {item.title}
-                </span>
-              ))}
               <button
                 type="button"
-                onClick={scrollToShop}
-                className="bg-white/80 border border-sky-100 px-4 py-2 rounded-full text-sm hover:bg-white transition-colors text-slate-800 shadow-sm"
+                onClick={scrollToFlavors}
+                className="inline-flex items-center justify-center rounded-full border border-white/70 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
               >
-                How it works →
+                Explore Flavors
+                <ArrowRight className="ml-2 h-4 w-4" />
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              {heroStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="bg-white/80 border border-sky-100 rounded-xl px-4 py-3 shadow-sm backdrop-blur"
-                >
-                  <div className="text-xs uppercase tracking-[0.15em] text-sky-800 font-semibold">{stat.label}</div>
-                  <div className="text-2xl font-semibold text-slate-900">{stat.value}</div>
-                </div>
-              ))}
+
+            <div className="mt-4 grid gap-3 text-xs md:text-sm sm:grid-cols-3">
+              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+                <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
+                  Protein
+                </p>
+                <p className="mt-1 text-lg font-semibold text-white">10-15g</p>
+                <p className="text-white/80">per cup, depending on flavor.</p>
+              </div>
+              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+                <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
+                  Real Fruit
+                </p>
+                <p className="mt-1 text-lg font-semibold text-white">No dyes</p>
+                <p className="text-white/80">Colors come from nature.</p>
+              </div>
+              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+                <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
+                  Convenient
+                </p>
+                <p className="mt-1 text-lg font-semibold text-white">
+                  School & home
+                </p>
+                <p className="text-white/80">Delivery that fits your week.</p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur text-slate-900 p-8 rounded-2xl shadow-2xl border border-sky-100">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sky-700 uppercase tracking-wider text-sm">Popular right now</p>
-              <span className="rounded-full bg-sky-50 text-sky-700 text-xs font-semibold px-3 py-1 border border-sky-100">
-                Updated live
-              </span>
-            </div>
-            <h3 className="text-2xl font-semibold mb-4">What neighbors are adding</h3>
-            <div className="space-y-3">
-              {popularProducts.length ? (
-                popularProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between border-b last:border-b-0 border-gray-200 pb-3"
-                  >
-                    <div>
-                      <div className="font-semibold text-black">{product.name}</div>
-                      {product.category && <div className="text-xs text-gray-500">{product.category.name}</div>}
-                    </div>
-                    <div className="text-sky-700 font-semibold">{formatPrice(product.price_cents)}</div>
+          {/* Right image card */}
+          <div className="flex-1">
+            <div className="relative mx-auto max-w-md">
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#f97316]/50 blur-3xl" />
+              <div className="absolute -left-10 bottom-10 h-28 w-28 rounded-full bg-[#22c1c3]/40 blur-3xl" />
+
+              <div className="overflow-hidden rounded-[32px] bg-white/95 p-4 shadow-2xl">
+                <div className="overflow-hidden rounded-3xl">
+                  <img
+                    src={HERO_IMAGE}
+                    alt="Colorful yogurt bowl full of fruit"
+                    className="h-[260px] w-full object-cover sm:h-[300px]"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3 text-xs text-slate-700">
+                  <div className="inline-flex items-center gap-2">
+                    <Milk className="h-4 w-4 text-[#5b21ff]" />
+                    <span>Made with real {brand.shortName || brand.name} dairy</span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-600">
-                  {loading ? "Loading top picks..." : "Mark products as popular in admin to feature them here."}
-                </p>
-              )}
+                  <div className="inline-flex items-center gap-2">
+                    <Droplets className="h-4 w-4 text-[#22c1c3]" />
+                    <span>Live &amp; active cultures</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            {error && <p className="text-amber-600 text-sm mt-3">{error}</p>}
-            <button
-              type="button"
-              className="bg-sky-900 text-white px-6 py-3 rounded-lg hover:bg-sky-800 transition-colors w-full mt-6 shadow-md"
-              onClick={scrollToShop}
-            >
-              Shop the lineup
-            </button>
           </div>
         </div>
       </section>
 
-      <section className="landing-section py-16 bg-white text-slate-900 border-t border-sky-100">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14">
-          <div className="grid md:grid-cols-3 gap-8">
-            {milkBoxes.map((pkg) => (
-              <div key={pkg.title} className="text-center bg-sky-50 rounded-2xl p-6 shadow-sm border border-sky-100">
-                <div className="mb-6 h-48 overflow-hidden rounded-xl border border-sky-100">
-                  <img src={pkg.image} alt={pkg.title} className="w-full h-full object-cover" />
+      {/* HERO FEATURE TILES */}
+      <section className="bg-gradient-to-r from-[#4c1d95] via-[#7c3aed] to-[#db2777] py-12">
+        <div className="mx-auto grid max-w-[1180px] gap-6 px-4 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+          {HERO_FEATURE_TILES.map(({ title, copy, Icon, bg, text }) => (
+            <div
+              key={title}
+              className={`flex h-full flex-col rounded-3xl ${bg} ${text} p-5 shadow-[0_16px_40px_rgba(0,0,0,0.25)]`}
+            >
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/5">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-semibold">{title}</h3>
+              <p className="mt-2 text-sm opacity-90">{copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* DISCOVER YOUR FLAVOR */}
+      <section
+        ref={flavorsRef}
+        className="bg-gradient-to-b from-[#fff7cc] via-[#fffaf0] to-[#fffbeb] py-16 md:py-20"
+      >
+        <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
+          <div className="space-y-3 text-center">
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              Discover Your{" "}
+              <span className="text-[#a855f7] drop-shadow-sm">Flavor</span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-slate-600">
+              Every flavor is a fun adventure for your taste buds. Mix, match,
+              and find your new everyday favorite.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {FLAVORS.map((flavor) => (
+              <article
+                key={flavor.name}
+                className={`flex flex-col items-center rounded-[32px] bg-gradient-to-br ${flavor.gradient} px-6 pb-7 pt-9 text-white shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)]`}
+              >
+                <div className="mb-6 h-28 w-28 overflow-hidden rounded-full border-4 border-white/70 shadow-lg">
+                  <img
+                    src={flavor.image}
+                    alt={flavor.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
-                <h3 className="text-2xl font-semibold mb-2">{pkg.title}</h3>
-                <p className="text-sky-800 font-semibold mb-4">{pkg.price}</p>
+                <h3 className="text-lg font-semibold">{flavor.name}</h3>
+                <p className="mt-2 text-sm text-white/90">{flavor.tag}</p>
                 <button
                   type="button"
-                  onClick={scrollToShop}
-                  className="bg-slate-900 text-white px-6 py-2 rounded-full hover:bg-sky-800 transition-colors text-sm"
+                  className="mt-6 inline-flex rounded-full bg-white px-6 py-2 text-sm font-semibold text-[#7c3aed] shadow-md transition hover:bg-slate-50"
                 >
-                  See what&apos;s inside
+                  Try Now
                 </button>
-              </div>
+              </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="landing-section py-16 bg-[#eaf5ff]">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 space-y-8">
-          <div className="flex flex-col gap-3">
-            <p className="text-sky-800 uppercase tracking-[0.2em] text-xs">Categories</p>
-            <h2 className="text-3xl font-semibold text-slate-900">Everyday dairy plus cafe-ready staples.</h2>
-            <p className="text-slate-700 max-w-2xl">
-              Build your cart by craving: creamy milks, cultured yogurt and kefir, spreadable butter, and cheese boards
-              made for quick hosting.
-            </p>
-          </div>
-          <div className="flex gap-8 flex-wrap">
-            {categoryShowcase.map((category) => (
-              <CategoryCard key={category.title} {...category} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section py-16 bg-white">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14">
-          <div className="grid md:grid-cols-2 gap-12">
-            <div className="space-y-4">
-              <p className="text-sky-700 uppercase tracking-wider text-sm">From farm to glass</p>
-              <h2 className="text-4xl font-semibold">Less than 24 hours from milking to your fridge.</h2>
-              <p className="text-slate-700">
-                We bottle in small batches, keep everything between 0–4°C, and timestamp every crate so you can taste
-                the difference in sweetness and texture.
-              </p>
-              <div className="flex gap-4 flex-wrap">
-                <Link
-                  to="/pricing"
-                  className="bg-slate-900 text-white px-6 py-3 rounded-lg hover:bg-sky-800 transition-colors"
-                >
-                  See subscriptions
-                </Link>
-                <Link
-                  to="/menu"
-                  className="border-2 border-slate-900 text-slate-900 px-6 py-3 rounded-lg hover:bg-slate-900 hover:text-white transition-colors"
-                >
-                  Shop all dairy
-                </Link>
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-[#0b3b5c] to-[#0e7490] p-8 rounded-2xl shadow-lg space-y-4 text-white">
-              <p className="uppercase tracking-wider text-sm text-sky-100">Delivery promise</p>
-              <h3 className="text-3xl font-semibold">Routes that respect the cold chain.</h3>
-              <p className="text-white/90">
-                Vancouver, Burnaby, and North Shore runs twice weekly. Bottles ride with gel packs and ice blankets; your
-                SMS includes a cold-chain timestamp.
-              </p>
-              <p className="text-sky-100 text-sm">Bottle returns accepted on every delivery.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section py-16 bg-white text-slate-900">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 grid md:grid-cols-2 gap-12 items-start">
-          <div className="space-y-4">
-            <p className="text-sky-700 uppercase tracking-wider text-sm">About {brand.shortName}</p>
-            <h2 className="text-4xl font-semibold">
-              Vancouver-made dairy with reusable bottles and transparent sourcing.
+      {/* WHY SHOULD DAIRY BE BORING? */}
+      <section className="bg-white py-16 md:py-20">
+        <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
+          <div className="mx-auto max-w-3xl space-y-4 text-center">
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              Why should dairy be boring?{" "}
+              <span className="text-[#facc15]">We</span>{" "}
+              <span className="text-[#fb7185]">made it fun again.</span>
             </h2>
-            <p className="text-gray-700">
-              Our team grew up between local farms and Vancouver cafes. We pair grass-fed milk with barista-level
-              standards so your fridge staples stay premium without the markup.
-            </p>
-            <p className="text-gray-700">
-              Every bottle lists the dairy, batch, and pasteurization window. Returns ride back on your next delivery so
-              glass can be reused instead of recycled.
-            </p>
-            <Link
-              to="/about-us"
-              className="text-slate-900 border-2 border-slate-900 px-6 py-3 inline-flex rounded-lg hover:bg-slate-900 hover:text-white transition-colors w-fit"
-            >
-              Read our story →
-            </Link>
-          </div>
-          <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-lg space-y-4">
-            <p className="text-sky-200 uppercase tracking-wider text-sm">Customer note</p>
-            <p className="text-xl leading-relaxed">
-              “It tastes like the milk we grew up with. The bottles show the milking date, and returns are easy—I just
-              leave them out for the driver.”
-            </p>
-            <p className="text-slate-200">- Rhea M., Kitsilano</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section py-16 bg-slate-900 text-white border-t border-sky-200/20">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-10">
-            <div>
-              <p className="text-sky-200 uppercase tracking-wider text-sm mb-2">Why choose us</p>
-              <h2 className="text-4xl font-semibold">Standards you can taste.</h2>
-            </div>
-            <p className="text-sky-100/80 max-w-md">
-              Grass-fed milk, pasteurization logs, and bottle-return routes that keep the planet and your coffee happy.
+            <p className="text-slate-600">
+              {brand.name} was born from a simple belief: healthy food should
+              make you smile. We create dairy snacks that fuel active
+              lifestyles, without compromising on taste or fun.
             </p>
           </div>
-          <div className="grid md:grid-cols-5 gap-4">
-            {featureHighlights.map((feature, index) => (
-              <FeatureCard key={feature.title} {...feature} index={index} />
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section className="landing-section py-16 bg-white text-slate-900" ref={shopSectionRef} id="shop">
-        <div className="w-full max-w-[1400px] mx-auto px-4 md:px-8 lg:px-14 space-y-10">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-            <div>
-              <p className="text-sky-700 uppercase tracking-wider text-sm">Shop • Menu</p>
-              <h2 className="text-4xl font-semibold">Explore the dairy case.</h2>
-              <p className="text-gray-600 mt-2">
-                Pick your staples, add weekend treats, and leave bottle returns at the door for your next delivery.
-              </p>
-            </div>
-            <Link to="/menu" className="text-slate-900 font-semibold hover:underline flex items-center gap-2">
-              Visit shop <ArrowRight size={18} />
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {productHighlights.map((item) => (
-              <ProductCard key={item.name} {...item} ctaLabel="Open category" onClick={() => navigate("/menu")} />
-            ))}
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {loading && !shopHighlights.length ? (
-              <div className="md:col-span-2 text-gray-600">Loading products...</div>
-            ) : shopHighlights.length ? (
-              shopHighlights.map((product) => (
-                <ServiceCard
-                  key={product.id}
-                  title={product.name}
-                  price={formatPrice(product.price_cents)}
-                  description={product.description || product.category?.name || "Popular pick from our shop."}
-                  image={getProductImageUrl(product)}
-                  onAddToCart={() => handleAddToCart(product)}
-                  onDetails={() => navigate(`/products/${product.slug}`)}
+          <div className="grid gap-6 md:grid-cols-3">
+            {STORY_IMAGES.map((src, index) => (
+              <div
+                key={src}
+                className="overflow-hidden rounded-[30px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.15)]"
+              >
+                <img
+                  src={src}
+                  alt={`Yogurt snack ${index + 1}`}
+                  className="h-[260px] w-full object-cover sm:h-[320px]"
+                  loading="lazy"
                 />
-              ))
-            ) : (
-              <div className="md:col-span-2 text-gray-700 bg-gray-50 border border-dashed border-gray-200 rounded-xl p-6">
-                <p className="font-semibold text-black">No products yet.</p>
-                <p className="text-sm mt-2">Add items in the admin to see them featured here.</p>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ABOUT FEATURES */}
+      <section className="bg-white pb-6 md:pb-10">
+        <div className="mx-auto grid max-w-[1180px] gap-6 px-4 md:grid-cols-3 lg:px-8">
+          {ABOUT_FEATURES.map((feature) => (
+            <div
+              key={feature.title}
+              className={`rounded-[28px] ${feature.bg} px-6 py-8 shadow-sm`}
+            >
+              <h3 className="text-lg font-semibold text-slate-900">
+                {feature.title}
+              </h3>
+              <p className="mt-2 text-sm text-slate-700">{feature.copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* WHAT PEOPLE ARE SAYING */}
+      <section className="bg-gradient-to-r from-[#5b21ff] via-[#7c3aed] to-[#ec4899] py-16 text-white md:py-20">
+        <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
+          <div className="space-y-3 text-center">
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              What People Are <span className="text-[#ffe75e]">Saying</span>
+            </h2>
+            <p className="text-sm text-white/85">
+              Real stories from real {brand.name} lovers.
+            </p>
           </div>
 
-          {error && <p className="text-amber-700 text-sm">{error}</p>}
+          <div className="grid gap-6 md:grid-cols-3">
+            {TESTIMONIALS.map((t) => (
+              <article
+                key={t.name}
+                className="flex h-full flex-col rounded-[28px] bg-white/10 p-6 text-left shadow-[0_18px_50px_-18px_rgba(0,0,0,0.7)] backdrop-blur"
+              >
+                <div className="mb-3 flex items-center gap-1 text-yellow-300">
+                  <span>*</span>
+                  <span>*</span>
+                  <span>*</span>
+                  <span>*</span>
+                  <span>*</span>
+                </div>
+                <p className="text-sm leading-relaxed text-white/95">
+                  {t.quote}
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+                    <Smile className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-white/80">{t.role}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* JOIN THE COMMUNITY */}
+      <section className="bg-gradient-to-b from-[#ede9ff] via-[#e0f2fe] to-[#f5d0fe] py-16 md:py-20">
+        <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
+          <div className="space-y-3 text-center">
+            <h2 className="text-3xl font-semibold md:text-4xl">
+              Join The{" "}
+              <span className="text-[#7c3aed] drop-shadow-sm">
+                {brand.name}
+              </span>{" "}
+              Community
+            </h2>
+            <p className="mx-auto max-w-2xl text-slate-700">
+              Share your moments with{" "}
+              <span className="font-semibold text-[#7c3aed]">
+                #{brand.shortName || "Yummee"}Life
+              </span>{" "}
+              and tag us for a chance to be featured.
+            </p>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {COMMUNITY_PHOTOS.map((src, index) => (
+              <div
+                key={src}
+                className="relative h-40 w-40 min-w-[10rem] overflow-hidden rounded-3xl bg-slate-200 shadow-md md:h-48 md:w-48"
+              >
+                <img
+                  src={src}
+                  alt={`Community photo ${index + 1}`}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-center">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-[#ffe75e] px-8 py-3 text-sm font-semibold text-[#5b21ff] shadow-[0_18px_40px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5"
+            >
+              Follow Us on Instagram
+            </a>
+          </div>
         </div>
       </section>
     </div>

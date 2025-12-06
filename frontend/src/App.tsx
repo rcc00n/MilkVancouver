@@ -18,7 +18,6 @@ import ProductPage from "./pages/ProductPage";
 import SuccessPage from "./pages/SuccessPage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
 import Shop from "./pages/Shop";
 import AdminClientsPage from "./pages/admin/AdminClientsPage";
@@ -37,7 +36,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<StorefrontLayout />}>
-          <Route index element={<Home />} />
+          <Route index element={<HomePage />} />
           <Route path="shop" element={<Shop />} />
           <Route path="pricing" element={<Pricing />} />
           <Route path="about" element={<About />} />
@@ -61,7 +60,7 @@ function App() {
           <Route path="home/legacy" element={<HomePage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
           <Route path="account" element={<AccountPage />} />
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<HomePage />} />
         </Route>
         <Route path="/driver" element={<DriverLayout />}>
           <Route index element={<DriverHomePage />} />
