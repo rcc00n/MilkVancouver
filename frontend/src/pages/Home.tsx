@@ -176,7 +176,7 @@ function Home() {
           </div>
 
           <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="space-y-6 text-slate-900">
+            <div className="space-y-6 text-slate-900 animate-fade-up">
               <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/80 px-4 py-2 text-sm font-semibold text-sky-900 shadow-sm backdrop-blur">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                 Delivering fresh across Vancouver
@@ -218,7 +218,7 @@ function Home() {
             </div>
 
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-2xl border border-sky-100 bg-white/80 shadow-xl backdrop-blur">
+              <div className="overflow-hidden rounded-2xl border border-sky-100 bg-white/80 shadow-xl backdrop-blur animate-float-soft">
                 <img
                   src={heroImageUrl}
                   alt={heroImageAlt}
@@ -289,6 +289,8 @@ function Home() {
                 imageKey={flavor.key}
                 tone={flavor.tone}
                 onCta={isShopFlavor ? () => navigate("/shop") : scrollToShop}
+                className="animate-fade-up"
+                style={{ animationDelay: `${index * 80}ms` }}
               />
             );
           })}
@@ -419,10 +421,11 @@ function Home() {
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                {resolvedStoryImages.map((image) => (
+                {resolvedStoryImages.map((image, index) => (
                   <div
                     key={image.key}
-                    className={`overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] ${image.offset}`}
+                    className={`overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-[0_20px_48px_-34px_rgba(15,23,42,0.45)] animate-fade-up ${image.offset}`}
+                    style={{ animationDelay: `${index * 120}ms` }}
                   >
                     <img
                       src={image.url}
@@ -500,7 +503,8 @@ function Home() {
               {resolvedCommunityShots.map((image, index) => (
                 <div
                   key={image.key}
-                  className="relative aspect-square overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.45)]"
+                  className="relative aspect-square overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.45)] animate-fade-up"
+                  style={{ animationDelay: `${index * 70}ms` }}
                 >
                   <img
                     src={image.url}
@@ -516,7 +520,7 @@ function Home() {
       </section>
 
       <section className="container">
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 px-6 py-10 text-white shadow-[0_24px_64px_-32px_rgba(0,0,0,0.55)] md:px-10 lg:px-12">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 px-6 py-10 text-white shadow-[0_24px_64px_-32px_rgba(0,0,0,0.55)] md:px-10 lg:px-12 animate-fade-up">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.16),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(248,250,252,0.16),transparent_28%)]" />
           <div className="relative flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
