@@ -1,6 +1,9 @@
 from django import forms
-from django.contrib import admin
-from django.urls import reverse
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.core.management import call_command
+from django.shortcuts import redirect
+from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .models import DeliveryProof, DeliveryRoute, Driver, RouteStop
@@ -42,6 +45,7 @@ class RouteStopInline(admin.TabularInline):
 
 @admin.register(DeliveryRoute)
 class DeliveryRouteAdmin(admin.ModelAdmin):
+    change_list_template = "admin/delivery/deliveryroute/change_list.html"
     list_display = (
         "id",
         "date",
@@ -100,6 +104,26 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         if not getattr(obj, "is_merged", False):
             obj.refresh_completion_status(save=True)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "optimize-routes/",
+                self.admin_site.admin_view(self.optimize_routes_view),
+                name="delivery_deliveryroute_optimize_routes",
+            ),
+        ]
+        return custom_urls + urls
+
+    def optimize_routes_view(self, request):
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+        if request.method != "POST":
+            return redirect(reverse("admin:delivery_deliveryroute_changelist"))
+        call_command("optimize_routes")
+        self.message_user(request, "Queued optimize_routes task.", level=messages.SUCCESS)
+        return redirect(reverse("admin:delivery_deliveryroute_changelist"))
 
 
 WEEKDAY_CHOICES = (
