@@ -52,8 +52,8 @@ const FLAVORS = [
     key: "home.flavor.mango_magic",
     name: "Mango Magic",
     tag: "Tropical mango paradise",
-    fallbackImage:
-      "https://images.unsplash.com/photo-1505253181491-580b10ae1535?auto=format&fit=crop&w=900&q=80",
+    // Local fallback to avoid broken hotlinks
+    fallbackImage: "/images/home/flavors/flavor-tropical-sunrise.jpg",
     gradient: "from-[#f97316] to-[#facc15]",
   },
   {
@@ -373,12 +373,12 @@ function HomePage() {
                 </div>
                 <h3 className="text-lg font-semibold">{flavor.name}</h3>
                 <p className="mt-2 text-sm text-white/90">{flavor.tag}</p>
-                <button
-                  type="button"
+                <Link
+                  to="/shop"
                   className="mt-6 inline-flex rounded-full bg-white px-6 py-2 text-sm font-semibold text-[#7c3aed] shadow-md transition hover:bg-slate-50"
                 >
                   Try Now
-                </button>
+                </Link>
               </article>
             ))}
           </div>
