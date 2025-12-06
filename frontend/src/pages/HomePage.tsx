@@ -178,15 +178,22 @@ function HomePage() {
   );
 
   useEffect(() => {
+    const root = document.documentElement;
+    const revealItems = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
+
+    if (!revealItems.length) {
+      root.classList.remove("motion-ready");
+      return;
+    }
+
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isMobileOrTablet = window.matchMedia("(max-width: 1024px)").matches;
-    const disableMotion = prefersReducedMotion || isMobileOrTablet;
-    const revealItems = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-reveal]")
-    );
+    const disableMotion =
+      prefersReducedMotion || isMobileOrTablet || typeof IntersectionObserver === "undefined";
 
-    if (disableMotion || typeof IntersectionObserver === "undefined") {
+    if (disableMotion) {
       revealItems.forEach((el) => el.classList.add("reveal-visible"));
+      root.classList.remove("motion-ready");
       return;
     }
 
@@ -199,11 +206,24 @@ function HomePage() {
           }
         });
       },
-      { threshold: 0.18, rootMargin: "0px 0px -5% 0px" }
+      { threshold: 0.2, rootMargin: "0px 0px -8% 0px" }
     );
 
-    revealItems.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    revealItems.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
+        el.classList.add("reveal-visible");
+      } else {
+        observer.observe(el);
+      }
+    });
+
+    root.classList.add("motion-ready");
+
+    return () => {
+      observer.disconnect();
+      root.classList.remove("motion-ready");
+    };
   }, []);
 
   return (
@@ -307,7 +327,9 @@ function HomePage() {
                     src={HERO_IMAGE}
                     alt="Colorful yogurt bowl full of fruit"
                     className="h-[260px] w-full object-cover sm:h-[300px]"
-                    loading="lazy"
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                   />
                 </div>
 
