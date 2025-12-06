@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, Leaf, Shield, Users } from "lucide-react";
+import { ArrowRight, Award, Droplet, Leaf, MapPin, Shield, Users } from "lucide-react";
 
 import { brand } from "../config/brand";
 
@@ -15,6 +15,21 @@ type Stat = {
   value: string;
   label: string;
 };
+
+const HERO_IMAGE =
+  "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=10";
+
+const aboutStats = [
+  { label: "Founded", value: "2020" },
+  { label: "Families served", value: "50K+" },
+  { label: "Flavors & formats", value: "15+" },
+];
+
+const aboutHighlights = [
+  { Icon: MapPin, label: "Fraser Valley farms" },
+  { Icon: Droplet, label: "Bottled before sunrise" },
+  { Icon: Leaf, label: "Reusable glass & eco routes" },
+];
 
 function useRevealOnScroll<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
@@ -52,43 +67,99 @@ function useRevealOnScroll<T extends HTMLElement>() {
   return ref;
 }
 
-function HeroSection() {
-  const heroImage =
-    "https://images.unsplash.com/photo-1521416043332-5ab2fcd7b1c9?auto=format&fit=crop&w=1600&q=80";
+function AboutHero() {
+  const brandName = brand.shortName || brand.name;
 
   return (
-    <section className="bg-[#fffaf0] py-12 md:py-16">
-      <div className="mx-auto w-full max-w-[1200px] px-4 md:px-8">
-        <div className="about-hero-motion about-reveal relative overflow-hidden rounded-[32px] bg-slate-900 text-white shadow-[0_32px_90px_-48px_rgba(15,23,42,0.7)]">
-          <div className="absolute inset-0">
-            <img
-              src={heroImage}
-              alt="Kids playing soccer on a sunny field"
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-tr from-[rgba(76,29,149,0.85)] via-[rgba(124,58,237,0.78)] to-[rgba(236,72,153,0.68)]" />
-            <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/45 via-black/20 to-transparent" />
+    <section className="bg-gradient-to-b from-[#eaf5ff] via-white to-white border-b border-slate-100/60 py-12 md:py-16 lg:py-20">
+      <div className="container mx-auto max-w-[1200px] px-4 md:px-8">
+        <div className="about-hero relative overflow-hidden rounded-3xl border border-slate-100 bg-white px-6 py-8 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.75)] md:px-10 md:py-10 lg:px-14 lg:py-14">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-16 -top-24 h-60 w-60 rounded-full bg-sky-200/40 blur-3xl" />
+            <div className="absolute right-0 top-10 h-64 w-64 rounded-full bg-amber-100/50 blur-3xl" />
+            <div className="absolute left-10 bottom-0 h-56 w-56 rounded-full bg-blue-200/40 blur-3xl" />
           </div>
 
-          <div className="relative max-w-xl px-6 py-10 md:px-12 md:py-14 lg:px-16 lg:py-16">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200 md:text-sm">
-              {brand.shortName || brand.name}
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold leading-[1.08] md:text-4xl lg:text-5xl">
-              Fuel Your Active Lifestyle
-            </h1>
-            <p className="mt-4 text-sm text-white/90 md:text-base">
-              From soccer practice to dance class, playground fun to family bike rides –{" "}
-              {brand.shortName || brand.name} gives kids the energy to play, learn and grow!
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/shop"
-                className="inline-flex items-center justify-center rounded-full bg-[#ffd54f] px-8 py-3 text-sm font-semibold text-[#5a2c86] shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#ffe082] hover:shadow-xl md:text-base"
-              >
-                Shop Now
-              </Link>
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="space-y-6 text-slate-900">
+              <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-sky-800 shadow-sm backdrop-blur">
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                Our story
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+                  From local farms to your doorstep.
+                </h1>
+                <p className="max-w-xl text-sm text-slate-700 md:text-base">
+                  {brandName} bottles Fraser Valley milk, yogurt, and cream at dawn, keeps every crate in the 0–4°C cold
+                  chain, and delivers it to Vancouver homes in reusable glass.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                {aboutHighlights.map(({ Icon, label }) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm backdrop-blur"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white">
+                      <Icon size={14} />
+                    </span>
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-slate-800"
+                >
+                  Shop milk
+                </Link>
+                <Link
+                  to="/pricing"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-900 bg-white/90 px-6 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-900 hover:text-white"
+                >
+                  See pricing
+                </Link>
+              </div>
+
+              <div className="grid gap-3 pt-4 sm:grid-cols-3">
+                {aboutStats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl border border-slate-100 bg-white/90 px-4 py-3 shadow-sm backdrop-blur"
+                  >
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-sky-800">
+                      {stat.label}
+                    </p>
+                    <p className="text-xl font-semibold text-slate-900 md:text-2xl">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-4 rounded-[28px] bg-gradient-to-tr from-sky-200/40 via-slate-100/40 to-amber-100/40 blur-2xl" />
+              <div className="relative overflow-hidden rounded-[28px] border border-slate-100 bg-slate-900/90 shadow-xl">
+                <img
+                  src={HERO_IMAGE}
+                  alt="Team preparing fresh dairy delivery crates"
+                  className="h-full w-full min-h-[260px] object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl bg-white/90 px-4 py-3 text-xs text-slate-900 shadow-lg backdrop-blur">
+                  <div>
+                    <p className="font-semibold">Cold-chain routes</p>
+                    <p className="text-[0.7rem] text-slate-600">Vancouver & North Shore · 0–4°C from depot to doorstep.</p>
+                  </div>
+                  <span className="rounded-full bg-slate-900 px-3 py-1 text-[0.7rem] font-semibold text-white">
+                    Returns included
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -299,7 +370,7 @@ function StatsAndTeamSection() {
 function About() {
   return (
     <div className="about-yummee-page bg-white text-slate-900">
-      <HeroSection />
+      <AboutHero />
       <CommitmentSection />
       <GradientCTASection />
       <StatsAndTeamSection />

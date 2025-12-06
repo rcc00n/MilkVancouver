@@ -446,10 +446,23 @@
     transform: translateY(0);
   }
 
+  .about-hero {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+    animation: aboutHeroIn 700ms ease-out forwards;
+  }
+
   .about-hero-motion {
     opacity: 0;
     transform: translateY(28px) scale(0.985);
     animation: about-hero-in 700ms ease-out forwards;
+  }
+}
+
+@keyframes aboutHeroIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -474,6 +487,7 @@
   }
 
   .about-reveal,
+  .about-hero,
   .about-hero-motion {
     opacity: 1 !important;
     transform: none !important;
