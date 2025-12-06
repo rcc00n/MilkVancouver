@@ -120,12 +120,12 @@ const TESTIMONIALS = [
 ];
 
 const COMMUNITY_PHOTOS = [
-  "https://images.unsplash.com/photo-1529070538774-1843cb3265df?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1484981184820-2e84ea0af0cc?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1552767059-ce182ead6c1b?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1506086679524-493c64fdfaa6?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=900&q=80",
+  { key: "home.community_1", alt: "Community photo 1" },
+  { key: "home.community_2", alt: "Community photo 2" },
+  { key: "home.community_3", alt: "Community photo 3" },
+  { key: "home.community_4", alt: "Community photo 4" },
+  { key: "home.community_5", alt: "Community photo 5" },
+  { key: "home.community_6", alt: "Community photo 6" },
 ];
 
 function HomePage() {
@@ -161,6 +161,18 @@ function HomePage() {
         const alt = record?.alt || storyImage.alt;
 
         return { ...storyImage, url, alt };
+      }),
+    [images],
+  );
+
+  const resolvedCommunityPhotos = useMemo(
+    () =>
+      COMMUNITY_PHOTOS.map((photo) => {
+        const record = images[photo.key];
+        const url = record?.url || getImageSrc(photo.key);
+        const alt = record?.alt || photo.alt;
+
+        return { ...photo, url, alt };
       }),
     [images],
   );
@@ -506,16 +518,16 @@ function HomePage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto pb-2">
-            {COMMUNITY_PHOTOS.map((src, index) => (
+            {resolvedCommunityPhotos.map((photo, index) => (
               <div
-                key={src}
+                key={photo.key}
                 className="relative h-40 w-40 min-w-[10rem] overflow-hidden rounded-3xl bg-slate-200 shadow-md md:h-48 md:w-48"
                 data-reveal="scale"
                 style={withDelay(120 + index * 50)}
               >
                 <img
-                  src={src}
-                  alt={`Community photo ${index + 1}`}
+                  src={photo.url}
+                  alt={photo.alt}
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
