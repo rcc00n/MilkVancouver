@@ -112,7 +112,7 @@ function Header({ onCartClick }: HeaderProps) {
             <img
               src={brandLogo.url}
               alt={brandLogo.alt}
-              className="h-12 w-auto shrink-0 drop-shadow-lg"
+              className="h-14 w-auto shrink-0 drop-shadow-lg"
               loading="eager"
             />
           </Link>
@@ -233,7 +233,7 @@ function Header({ onCartClick }: HeaderProps) {
                 <img
                   src={brandLogo.url}
                   alt={brandLogo.alt}
-                  className="h-12 w-auto shrink-0 drop-shadow-md"
+                  className="h-14 w-auto shrink-0 drop-shadow-md"
                   loading="eager"
                 />
               </Link>
