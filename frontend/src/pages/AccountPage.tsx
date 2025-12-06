@@ -39,12 +39,19 @@ function AccountPage() {
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("Canada");
 
-  const [requestingVerification, setRequestingVerification] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
-  const [verificationStarted, setVerificationStarted] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
+  const [requestingPhoneVerification, setRequestingPhoneVerification] = useState(false);
+  const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
+  const [phoneVerificationStarted, setPhoneVerificationStarted] = useState(false);
+  const [phoneVerificationCode, setPhoneVerificationCode] = useState("");
+  const [phoneVerificationError, setPhoneVerificationError] = useState<string | null>(null);
+  const [phoneVerificationMessage, setPhoneVerificationMessage] = useState<string | null>(null);
+
+  const [requestingEmailVerification, setRequestingEmailVerification] = useState(false);
+  const [verifyingEmailCode, setVerifyingEmailCode] = useState(false);
+  const [emailVerificationStarted, setEmailVerificationStarted] = useState(false);
+  const [emailVerificationCode, setEmailVerificationCode] = useState("");
+  const [emailVerificationError, setEmailVerificationError] = useState<string | null>(null);
+  const [emailVerificationMessage, setEmailVerificationMessage] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<OrderDetail[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -59,6 +66,10 @@ function AccountPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
+  const emailVerified = useMemo(
+    () => Boolean(me?.profile.email_verified_at),
+    [me?.profile.email_verified_at],
+  );
   const phoneVerified = useMemo(
     () => Boolean(me?.profile.phone_verified_at),
     [me?.profile.phone_verified_at],
@@ -75,6 +86,14 @@ function AccountPage() {
       setActiveTab("security");
     }
   }, [location.hash, location.search]);
+
+  useEffect(() => {
+    if (!emailVerified) return;
+    setEmailVerificationStarted(false);
+    setEmailVerificationCode("");
+    setEmailVerificationMessage(null);
+    setEmailVerificationError(null);
+  }, [emailVerified]);
 
   useEffect(() => {
     if (me) {
@@ -123,43 +142,83 @@ function AccountPage() {
     }
   };
 
-  const handleRequestVerification = async () => {
-    setRequestingVerification(true);
-    setVerificationError(null);
-    setVerificationMessage(null);
+  const handleRequestEmailVerification = async () => {
+    setRequestingEmailVerification(true);
+    setEmailVerificationError(null);
+    setEmailVerificationMessage(null);
     try {
-      const { detail } = await authApi.requestPhoneVerification(phone || undefined);
-      setVerificationStarted(true);
-      setVerificationMessage(detail || "Verification code sent.");
+      const { detail } = await authApi.requestEmailVerification();
+      setEmailVerificationStarted(true);
+      setEmailVerificationMessage(detail || "Verification email sent.");
     } catch (err) {
       const message =
         (err as any)?.response?.data?.detail ||
         (err as Error).message ||
-        "Unable to send verification code.";
-      setVerificationError(message);
+        "Unable to send verification email.";
+      setEmailVerificationError(message);
     } finally {
-      setRequestingVerification(false);
+      setRequestingEmailVerification(false);
     }
   };
 
-  const handleVerifyCode = async () => {
-    setVerifyingCode(true);
-    setVerificationError(null);
-    setVerificationMessage(null);
+  const handleVerifyEmailCode = async () => {
+    setVerifyingEmailCode(true);
+    setEmailVerificationError(null);
+    setEmailVerificationMessage(null);
     try {
-      const { detail } = await authApi.verifyPhone(verificationCode.trim());
-      setVerificationMessage(detail || "Phone verified.");
-      setVerificationStarted(false);
-      setVerificationCode("");
+      const { detail } = await authApi.verifyEmail(emailVerificationCode.trim());
+      setEmailVerificationMessage(detail || "Email verified.");
+      setEmailVerificationStarted(false);
+      setEmailVerificationCode("");
       await refreshMe();
     } catch (err) {
       const message =
         (err as any)?.response?.data?.detail ||
         (err as Error).message ||
         "Verification failed.";
-      setVerificationError(message);
+      setEmailVerificationError(message);
     } finally {
-      setVerifyingCode(false);
+      setVerifyingEmailCode(false);
+    }
+  };
+
+  const handleRequestPhoneVerification = async () => {
+    setRequestingPhoneVerification(true);
+    setPhoneVerificationError(null);
+    setPhoneVerificationMessage(null);
+    try {
+      const { detail } = await authApi.requestPhoneVerification(phone || undefined);
+      setPhoneVerificationStarted(true);
+      setPhoneVerificationMessage(detail || "Verification code sent.");
+    } catch (err) {
+      const message =
+        (err as any)?.response?.data?.detail ||
+        (err as Error).message ||
+        "Unable to send verification code.";
+      setPhoneVerificationError(message);
+    } finally {
+      setRequestingPhoneVerification(false);
+    }
+  };
+
+  const handleVerifyPhoneCode = async () => {
+    setVerifyingPhoneCode(true);
+    setPhoneVerificationError(null);
+    setPhoneVerificationMessage(null);
+    try {
+      const { detail } = await authApi.verifyPhone(phoneVerificationCode.trim());
+      setPhoneVerificationMessage(detail || "Phone verified.");
+      setPhoneVerificationStarted(false);
+      setPhoneVerificationCode("");
+      await refreshMe();
+    } catch (err) {
+      const message =
+        (err as any)?.response?.data?.detail ||
+        (err as Error).message ||
+        "Verification failed.";
+      setPhoneVerificationError(message);
+    } finally {
+      setVerifyingPhoneCode(false);
     }
   };
 
@@ -358,7 +417,75 @@ function AccountPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} readOnly />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="relative w-full">
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        readOnly
+                        className={emailVerified ? "pr-24" : undefined}
+                      />
+                      {emailVerified ? (
+                        <div className="absolute inset-y-0 right-3 flex items-center gap-2 text-emerald-600 text-sm font-semibold">
+                          <CheckCircle2 className="size-4" />
+                          Verified
+                        </div>
+                      ) : null}
+                    </div>
+                    {!emailVerified && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRequestEmailVerification}
+                        disabled={requestingEmailVerification || !email.trim()}
+                      >
+                        {requestingEmailVerification ? "Sending..." : "Verify"}
+                      </Button>
+                    )}
+                  </div>
+                  {!emailVerified && emailVerificationStarted && (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="email-verification-code">Verification code</Label>
+                        <Input
+                          id="email-verification-code"
+                          value={emailVerificationCode}
+                          onChange={(e) => setEmailVerificationCode(e.target.value)}
+                          placeholder="Enter the code from your email"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          type="button"
+                          onClick={handleVerifyEmailCode}
+                          disabled={verifyingEmailCode || !emailVerificationCode.trim()}
+                        >
+                          {verifyingEmailCode ? "Verifying..." : "Verify code"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleRequestEmailVerification}
+                          disabled={requestingEmailVerification}
+                        >
+                          Resend code
+                        </Button>
+                      </div>
+                      {emailVerificationError && (
+                        <p className="text-sm text-destructive">{emailVerificationError}</p>
+                      )}
+                      {emailVerificationMessage && (
+                        <p className="text-sm text-emerald-700">{emailVerificationMessage}</p>
+                      )}
+                    </div>
+                  )}
+                  {!emailVerified && !emailVerificationStarted && emailVerificationMessage && (
+                    <p className="text-sm text-emerald-700">{emailVerificationMessage}</p>
+                  )}
+                  {!emailVerified && emailVerificationError && !emailVerificationStarted && (
+                    <p className="text-sm text-destructive">{emailVerificationError}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">Email changes are managed by support.</p>
                 </div>
 
@@ -386,57 +513,57 @@ function AccountPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={handleRequestVerification}
-                          disabled={requestingVerification || !phone.trim()}
+                          onClick={handleRequestPhoneVerification}
+                          disabled={requestingPhoneVerification || !phone.trim()}
                         >
-                          {requestingVerification ? "Sending..." : "Verify"}
+                          {requestingPhoneVerification ? "Sending..." : "Verify"}
                         </Button>
                       )}
                     </div>
-                    {!phoneVerified && verificationStarted && (
+                    {!phoneVerified && phoneVerificationStarted && (
                       <div className="space-y-3">
                         <div className="space-y-2">
-                          <Label htmlFor="verification-code">Verification code</Label>
+                          <Label htmlFor="phone-verification-code">Verification code</Label>
                           <Input
-                            id="verification-code"
+                            id="phone-verification-code"
                             inputMode="numeric"
                             pattern="[0-9]*"
                             maxLength={6}
-                            value={verificationCode}
-                            onChange={(e) => setVerificationCode(e.target.value)}
+                            value={phoneVerificationCode}
+                            onChange={(e) => setPhoneVerificationCode(e.target.value)}
                             placeholder="123456"
                           />
                         </div>
                         <div className="flex flex-wrap gap-3">
                           <Button
                             type="button"
-                            onClick={handleVerifyCode}
-                            disabled={verifyingCode || verificationCode.trim().length !== 6}
+                            onClick={handleVerifyPhoneCode}
+                            disabled={verifyingPhoneCode || phoneVerificationCode.trim().length !== 6}
                           >
-                            {verifyingCode ? "Verifying..." : "Verify code"}
+                            {verifyingPhoneCode ? "Verifying..." : "Verify code"}
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
-                            onClick={handleRequestVerification}
-                            disabled={requestingVerification}
+                            onClick={handleRequestPhoneVerification}
+                            disabled={requestingPhoneVerification}
                           >
                             Resend code
                           </Button>
                         </div>
-                        {verificationError && (
-                          <p className="text-sm text-destructive">{verificationError}</p>
+                        {phoneVerificationError && (
+                          <p className="text-sm text-destructive">{phoneVerificationError}</p>
                         )}
-                        {verificationMessage && (
-                          <p className="text-sm text-emerald-700">{verificationMessage}</p>
+                        {phoneVerificationMessage && (
+                          <p className="text-sm text-emerald-700">{phoneVerificationMessage}</p>
                         )}
                       </div>
                     )}
-                    {!phoneVerified && !verificationStarted && verificationMessage && (
-                      <p className="text-sm text-emerald-700">{verificationMessage}</p>
+                    {!phoneVerified && !phoneVerificationStarted && phoneVerificationMessage && (
+                      <p className="text-sm text-emerald-700">{phoneVerificationMessage}</p>
                     )}
-                    {!phoneVerified && verificationError && !verificationStarted && (
-                      <p className="text-sm text-destructive">{verificationError}</p>
+                    {!phoneVerified && phoneVerificationError && !phoneVerificationStarted && (
+                      <p className="text-sm text-destructive">{phoneVerificationError}</p>
                     )}
                   </div>
                 </div>

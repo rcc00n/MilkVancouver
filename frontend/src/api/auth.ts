@@ -65,6 +65,16 @@ export async function updateProfile(payload: Partial<CustomerProfile>): Promise<
   return data;
 }
 
+export async function requestEmailVerification(): Promise<DetailResponse> {
+  const { data } = await api.post<DetailResponse>("/auth/request-email-verification/");
+  return data;
+}
+
+export async function verifyEmail(token: string): Promise<DetailResponse> {
+  const { data } = await api.get<DetailResponse>("/auth/verify-email/", { params: { token } });
+  return data;
+}
+
 export async function requestPhoneVerification(phone_number?: string): Promise<DetailResponse> {
   const { data } = await api.post<DetailResponse>("/auth/request-phone-verification/", {
     phone_number,
