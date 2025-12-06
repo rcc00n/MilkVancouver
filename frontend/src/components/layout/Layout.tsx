@@ -12,7 +12,10 @@ function Layout() {
   const location = useLocation();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const isHome = location.pathname === "/";
-  const isFlushLayout = location.pathname.startsWith("/shop") || location.pathname.startsWith("/about");
+  const isFlushLayout =
+    location.pathname.startsWith("/shop") ||
+    location.pathname.startsWith("/about") ||
+    location.pathname.startsWith("/products");
   const showCartFab = isHome || location.pathname.startsWith("/shop");
 
   useEffect(() => {
