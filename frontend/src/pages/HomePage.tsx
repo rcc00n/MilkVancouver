@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Droplet, Droplets, Leaf, Milk, ShieldCheck, Smile, Truck } from "lucide-react";
 import { brand } from "../config/brand";
@@ -129,10 +129,43 @@ function HomePage() {
     flavorsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const withDelay = (ms: number): CSSProperties =>
+    ({
+      "--reveal-delay": `${ms}ms`,
+    } as CSSProperties);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealItems = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-reveal]")
+    );
+
+    if (prefersReducedMotion || typeof IntersectionObserver === "undefined") {
+      revealItems.forEach((el) => el.classList.add("reveal-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -5% 0px" }
+    );
+
+    revealItems.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="yummee-home text-slate-900">
       {/* HERO */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#5b21ff] via-[#a855f7] to-[#22c1c3] text-white">
+        <div className="hero-aurora" aria-hidden="true" />
         <div className="pointer-events-none absolute inset-0 opacity-70">
           <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-white/20 blur-3xl" />
           <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-[#facc15]/20 blur-3xl" />
@@ -141,7 +174,7 @@ function HomePage() {
 
         <div className="relative mx-auto flex max-w-[1180px] flex-col gap-12 px-4 py-20 md:flex-row md:items-center md:py-24 lg:px-8">
           {/* Left copy */}
-          <div className="flex-1 space-y-7">
+          <div className="flex-1 space-y-7" data-reveal="fade" style={withDelay(0)}>
             <p className="inline-flex items-center rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
               {brand.name} - Active families, young lifestyles
             </p>
@@ -179,21 +212,33 @@ function HomePage() {
             </div>
 
             <div className="mt-4 grid gap-3 text-xs md:text-sm sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+              <div
+                className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur"
+                data-reveal="scale"
+                style={withDelay(120)}
+              >
                 <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
                   Protein
                 </p>
                 <p className="mt-1 text-lg font-semibold text-white">10-15g</p>
                 <p className="text-white/80">per cup, depending on flavor.</p>
               </div>
-              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+              <div
+                className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur"
+                data-reveal="scale"
+                style={withDelay(200)}
+              >
                 <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
                   Real Fruit
                 </p>
                 <p className="mt-1 text-lg font-semibold text-white">No dyes</p>
                 <p className="text-white/80">Colors come from nature.</p>
               </div>
-              <div className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+              <div
+                className="rounded-2xl bg-white/15 px-4 py-3 backdrop-blur"
+                data-reveal="scale"
+                style={withDelay(280)}
+              >
                 <p className="font-semibold uppercase tracking-[0.25em] text-yellow-200">
                   Convenient
                 </p>
@@ -206,12 +251,12 @@ function HomePage() {
           </div>
 
           {/* Right image card */}
-          <div className="flex-1">
+          <div className="flex-1" data-reveal="rise" style={withDelay(160)}>
             <div className="relative mx-auto max-w-md">
               <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#f97316]/50 blur-3xl" />
               <div className="absolute -left-10 bottom-10 h-28 w-28 rounded-full bg-[#22c1c3]/40 blur-3xl" />
 
-              <div className="overflow-hidden rounded-[32px] bg-white/95 p-4 shadow-2xl">
+              <div className="overflow-hidden rounded-[32px] bg-white/95 p-4 shadow-2xl animate-glow-soft">
                 <div className="overflow-hidden rounded-3xl">
                   <img
                     src={HERO_IMAGE}
@@ -240,18 +285,23 @@ function HomePage() {
       {/* HERO FEATURE TILES */}
       <section className="bg-gradient-to-r from-[#4c1d95] via-[#7c3aed] to-[#db2777] py-12">
         <div className="mx-auto grid max-w-[1180px] gap-6 px-4 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
-          {HERO_FEATURE_TILES.map(({ title, copy, Icon, bg, text }) => (
-            <div
-              key={title}
-              className={`flex h-full flex-col rounded-3xl ${bg} ${text} p-5 shadow-[0_16px_40px_rgba(0,0,0,0.25)]`}
-            >
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/5">
-                <Icon className="h-5 w-5" />
+          {HERO_FEATURE_TILES.map((tile, idx) => {
+            const { title, copy, Icon, bg, text } = tile;
+            return (
+              <div
+                key={title}
+                className={`flex h-full flex-col rounded-3xl ${bg} ${text} p-5 shadow-[0_16px_40px_rgba(0,0,0,0.25)]`}
+                data-reveal="fade"
+                style={withDelay(100 + idx * 80)}
+              >
+                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/5">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-base font-semibold">{title}</h3>
+                <p className="mt-2 text-sm opacity-90">{copy}</p>
               </div>
-              <h3 className="text-base font-semibold">{title}</h3>
-              <p className="mt-2 text-sm opacity-90">{copy}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -261,7 +311,7 @@ function HomePage() {
         className="bg-gradient-to-b from-[#fff7cc] via-[#fffaf0] to-[#fffbeb] py-16 md:py-20"
       >
         <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
-          <div className="space-y-3 text-center">
+          <div className="space-y-3 text-center" data-reveal="fade">
             <h2 className="text-3xl font-semibold md:text-4xl">
               Discover Your{" "}
               <span className="text-[#a855f7] drop-shadow-sm">Flavor</span>
@@ -273,10 +323,12 @@ function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {FLAVORS.map((flavor) => (
+            {FLAVORS.map((flavor, idx) => (
               <article
                 key={flavor.name}
                 className={`flex flex-col items-center rounded-[32px] bg-gradient-to-br ${flavor.gradient} px-6 pb-7 pt-9 text-white shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)]`}
+                data-reveal="scale"
+                style={withDelay(120 + idx * 90)}
               >
                 <div className="mb-6 h-28 w-28 overflow-hidden rounded-full border-4 border-white/70 shadow-lg">
                   <img
@@ -303,7 +355,7 @@ function HomePage() {
       {/* WHY SHOULD DAIRY BE BORING? */}
       <section className="bg-white py-16 md:py-20">
         <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
-          <div className="mx-auto max-w-3xl space-y-4 text-center">
+          <div className="mx-auto max-w-3xl space-y-4 text-center" data-reveal="fade">
             <h2 className="text-3xl font-semibold md:text-4xl">
               Why should dairy be boring?{" "}
               <span className="text-[#facc15]">We</span>{" "}
@@ -321,6 +373,8 @@ function HomePage() {
               <div
                 key={src}
                 className="overflow-hidden rounded-[30px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.15)]"
+                data-reveal="rise"
+                style={withDelay(120 + index * 80)}
               >
                 <img
                   src={src}
@@ -337,10 +391,12 @@ function HomePage() {
       {/* ABOUT FEATURES */}
       <section className="bg-white pb-6 md:pb-10">
         <div className="mx-auto grid max-w-[1180px] gap-6 px-4 md:grid-cols-3 lg:px-8">
-          {ABOUT_FEATURES.map((feature) => (
+          {ABOUT_FEATURES.map((feature, idx) => (
             <div
               key={feature.title}
               className={`rounded-[28px] ${feature.bg} px-6 py-8 shadow-sm`}
+              data-reveal={idx % 2 === 0 ? "left" : "right"}
+              style={withDelay(100 + idx * 90)}
             >
               <h3 className="text-lg font-semibold text-slate-900">
                 {feature.title}
@@ -364,10 +420,12 @@ function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map((t) => (
+            {TESTIMONIALS.map((t, idx) => (
               <article
                 key={t.name}
                 className="flex h-full flex-col rounded-[28px] bg-white/10 p-6 text-left shadow-[0_18px_50px_-18px_rgba(0,0,0,0.7)] backdrop-blur"
+                data-reveal="fade"
+                style={withDelay(100 + idx * 120)}
               >
                 <div className="mb-3 flex items-center gap-1 text-yellow-300">
                   <span>*</span>
@@ -397,7 +455,7 @@ function HomePage() {
       {/* JOIN THE COMMUNITY */}
       <section className="bg-gradient-to-b from-[#ede9ff] via-[#e0f2fe] to-[#f5d0fe] py-16 md:py-20">
         <div className="mx-auto max-w-[1180px] space-y-10 px-4 lg:px-8">
-          <div className="space-y-3 text-center">
+          <div className="space-y-3 text-center" data-reveal="fade">
             <h2 className="text-3xl font-semibold md:text-4xl">
               Join The{" "}
               <span className="text-[#7c3aed] drop-shadow-sm">
@@ -419,6 +477,8 @@ function HomePage() {
               <div
                 key={src}
                 className="relative h-40 w-40 min-w-[10rem] overflow-hidden rounded-3xl bg-slate-200 shadow-md md:h-48 md:w-48"
+                data-reveal="scale"
+                style={withDelay(120 + index * 50)}
               >
                 <img
                   src={src}

@@ -1,5 +1,5 @@
 from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import never_cache
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,13 +8,10 @@ from .models import SiteImage
 from .serializers import SiteImageSerializer
 
 
-CACHE_TIMEOUT = 60 * 10  # 10 minutes
-
-
 class SiteImageListView(APIView):
     permission_classes = [AllowAny]
 
-    @method_decorator(cache_page(CACHE_TIMEOUT))
+    @method_decorator(never_cache)
     def get(self, _request):
         images = SiteImage.objects.all()
         serialized = SiteImageSerializer(images, many=True).data
@@ -26,15 +23,13 @@ class SiteImageListView(APIView):
             }
             for item in serialized
         }
-        response = Response(payload)
-        response["Cache-Control"] = f"public, max-age={CACHE_TIMEOUT}"
-        return response
+        return Response(payload)
 
 
 class SiteImageDetailView(APIView):
     permission_classes = [AllowAny]
 
-    @method_decorator(cache_page(CACHE_TIMEOUT))
+    @method_decorator(never_cache)
     def get(self, _request, key: str):
         try:
             image = SiteImage.objects.get(key=key)
@@ -42,7 +37,7 @@ class SiteImageDetailView(APIView):
             return Response({"detail": "Not found."}, status=404)
 
         data = SiteImageSerializer(image).data
-        response = Response(
+        return Response(
             {
                 "key": data["key"],
                 "url": data["url"],
@@ -50,5 +45,3 @@ class SiteImageDetailView(APIView):
                 "description": data["description"],
             }
         )
-        response["Cache-Control"] = f"public, max-age={CACHE_TIMEOUT}"
-        return response
