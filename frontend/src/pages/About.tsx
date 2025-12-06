@@ -71,19 +71,19 @@ function AboutHero() {
   const brandName = brand.shortName || brand.name;
 
   return (
-    <section className="bg-gradient-to-b from-[#eaf5ff] via-white to-white border-b border-slate-100/60 py-12 md:py-16 lg:py-20">
+    <section className="bg-gradient-to-b from-[#fff3c4] via-[#fff8e1] to-white border-b border-amber-100/70 py-12 md:py-16 lg:py-20">
       <div className="container mx-auto max-w-[1200px] px-4 md:px-8">
         <div className="about-hero relative overflow-hidden rounded-3xl border border-slate-100 bg-white px-6 py-8 shadow-[0_32px_80px_-48px_rgba(15,23,42,0.75)] md:px-10 md:py-10 lg:px-14 lg:py-14">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-16 -top-24 h-60 w-60 rounded-full bg-sky-200/40 blur-3xl" />
-            <div className="absolute right-0 top-10 h-64 w-64 rounded-full bg-amber-100/50 blur-3xl" />
-            <div className="absolute left-10 bottom-0 h-56 w-56 rounded-full bg-blue-200/40 blur-3xl" />
+            <div className="absolute -left-16 -top-24 h-60 w-60 rounded-full bg-amber-200/60 blur-3xl" />
+            <div className="absolute right-0 top-10 h-64 w-64 rounded-full bg-yellow-100/60 blur-3xl" />
+            <div className="absolute left-10 bottom-0 h-56 w-56 rounded-full bg-amber-100/50 blur-3xl" />
           </div>
 
           <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="space-y-6 text-slate-900">
-              <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-sky-800 shadow-sm backdrop-blur">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-amber-800 shadow-sm backdrop-blur">
+                <span className="inline-flex h-2 w-2 rounded-full bg-amber-500" />
                 Our story
               </div>
 
@@ -101,7 +101,7 @@ function AboutHero() {
                 {aboutHighlights.map(({ Icon, label }) => (
                   <span
                     key={label}
-                    className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm backdrop-blur"
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white/90 px-3 py-1.5 text-xs font-medium text-slate-900 shadow-sm backdrop-blur"
                   >
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white">
                       <Icon size={14} />
@@ -132,7 +132,7 @@ function AboutHero() {
                     key={stat.label}
                     className="rounded-2xl border border-slate-100 bg-white/90 px-4 py-3 shadow-sm backdrop-blur"
                   >
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-sky-800">
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-amber-800">
                       {stat.label}
                     </p>
                     <p className="text-xl font-semibold text-slate-900 md:text-2xl">{stat.value}</p>
@@ -142,7 +142,7 @@ function AboutHero() {
             </div>
 
             <div className="relative">
-              <div className="absolute -inset-4 rounded-[28px] bg-gradient-to-tr from-sky-200/40 via-slate-100/40 to-amber-100/40 blur-2xl" />
+              <div className="absolute -inset-4 rounded-[28px] bg-gradient-to-tr from-amber-200/40 via-white/50 to-amber-100/60 blur-2xl" />
               <div className="relative overflow-hidden rounded-[28px] border border-slate-100 bg-slate-900/90 shadow-xl">
                 <img
                   src={HERO_IMAGE}
