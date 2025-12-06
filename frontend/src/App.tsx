@@ -14,11 +14,12 @@ import GoodToKnowPage from "./pages/GoodToKnowPage";
 import HomePage from "./pages/HomePage";
 import MenuPage from "./pages/MenuPage";
 import PricingPage from "./pages/PricingPage";
+import ProductPage from "./pages/ProductPage";
 import SuccessPage from "./pages/SuccessPage";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
-import ShopPage from "./pages/ShopPage";
+import Shop from "./pages/Shop";
 import AdminClientsPage from "./pages/admin/AdminClientsPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
@@ -29,7 +30,6 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DriverHomePage from "./pages/driver/DriverHomePage";
 import DriverRoutePage from "./pages/driver/DriverRoutePage";
 import DriverUpcomingPage from "./pages/driver/DriverUpcomingPage";
-import ProductDetailPage from "./pages/ProductDetailPage";
 
 function App() {
   return (
@@ -37,7 +37,7 @@ function App() {
       <Routes>
         <Route path="/" element={<StorefrontLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="shop" element={<ShopPage />} />
+          <Route path="shop" element={<Shop />} />
           <Route path="pricing" element={<Pricing />} />
           <Route path="about" element={<About />} />
           <Route path="about-us" element={<About />} />
@@ -47,7 +47,7 @@ function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="contact/form" element={<ContactPage />} />
           <Route path="menu" element={<MenuPage />} />
-          <Route path="products/:slug" element={<ProductDetailPage />} />
+          <Route path="products/:slug" element={<ProductPage />} />
           <Route path="gallery" element={<GalleryPage />} />
           <Route path="good-to-know" element={<GoodToKnowPage />} />
           <Route path="milk-education" element={<GoodToKnowPage />} />
