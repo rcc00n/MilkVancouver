@@ -211,6 +211,12 @@ select:focus-visible {
   gap: 22px;
 }
 
+.site-main__inner--flush {
+  max-width: none;
+  width: 100%;
+  padding: 0;
+}
+
 .page-shell {
   padding: calc(var(--space-6) + 8px) 0 var(--space-6);
 }

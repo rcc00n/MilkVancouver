@@ -12,6 +12,7 @@ function Layout() {
   const location = useLocation();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const isHome = location.pathname === "/";
+  const isFlushLayout = location.pathname.startsWith("/shop") || location.pathname.startsWith("/about");
   const showCartFab = isHome || location.pathname.startsWith("/shop");
 
   useEffect(() => {
@@ -25,8 +26,16 @@ function Layout() {
   return (
     <div className="layout-shell">
       <Header onCartClick={handleOpenCart} />
-      <main className={`site-main ${isHome ? "site-main--wide site-main--banded" : ""}`}>
-        <div className={`site-main__inner ${isHome ? "site-main__inner--banded" : ""}`}>
+      <main
+        className={`site-main ${isHome ? "site-main--wide site-main--banded" : ""}`}
+        style={{ paddingTop: 0, paddingBottom: 0 }}
+      >
+        <div
+          className={`site-main__inner ${isHome ? "site-main__inner--banded" : ""} ${
+            isFlushLayout ? "site-main__inner--flush" : ""
+          }`}
+          style={{ paddingRight: 0, paddingLeft: 0 }}
+        >
           <div className="cart-link-mobile">
             <button type="button" onClick={handleOpenCart} aria-label="Open cart">
               Cart ({itemCount}) · ${(subtotalCents / 100).toFixed(2)}
