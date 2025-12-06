@@ -75,9 +75,9 @@ const FLAVORS = [
 ];
 
 const STORY_IMAGES = [
-  "https://images.unsplash.com/photo-1571687949920-1a810e9a4108?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1516886635086-2b3c423c0943?auto=format&fit=crop&w=900&q=80",
+  { key: "home.story.image_1", alt: "Yogurt snack 1" },
+  { key: "home.story.image_2", alt: "Yogurt snack 2" },
+  { key: "home.story.image_3", alt: "Yogurt snack 3" },
 ];
 
 const ABOUT_FEATURES = [
@@ -153,13 +153,27 @@ function HomePage() {
     [images],
   );
 
+  const resolvedStoryImages = useMemo(
+    () =>
+      STORY_IMAGES.map((storyImage) => {
+        const record = images[storyImage.key];
+        const url = record?.url || getImageSrc(storyImage.key);
+        const alt = record?.alt || storyImage.alt;
+
+        return { ...storyImage, url, alt };
+      }),
+    [images],
+  );
+
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isMobileOrTablet = window.matchMedia("(max-width: 1024px)").matches;
+    const disableMotion = prefersReducedMotion || isMobileOrTablet;
     const revealItems = Array.from(
       document.querySelectorAll<HTMLElement>("[data-reveal]")
     );
 
-    if (prefersReducedMotion || typeof IntersectionObserver === "undefined") {
+    if (disableMotion || typeof IntersectionObserver === "undefined") {
       revealItems.forEach((el) => el.classList.add("reveal-visible"));
       return;
     }
@@ -275,7 +289,7 @@ function HomePage() {
               <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[#f97316]/50 blur-3xl" />
               <div className="absolute -left-10 bottom-10 h-28 w-28 rounded-full bg-[#22c1c3]/40 blur-3xl" />
 
-              <div className="overflow-hidden rounded-[32px] bg-white/95 p-4 shadow-2xl animate-glow-soft">
+              <div className="overflow-hidden rounded-[32px] bg-white/95 p-4 shadow-2xl">
                 <div className="overflow-hidden rounded-3xl">
                   <img
                     src={HERO_IMAGE}
@@ -388,16 +402,16 @@ function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
-            {STORY_IMAGES.map((src, index) => (
+            {resolvedStoryImages.map((image, index) => (
               <div
-                key={src}
+                key={image.key}
                 className="overflow-hidden rounded-[30px] border border-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.15)]"
                 data-reveal="rise"
                 style={withDelay(120 + index * 80)}
               >
                 <img
-                  src={src}
-                  alt={`Yogurt snack ${index + 1}`}
+                  src={image.url}
+                  alt={image.alt}
                   className="h-[260px] w-full object-cover sm:h-[320px]"
                   loading="lazy"
                 />
