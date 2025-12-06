@@ -229,12 +229,12 @@ function HomePage() {
   return (
     <div className="yummee-home text-slate-900">
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#5b21ff] via-[#a855f7] to-[#22c1c3] text-white">
+      <section className="hero-shell relative overflow-hidden bg-gradient-to-br from-[#5b21ff] via-[#a855f7] to-[#22c1c3] text-white">
         <div className="hero-aurora" aria-hidden="true" />
         <div className="pointer-events-none absolute inset-0 opacity-70">
-          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-[#facc15]/20 blur-3xl" />
-          <div className="absolute left-10 bottom-0 h-64 w-64 rounded-full bg-[#22c1c3]/30 blur-3xl" />
+          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full bg-white/20 blur-2xl md:blur-3xl" />
+          <div className="absolute right-0 top-10 h-72 w-72 rounded-full bg-[#facc15]/20 blur-2xl md:blur-3xl" />
+          <div className="absolute left-10 bottom-0 h-64 w-64 rounded-full bg-[#22c1c3]/30 blur-2xl md:blur-3xl" />
         </div>
 
         <div className="relative mx-auto flex max-w-[1180px] flex-col gap-12 px-4 py-20 md:flex-row md:items-center md:py-24 lg:px-8">

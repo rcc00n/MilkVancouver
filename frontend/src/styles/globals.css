@@ -298,6 +298,13 @@
 }
 
 @layer utilities {
+  .hero-shell {
+    isolation: isolate;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
+  }
+
   .animate-fade-up {
     opacity: 0;
     transform: translateY(18px);
@@ -318,18 +325,19 @@
     background-image: radial-gradient(circle at 18% 32%, rgba(255, 255, 255, 0.18), transparent 36%),
       radial-gradient(circle at 76% 18%, rgba(251, 191, 36, 0.24), transparent 40%),
       radial-gradient(circle at 28% 78%, rgba(34, 211, 238, 0.26), transparent 42%);
-    filter: blur(52px) saturate(1.08);
-    opacity: 0.85;
+    filter: blur(40px) saturate(1.04);
+    opacity: 0.82;
     pointer-events: none;
     animation: none;
     transform: translateZ(0);
-    mix-blend-mode: screen;
+    mix-blend-mode: normal;
+    will-change: transform, opacity;
   }
 
   @media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
     .hero-aurora {
-      animation: aurora-drift 24s ease-in-out infinite alternate;
-      opacity: 0.9;
+      animation: aurora-drift 30s ease-in-out infinite alternate;
+      opacity: 0.85;
     }
   }
 }
@@ -439,7 +447,9 @@
 @media (max-width: 1024px) {
   .hero-aurora {
     animation: none;
-    filter: blur(44px);
+    filter: blur(32px) saturate(1.02);
+    opacity: 0.78;
+    mix-blend-mode: normal;
   }
 
   .motion-ready [data-reveal] {
@@ -504,7 +514,9 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-aurora {
     animation: none;
-    filter: blur(48px);
+    filter: blur(28px);
+    opacity: 0.72;
+    mix-blend-mode: normal;
   }
 
   .motion-ready [data-reveal] {
