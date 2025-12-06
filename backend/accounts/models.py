@@ -1,5 +1,6 @@
 import secrets
 from datetime import timedelta
+from typing import Callable
 
 from django.conf import settings
 from django.db import models
@@ -20,16 +21,29 @@ def default_password_reset_expires_at():
     return timezone.now() + timedelta(minutes=ttl_minutes)
 
 
+def _generate_numeric_code(length: int = 6) -> str:
+    # Zero-pad to enforce a fixed length (e.g., 000123).
+    return f"{secrets.randbelow(10**length):0{length}d}"
+
+
 class EmailVerificationTokenManager(models.Manager):
+    def _unique_code(self, code_factory: Callable[[], str]) -> str:
+        code = code_factory()
+        # Avoid rare collisions with a simple retry loop.
+        while self.filter(token=code).exists():
+            code = code_factory()
+        return code
+
     def create_for_user(self, user, expires_at=None):
         now = timezone.now()
         # Invalidate any active tokens for this user before creating a new one.
         self.filter(user=user, used_at__isnull=True, expires_at__gt=now).update(used_at=now)
         if expires_at is None:
             expires_at = now + timedelta(hours=24)
+        token_value = self._unique_code(_generate_numeric_code)
         return self.create(
             user=user,
-            token=secrets.token_urlsafe(32),
+            token=token_value,
             expires_at=expires_at,
         )
 

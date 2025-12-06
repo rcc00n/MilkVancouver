@@ -450,16 +450,21 @@ function AccountPage() {
                         <Label htmlFor="email-verification-code">Verification code</Label>
                         <Input
                           id="email-verification-code"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={6}
                           value={emailVerificationCode}
                           onChange={(e) => setEmailVerificationCode(e.target.value)}
-                          placeholder="Enter the code from your email"
+                          placeholder="Enter the 6-digit code"
                         />
                       </div>
                       <div className="flex flex-wrap gap-3">
                         <Button
                           type="button"
                           onClick={handleVerifyEmailCode}
-                          disabled={verifyingEmailCode || !emailVerificationCode.trim()}
+                          disabled={
+                            verifyingEmailCode || !/^[0-9]{6}$/.test(emailVerificationCode.trim())
+                          }
                         >
                           {verifyingEmailCode ? "Verifying..." : "Verify code"}
                         </Button>

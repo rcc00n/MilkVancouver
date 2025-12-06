@@ -2,7 +2,7 @@ Hi {{ user.get_full_name|default:user.email }},
 
 Please verify your email address to finish setting up your account.
 
-Your verification code:
+Your 6-digit verification code:
 {{ token }}
 
 You can enter this code in the app or open the link below:
