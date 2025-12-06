@@ -391,36 +391,33 @@
 
   [data-reveal] {
     opacity: 0;
-    transform: translate3d(0, 22px, 0) scale(0.985);
-    filter: blur(5px);
+    transform: translate3d(0, 14px, 0) scale(0.99);
     transition:
-      opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-      filter 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      opacity 0.35s ease-out,
+      transform 0.35s ease-out;
     transition-delay: var(--reveal-delay, 0ms);
-    will-change: opacity, transform, filter;
+    will-change: opacity, transform;
   }
 
   [data-reveal="rise"] {
-    transform: translate3d(0, 30px, 0) scale(0.97);
+    transform: translate3d(0, 16px, 0) scale(0.985);
   }
 
   [data-reveal="left"] {
-    transform: translate3d(-24px, 0, 0);
+    transform: translate3d(-14px, 0, 0);
   }
 
   [data-reveal="right"] {
-    transform: translate3d(24px, 0, 0);
+    transform: translate3d(14px, 0, 0);
   }
 
   [data-reveal="scale"] {
-    transform: translate3d(0, 24px, 0) scale(0.94);
+    transform: translate3d(0, 14px, 0) scale(0.97);
   }
 
   [data-reveal].reveal-visible {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
   }
 }
 

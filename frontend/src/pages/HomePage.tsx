@@ -1,7 +1,9 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Droplet, Droplets, Leaf, Milk, ShieldCheck, Smile, Truck } from "lucide-react";
 import { brand } from "../config/brand";
+import { useSiteImages } from "../context/SiteImagesContext";
+import { getImageSrc } from "../utils/imageLibrary";
 
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1400&q=80&sat=15";
@@ -39,30 +41,34 @@ const HERO_FEATURE_TILES = [
 
 const FLAVORS = [
   {
+    key: "home.flavor.berry_blast",
     name: "Berry Blast",
     tag: "Mixed berries & Greek yogurt",
-    image:
+    fallbackImage:
       "https://images.unsplash.com/photo-1511918984145-48de785d4c4d?auto=format&fit=crop&w=900&q=80",
     gradient: "from-[#7c3aed] to-[#5b21ff]",
   },
   {
+    key: "home.flavor.mango_magic",
     name: "Mango Magic",
     tag: "Tropical mango paradise",
-    image:
+    fallbackImage:
       "https://images.unsplash.com/photo-1505253181491-580b10ae1535?auto=format&fit=crop&w=900&q=80",
     gradient: "from-[#f97316] to-[#facc15]",
   },
   {
+    key: "home.flavor.protein_power",
     name: "Protein Power",
     tag: "Extra protein, zero guilt",
-    image:
+    fallbackImage:
       "https://images.unsplash.com/photo-1511910849309-0dffb8785146?auto=format&fit=crop&w=900&q=80",
     gradient: "from-[#06b6d4] to-[#6366f1]",
   },
   {
+    key: "home.flavor.granola_crunch",
     name: "Granola Crunch",
     tag: "Crunchy granola perfection",
-    image:
+    fallbackImage:
       "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=80",
     gradient: "from-[#fb923c] to-[#facc15]",
   },
@@ -123,6 +129,7 @@ const COMMUNITY_PHOTOS = [
 ];
 
 function HomePage() {
+  const { images } = useSiteImages();
   const flavorsRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToFlavors = () => {
@@ -133,6 +140,18 @@ function HomePage() {
     ({
       "--reveal-delay": `${ms}ms`,
     } as CSSProperties);
+
+  const resolvedFlavors = useMemo(
+    () =>
+      FLAVORS.map((flavor) => {
+        const record = images[flavor.key];
+        const url = record?.url || flavor.fallbackImage || getImageSrc(flavor.key);
+        const alt = record?.alt || flavor.name;
+
+        return { ...flavor, image: url, alt };
+      }),
+    [images],
+  );
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -323,9 +342,9 @@ function HomePage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {FLAVORS.map((flavor, idx) => (
+            {resolvedFlavors.map((flavor, idx) => (
               <article
-                key={flavor.name}
+                key={flavor.key}
                 className={`flex flex-col items-center rounded-[32px] bg-gradient-to-br ${flavor.gradient} px-6 pb-7 pt-9 text-white shadow-[0_18px_50px_-18px_rgba(0,0,0,0.6)]`}
                 data-reveal="scale"
                 style={withDelay(120 + idx * 90)}
@@ -333,7 +352,7 @@ function HomePage() {
                 <div className="mb-6 h-28 w-28 overflow-hidden rounded-full border-4 border-white/70 shadow-lg">
                   <img
                     src={flavor.image}
-                    alt={flavor.name}
+                    alt={flavor.alt}
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />
