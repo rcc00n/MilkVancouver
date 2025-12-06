@@ -140,7 +140,7 @@ def send_email_verification_email(user, token: str) -> Optional[EmailNotificatio
         return None
 
     verification_url = build_email_verification_url(token)
-    context = {"user": user, "verification_url": verification_url}
+    context = {"user": user, "verification_url": verification_url, "token": token}
     subject = "Verify your email address"
     body_text = render_to_string("notifications/email_verification_plain.txt", context)
     body_html = render_to_string("emails/email_verification.html", context)
