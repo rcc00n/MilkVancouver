@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Filter, ShoppingCart } from "lucide-react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Filter, ShoppingCart } from "lucide-react";
 
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { Button } from "../components/ui/button";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductsContext";
 import { getCategories, type Category } from "../api/products";
@@ -27,6 +27,7 @@ function normalizeCategory(value?: string | null): string {
 function Shop() {
   const { products, loading, error, initialized, refresh } = useProducts();
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryError, setCategoryError] = useState<string | null>(null);
@@ -94,8 +95,21 @@ function Shop() {
     return products.filter((product) => normalizeCategory(product.category?.slug) === normalized);
   }, [products, selectedCategory]);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, event?: MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
     addItem(product, 1);
+  };
+
+  const handleOpenProduct = (slug: string) => {
+    if (!slug) return;
+    navigate(`/products/${slug}`);
+  };
+
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, slug: string) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleOpenProduct(slug);
+    }
   };
 
   const renderCategoryButton = (option: CategoryOption, isActive: boolean) => (
@@ -116,14 +130,31 @@ function Shop() {
 
   return (
     <section
-      className="pt-20 pb-16 min-h-screen"
+      className="relative min-h-screen bg-gradient-to-br from-[#f7f2ff] via-[#f9fbff] to-[#e7f7ff] pt-24 pb-16"
     >
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-10 top-16 h-64 w-64 rounded-full bg-[#facc15]/25 blur-3xl" />
+        <div className="absolute right-[-4%] top-20 h-72 w-72 rounded-full bg-[#a855f7]/20 blur-3xl" />
+        <div className="absolute left-10 bottom-20 h-60 w-60 rounded-full bg-[#22c55e]/16 blur-3xl" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10 space-y-2">
-          <h1 className="text-3xl font-medium text-[#6A0DAD]">Our Products</h1>
-          <p className="text-base text-gray-600 max-w-2xl mx-auto">
-            Discover our delicious range of healthy dairy products for the whole family!
+        <div className="relative text-center mb-12 space-y-3">
+          <h1 className="text-4xl font-semibold text-[#4c1d95] tracking-tight">Shop the Fridge</h1>
+          <p className="text-base text-gray-700 max-w-2xl mx-auto">
+            Tap any card to open the full story, nutrition, and delivery options. Add in one click when
+            you already know your favorite.
           </p>
+          <div className="flex items-center justify-center gap-3 text-sm text-[#6A0DAD]">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-[#6A0DAD]" aria-hidden="true" />
+              Freshly stocked & ready to ship
+            </span>
+            <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-sm">
+              <ArrowRight className="w-4 h-4" />
+              Use filters to jump to your category
+            </span>
+          </div>
         </div>
 
         <div className="lg:hidden mb-6">
@@ -138,7 +169,7 @@ function Shop() {
 
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           <aside className={`${mobileFiltersOpen ? "block" : "hidden"} lg:block w-full lg:w-64 flex-shrink-0`}>
-            <div className="bg-white rounded-3xl p-6 shadow-lg sticky top-24 space-y-6">
+            <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-lg shadow-[#6A0DAD]/5 border border-white/60 sticky top-24 space-y-6">
               <div className="space-y-4">
                 <h3 className="text-[#6A0DAD] text-xl font-semibold">Categories</h3>
                 <div className="space-y-3">
@@ -192,45 +223,59 @@ function Shop() {
                 }
 
                 return (
-                  <div
+                  <article
                     key={key}
-                    className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 group h-[400px]"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleOpenProduct(product.slug)}
+                    onKeyDown={(event) => handleCardKeyDown(event, product.slug)}
+                    aria-label={`Open ${product.name} details`}
+                    className="group relative flex h-[420px] cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl shadow-[#6A0DAD]/10 backdrop-blur-sm transition-all hover:-translate-y-2 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6A0DAD] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                   >
+                    <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 bg-gradient-to-br from-white/40 via-white/10 to-white/70" />
                     <div
-                      className="relative h-48 overflow-hidden"
+                      className="relative h-52 overflow-hidden"
                       style={{ backgroundColor: `${color}20` }}
                     >
                       <ImageWithFallback
                         src={product.main_image_url || product.image_url}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#6A0DAD] shadow-sm opacity-0 transition-all duration-300 group-hover:opacity-100">
+                        <span>View details</span>
+                        <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      </div>
                     </div>
 
-                    <div className="p-5 space-y-3">
+                    <div className="relative flex flex-1 flex-col p-5 space-y-3">
                       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#6A0DAD]">
                         <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
                         <span>{product.category?.name ?? "Featured"}</span>
                       </div>
-                      <h3 className="text-lg font-semibold text-[#6A0DAD]">{product.name}</h3>
-                      <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                      <h3 className="text-xl font-semibold text-[#4c1d95] leading-tight">{product.name}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {product.description || "Creamy, clean ingredients with a bright flavor profile."}
+                      </p>
 
                       <div className="flex items-center justify-between pt-2">
-                        <span className="text-2xl font-semibold text-[#6A0DAD]">
+                        <span className="text-2xl font-semibold text-[#4c1d95]">
                           ${(product.price_cents / 100).toFixed(2)}
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleAddToCart(product)}
-                          className="flex items-center gap-2 px-6 py-3 rounded-full text-white font-semibold hover:shadow-xl transition-all hover:scale-105"
+                          onClick={(event) => handleAddToCart(product, event)}
+                          className="group/add relative flex items-center gap-2 rounded-full px-5 py-3 text-white font-semibold shadow-lg shadow-[#6A0DAD]/30 transition-all hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
                           style={{ backgroundColor: color }}
                         >
+                          <span className="absolute inset-0 rounded-full bg-white/15 opacity-0 transition-opacity duration-200 group-hover/add:opacity-100" aria-hidden="true" />
                           <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                           Add
                         </button>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
