@@ -405,11 +405,13 @@ function Home() {
             <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] items-start">
               <div className="space-y-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">
-                  Why should dairy be boring?
+                  About us
                 </p>
-                <h2 className="text-3xl font-semibold text-slate-900">We made every pour feel fun again.</h2>
+                <h2 className="text-3xl font-semibold text-slate-900">
+                  Yummee creates simple, honest, and nourishing food designed for modern families.
+                </h2>
                 <p className="text-slate-700">
-                  Creamy bottles, playful flavors, and breakfast-ready staples that make mornings feel bright. Returns are simple—just leave glass at the door.
+                  Our products are soft, creamy dairy-based desserts with a smooth, comforting texture — an easy everyday snack that fits naturally into any lifestyle.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button size="lg" className="pill-button !px-6 !py-3" asChild>
@@ -417,6 +419,20 @@ function Home() {
                   </Button>
                   <Button size="lg" variant="ghost" className="px-6 py-3 rounded-full border-slate-200" asChild>
                     <Link to="/about">See how we bottle</Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-6 py-3 rounded-full border-amber-200 bg-white/90 text-amber-900 shadow-sm hover:bg-white"
+                    asChild
+                  >
+                    <a
+                      href="https://docs.google.com/forms/d/e/1FAIpQLSdyIcVx1K3-W5910394_uW3Lb1U9vpwQT01fgHlubqQ6VX2qw/viewform?usp=sharing&ouid=116307381524447680775"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Sign up for Yummee news
+                    </a>
                   </Button>
                 </div>
               </div>
