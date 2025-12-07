@@ -5,9 +5,18 @@ from products.models import Product
 
 
 class Region(models.Model):
+    class Weekday(models.IntegerChoices):
+        MONDAY = 0, "Monday"
+        TUESDAY = 1, "Tuesday"
+        WEDNESDAY = 2, "Wednesday"
+        THURSDAY = 3, "Thursday"
+        FRIDAY = 4, "Friday"
+        SATURDAY = 5, "Saturday"
+        SUNDAY = 6, "Sunday"
+
     code = models.CharField(max_length=32, unique=True)
     name = models.CharField(max_length=255)
-    delivery_weekday = models.PositiveSmallIntegerField()
+    delivery_weekday = models.PositiveSmallIntegerField(choices=Weekday.choices)
     min_orders = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

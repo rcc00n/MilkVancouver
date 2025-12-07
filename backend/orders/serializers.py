@@ -10,6 +10,8 @@ class OrderItemInputSerializer(serializers.Serializer):
 
 
 class RegionSerializer(serializers.ModelSerializer):
+    delivery_weekday = serializers.IntegerField()
+
     class Meta:
         model = Region
         fields = ["code", "name", "delivery_weekday", "min_orders"]
