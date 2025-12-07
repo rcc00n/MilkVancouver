@@ -68,8 +68,6 @@ function useRevealOnScroll<T extends HTMLElement>() {
 }
 
 function AboutHero() {
-  const brandName = brand.shortName || brand.name;
-
   return (
     <section className="bg-gradient-to-b from-[#fff3c4] via-[#fff8e1] to-white border-b border-amber-100/70 py-12 md:py-16 lg:py-20">
       <div className="container mx-auto max-w-[1200px] px-4 md:px-8">
@@ -89,11 +87,15 @@ function AboutHero() {
 
               <div className="space-y-3">
                 <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-                  From local farms to your doorstep.
+                  Yummee creates simple, honest, and nourishing food designed for modern families.
                 </h1>
                 <p className="max-w-xl text-sm text-slate-700 md:text-base">
-                  {brandName} bottles Fraser Valley milk, yogurt, and cream at dawn, keeps every crate in the 0–4°C cold
-                  chain, and delivers it to Vancouver homes in reusable glass.
+                  Our products are soft, creamy dairy-based desserts with a smooth, comforting texture — an easy
+                  everyday snack that fits naturally into any lifestyle.
+                </p>
+                <p className="max-w-xl text-sm text-slate-700 md:text-base">
+                  Our mission is to make quality food accessible and enjoyable for everyone. Each item is crafted with
+                  attention to freshness, convenience, and real value, then bottled in Vancouver to stay cold and ready.
                 </p>
               </div>
 
@@ -124,6 +126,12 @@ function AboutHero() {
                 >
                   See pricing
                 </Link>
+                <a
+                  href={`mailto:${brand.email}`}
+                  className="inline-flex items-center justify-center rounded-lg border border-amber-700 bg-white/90 px-6 py-3 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-50"
+                >
+                  Email {brand.email}
+                </a>
               </div>
 
               <div className="grid gap-3 pt-4 sm:grid-cols-3">

@@ -269,6 +269,82 @@ function Home() {
         </div>
       </section>
 
+      <section className="container">
+        <div className="relative overflow-hidden rounded-3xl border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-sky-50 p-8 shadow-[0_32px_80px_-56px_rgba(15,23,42,0.7)] md:p-10 lg:p-12">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-10 -top-16 h-40 w-40 rounded-full bg-amber-200/40 blur-3xl" />
+            <div className="absolute right-0 top-10 h-48 w-48 rounded-full bg-sky-100/50 blur-3xl" />
+            <div className="absolute bottom-0 left-16 h-36 w-36 rounded-full bg-white/70 blur-3xl" />
+          </div>
+          <div className="relative grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">Stay in the loop</p>
+              <h2 className="text-3xl font-semibold text-slate-900">Sign up for Yummee drops and tastings.</h2>
+              <p className="text-slate-700">
+                Our mission is to make quality food accessible and enjoyable for everyone. Each item is crafted with
+                attention to freshness, convenience, and real value. Prefer to talk to a person? Email us anytime at{" "}
+                <a href={`mailto:${brand.email}`} className="font-semibold text-slate-900 underline underline-offset-4">
+                  {brand.email}
+                </a>
+                .
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  className="px-6 py-3 text-base font-semibold shadow-lg"
+                  asChild
+                >
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSdyIcVx1K3-W5910394_uW3Lb1U9vpwQT01fgHlubqQ6VX2qw/viewform?usp=sharing&ouid=116307381524447680775"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open the sign-up form
+                  </a>
+                </Button>
+                <Button size="lg" variant="outline" className="px-6 py-3 text-base" asChild>
+                  <a href={`mailto:${brand.email}`}>Email us directly</a>
+                </Button>
+              </div>
+              <div className="rounded-xl border border-amber-100/70 bg-white/80 px-4 py-3 text-xs text-slate-700 shadow-sm backdrop-blur">
+                Direct link:{" "}
+                <a
+                  className="break-all font-mono font-semibold text-slate-900"
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdyIcVx1K3-W5910394_uW3Lb1U9vpwQT01fgHlubqQ6VX2qw/viewform?usp=sharing&ouid=116307381524447680775"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  https://docs.google.com/forms/d/e/1FAIpQLSdyIcVx1K3-W5910394_uW3Lb1U9vpwQT01fgHlubqQ6VX2qw/viewform?usp=sharing&ouid=116307381524447680775
+                </a>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-6 shadow-[0_24px_64px_-46px_rgba(15,23,42,0.65)] backdrop-blur">
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-amber-100/90 via-white to-sky-100/80" />
+              <div className="relative space-y-3">
+                <p className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-800 shadow-sm">
+                  About us
+                </p>
+                <h3 className="text-xl font-semibold text-slate-900">
+                  Yummee creates simple, honest, and nourishing food designed for modern families.
+                </h3>
+                <p className="text-slate-700">
+                  Our products are soft, creamy dairy-based desserts with a smooth, comforting texture — an easy everyday
+                  snack that fits naturally into any lifestyle.
+                </p>
+                <p className="text-sm text-slate-600">
+                  Reach us anytime at{" "}
+                  <a className="font-semibold text-slate-900" href={`mailto:${brand.email}`}>
+                    {brand.email}
+                  </a>
+                  . We&apos;re here for delivery questions, cafe orders, and collaborations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="container space-y-6 lg:space-y-8">
         <div className="space-y-2 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">New</p>
