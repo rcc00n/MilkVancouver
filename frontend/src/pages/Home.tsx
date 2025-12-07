@@ -347,6 +347,69 @@ function Home() {
 
       <section className="container space-y-6 lg:space-y-8">
         <div className="space-y-2 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-sky-800">Made for modern families</p>
+          <h2 className="text-3xl font-semibold text-slate-900">Life moves fast. We make healthy eating effortless.</h2>
+          <p className="max-w-3xl mx-auto text-slate-700">
+            Yummee isn&apos;t just a snack — it&apos;s a promise of honesty, nourishment, and simplicity.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="h-full border-slate-200/80 shadow-sm">
+            <CardHeader className="space-y-3">
+              <CardTitle className="text-xl font-semibold text-slate-900">Made for Modern Families</CardTitle>
+              <CardDescription className="text-slate-700">
+                Crafted to fit naturally into everyday routines.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-slate-700">
+              <ul className="space-y-2 list-disc list-inside">
+                <li>A quick bite at home.</li>
+                <li>A nutritious snack at school or work.</li>
+                <li>A convenient option on the go.</li>
+              </ul>
+              <p className="font-semibold text-slate-900">We make healthy eating effortless.</p>
+            </CardContent>
+          </Card>
+
+          <Card className="h-full border-slate-200/80 shadow-sm">
+            <CardHeader className="space-y-3">
+              <CardTitle className="text-xl font-semibold text-slate-900">Our Mission</CardTitle>
+              <CardDescription className="text-slate-700">
+                To make high-quality food accessible and enjoyable for everyone.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-slate-700">
+              <p className="font-semibold text-slate-900">Every Yummee cup is designed with:</p>
+              <ul className="space-y-2 list-disc list-inside">
+                <li>Freshness in every batch.</li>
+                <li>Convenience in every portion.</li>
+                <li>Real value in every bite.</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="h-full border-slate-200/80 shadow-sm">
+            <CardHeader className="space-y-3">
+              <CardTitle className="text-xl font-semibold text-slate-900">Crafted With Integrity</CardTitle>
+              <CardDescription className="text-slate-700">
+                Proudly made in Canada with transparent ingredients.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-slate-700">
+              <ul className="space-y-2 list-disc list-inside">
+                <li>Thoughtful production.</li>
+                <li>Consistent quality.</li>
+                <li>Transparent ingredients.</li>
+                <li>Genuine care for the families who trust us.</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="container space-y-6 lg:space-y-8">
+        <div className="space-y-2 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-700">New</p>
           <h2 className="text-3xl font-semibold text-slate-900">Discover your flavor.</h2>
           <p className="text-slate-600 max-w-2xl mx-auto">

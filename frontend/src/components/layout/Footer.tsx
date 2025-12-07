@@ -194,14 +194,34 @@ function Footer() {
               </button>
             </form>
             {feedback ? (
-              <p
-                className={`text-sm ${
-                  status === "success" ? "text-emerald-200" : "text-red-200"
-                }`}
-              >
+              <p className={`text-sm ${status === "success" ? "text-emerald-200" : "text-red-200"}`}>
                 {feedback}
               </p>
             ) : null}
+          </div>
+
+          <div className="mt-10 max-w-3xl mx-auto">
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_24px_64px_-48px_rgba(0,0,0,0.6)]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,231,76,0.15),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(165,124,255,0.2),transparent_32%)]" />
+              <div className="relative flex flex-col gap-3 items-start text-left sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">Join us</p>
+                  <p className="text-lg font-semibold text-white">Sign up for Yummee tastings & drops.</p>
+                  <p className="text-sm text-gray-200">
+                    One tap to the official form—share your email and we&apos;ll keep you in the loop.
+                  </p>
+                </div>
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdyIcVx1K3-W5910394_uW3Lb1U9vpwQT01fgHlubqQ6VX2qw/viewform?usp=sharing&ouid=116307381524447680775"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-white text-[#1a0a2e] px-5 py-3 text-sm font-semibold shadow-lg hover:scale-105 transition-transform"
+                >
+                  Open sign-up form
+                  <span aria-hidden className="text-[#6A0DAD]">↗</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
 
