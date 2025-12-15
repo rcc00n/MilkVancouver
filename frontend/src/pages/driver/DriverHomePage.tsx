@@ -1,6 +1,6 @@
 import axios from "axios";
 import { CalendarClock, Clock, RefreshCw, Route as RouteIcon, Truck } from "lucide-react";
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   fetchDriverRoutesByDate,
@@ -39,6 +39,7 @@ function DriverHomePage() {
   const [pastDate, setPastDate] = useState<string>(getInitialPastDate);
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<DriverRoute | null>(null);
+  const hasLoaded = useRef(false);
 
   const findRouteWithStops = useCallback(
     (id: number | null) => {
@@ -89,6 +90,8 @@ function DriverHomePage() {
   );
 
   useEffect(() => {
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
     loadRoutes();
   }, [loadRoutes]);
 
@@ -101,7 +104,7 @@ function DriverHomePage() {
     setSelectedRoute(found);
   }, [selectedRouteId, findRouteWithStops]);
 
-  const handleRouteUpdated = (updatedRoute: DriverRoute) => {
+  const handleRouteUpdated = useCallback((updatedRoute: DriverRoute) => {
     setTodayRoutes((prev) =>
       prev.map((route) => (route.id === updatedRoute.id ? updatedRoute : route)),
     );
@@ -109,7 +112,7 @@ function DriverHomePage() {
       prev.map((route) => (route.id === updatedRoute.id ? updatedRoute : route)),
     );
     setSelectedRoute(updatedRoute);
-  };
+  }, []);
 
   const todayTotals = useMemo(() => {
     const stops = todayRoutes.reduce((sum, route) => sum + route.stops.length, 0);

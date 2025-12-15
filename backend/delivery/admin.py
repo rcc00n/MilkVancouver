@@ -7,6 +7,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .models import DeliveryProof, DeliveryRoute, Driver, RouteStop
+from delivery.tasks import generate_delivery_routes
 
 
 class DeliveryProofInline(admin.StackedInline):
@@ -109,6 +110,11 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path(
+                "generate-routes/",
+                self.admin_site.admin_view(self.generate_routes_view),
+                name="delivery_deliveryroute_generate_routes",
+            ),
+            path(
                 "optimize-routes/",
                 self.admin_site.admin_view(self.optimize_routes_view),
                 name="delivery_deliveryroute_optimize_routes",
@@ -123,6 +129,20 @@ class DeliveryRouteAdmin(admin.ModelAdmin):
             return redirect(reverse("admin:delivery_deliveryroute_changelist"))
         call_command("optimize_routes")
         self.message_user(request, "Queued optimize_routes task.", level=messages.SUCCESS)
+        return redirect(reverse("admin:delivery_deliveryroute_changelist"))
+
+    def generate_routes_view(self, request):
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+        if request.method != "POST":
+            return redirect(reverse("admin:delivery_deliveryroute_changelist"))
+
+        async_result = generate_delivery_routes.delay()
+        self.message_user(
+            request,
+            f"Queued route generation task (id={async_result.id}).",
+            level=messages.SUCCESS,
+        )
         return redirect(reverse("admin:delivery_deliveryroute_changelist"))
 
 

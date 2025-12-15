@@ -37,7 +37,6 @@ type SessionProfile = {
 
 type SessionCapabilities = {
   isDriver: boolean;
-  canAccessAdmin: boolean;
   checked: boolean;
 };
 
@@ -79,7 +78,6 @@ type AuthMeResponse = {
 
 const defaultCapabilities: SessionCapabilities = {
   isDriver: false,
-  canAccessAdmin: false,
   checked: false,
 };
 
@@ -178,24 +176,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     let isActive = true;
 
-    const probeAdmin = async () => {
-      try {
-        await api.get("/admin/dashboard/");
-        return true;
-      } catch (error) {
-        if (!isActive) return false;
-        if (axios.isAxiosError(error)) {
-          const status = error.response?.status;
-          if (status === 403) return false;
-          if (status === 401) {
-            markAnonymous();
-            return false;
-          }
-        }
-        return false;
-      }
-    };
-
     const probeDriver = async () => {
       try {
         await api.get("/delivery/driver/routes/today/");
@@ -216,13 +196,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
     const run = async () => {
       setState((prev) => ({ ...prev, checkingAccess: true }));
-      const [adminAccess, driverAccess] = await Promise.all([probeAdmin(), probeDriver()]);
+      const driverAccess = await probeDriver();
       if (!isActive) return;
       setState((prev) => ({
         ...prev,
         capabilities: {
           isDriver: driverAccess,
-          canAccessAdmin: adminAccess || prev.user?.isStaff === true,
           checked: true,
         },
         checkingAccess: false,

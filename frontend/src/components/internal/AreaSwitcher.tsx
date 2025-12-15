@@ -1,4 +1,4 @@
-import { Car, LogIn, Shield, Store } from "lucide-react";
+import { Car, LogIn, Store } from "lucide-react";
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -44,13 +44,6 @@ function AreaSwitcher({ align = "end", size = "default" }: AreaSwitcherProps) {
       icon: <Car className="h-4 w-4" aria-hidden="true" />,
       visible: capabilities.isDriver || checkingAccess,
       description: "Routes assigned to you",
-    },
-    {
-      label: "Admin panel",
-      to: "/admin",
-      icon: <Shield className="h-4 w-4" aria-hidden="true" />,
-      visible: capabilities.canAccessAdmin || checkingAccess,
-      description: "Ops dashboard",
     },
   ];
 

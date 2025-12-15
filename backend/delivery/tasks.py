@@ -9,7 +9,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from orders.models import Order, Region
-from delivery.models import DeliveryRoute, RouteStop
+from delivery.models import DeliveryRoute, Driver, RouteStop
 from delivery.google_routes import optimize_route_with_google
 from notifications.tasks import send_delivery_eta_email_task
 
@@ -36,6 +36,8 @@ def generate_delivery_routes() -> dict:
     now = timezone.now()
     today_date = now.date()
     current_tz = timezone.get_current_timezone()
+
+    drivers_by_weekday = _drivers_by_weekday()
 
     eligible_orders = (
         Order.objects.select_related("region")
@@ -81,12 +83,27 @@ def generate_delivery_routes() -> dict:
         )
 
         with transaction.atomic():
-            route, created = DeliveryRoute.objects.get_or_create(
-                region=region,
-                date=delivery_date,
-                driver=None,
-                defaults={"is_completed": False},
+            route = (
+                DeliveryRoute.objects.select_for_update()
+                .filter(region=region, date=delivery_date, merged_into__isnull=True)
+                .order_by("id")
+                .first()
             )
+            created = False
+            if not route:
+                route = DeliveryRoute.objects.create(
+                    region=region,
+                    date=delivery_date,
+                    driver=None,
+                    is_completed=False,
+                )
+                created = True
+
+            if not route.driver_id:
+                assigned_driver = _select_driver_for_region(region, delivery_date, drivers_by_weekday)
+                if assigned_driver:
+                    route.driver = assigned_driver
+                    route.save(update_fields=["driver"])
 
             last_stop = route.stops.order_by("-sequence").first()
             next_sequence = (last_stop.sequence if last_stop else 0) + 1
@@ -137,6 +154,34 @@ def generate_delivery_routes() -> dict:
     }
     logger.info("Delivery route generation summary: %s", summary)
     return summary
+
+
+def _drivers_by_weekday() -> Dict[int, List[Driver]]:
+    drivers = Driver.objects.select_related("preferred_region").order_by("id")
+    mapping: Dict[int, List[Driver]] = {}
+    for driver in drivers:
+        days = driver.operating_weekdays or list(range(7))
+        for day in days:
+            try:
+                normalized = int(day)
+            except (TypeError, ValueError):
+                continue
+            mapping.setdefault(normalized, []).append(driver)
+    return mapping
+
+
+def _select_driver_for_region(
+    region: Region, delivery_date: datetime.date, drivers_by_weekday: Dict[int, List[Driver]]
+) -> Driver | None:
+    weekday = delivery_date.weekday()
+    candidates = drivers_by_weekday.get(weekday, [])
+    if not candidates:
+        return None
+
+    preferred_matches = [d for d in candidates if d.preferred_region_id == region.id]
+    if preferred_matches:
+        return preferred_matches[0]
+    return candidates[0]
 
 
 @shared_task(name="delivery.optimize_future_routes", queue="logistics")

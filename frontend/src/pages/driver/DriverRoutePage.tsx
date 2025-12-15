@@ -136,6 +136,8 @@ function DriverRouteDetail({
   const [noPickupReason, setNoPickupReason] = useState("");
   const [noPickupError, setNoPickupError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const lastFetchedRouteId = useRef<number | null>(null);
+  const routeRequestInFlight = useRef<number | null>(null);
 
   useEffect(() => {
     return () => {
@@ -146,21 +148,33 @@ function DriverRouteDetail({
   }, [photoPreview]);
 
   const loadRoute = useCallback(
-    async (showLoading = false) => {
+    async (showLoading = false, force = false) => {
       if (!routeId) {
         setRoute(null);
         setState("idle");
+        lastFetchedRouteId.current = null;
+        routeRequestInFlight.current = null;
         return;
+      }
+      if (!force) {
+        if (lastFetchedRouteId.current === routeId) {
+          return;
+        }
+        if (routeRequestInFlight.current === routeId) {
+          return;
+        }
       }
       if (showLoading) {
         setState("loading");
       }
       setError(null);
+      routeRequestInFlight.current = routeId;
       try {
         const data = await fetchDriverRoute(routeId);
         const nextRoute = { ...data, stops: sortDriverStops(data.stops) };
         setRoute(nextRoute);
         setState("ready");
+        lastFetchedRouteId.current = routeId;
         onRouteUpdated?.(nextRoute);
       } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -178,6 +192,8 @@ function DriverRouteDetail({
         }
         setError("Could not load this route. Try again.");
         setState("error");
+      } finally {
+        routeRequestInFlight.current = null;
       }
     },
     [routeId, onRouteUpdated],
@@ -194,6 +210,7 @@ function DriverRouteDetail({
     if (initialRoute && initialRoute.id === routeId) {
       setRoute(initialRoute);
       setState("ready");
+      lastFetchedRouteId.current = routeId;
       return;
     }
     loadRoute(true);
@@ -412,7 +429,7 @@ function DriverRouteDetail({
       {state === "error" && error ? (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>{error}</span>
-          <Button size="sm" variant="outline" onClick={() => loadRoute(true)}>
+          <Button size="sm" variant="outline" onClick={() => loadRoute(true, true)}>
             Retry
           </Button>
         </div>

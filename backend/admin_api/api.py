@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from delivery.models import DeliveryRoute, RouteStop
+from delivery.tasks import generate_delivery_routes, optimize_future_routes
 from delivery.serializers import DeliveryRouteSerializer
 from orders.models import Order, OrderItem
 
@@ -369,5 +370,33 @@ class AdminRouteMergeView(APIView):
                 "merged_from_route_id": source.id,
                 "moved_stops": len(stops),
                 "target_route": response_serializer.data,
+            }
+        )
+
+
+class AdminRouteGenerateView(APIView):
+    permission_classes = [AdminPermission]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        async_result = generate_delivery_routes.delay()
+        return Response(
+            {
+                "detail": "Route generation queued.",
+                "task_id": async_result.id,
+                "task_name": "delivery.generate_delivery_routes",
+            }
+        )
+
+
+class AdminRouteOptimizeView(APIView):
+    permission_classes = [AdminPermission]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        async_result = optimize_future_routes.delay()
+        return Response(
+            {
+                "detail": "Route optimization queued.",
+                "task_id": async_result.id,
+                "task_name": "delivery.optimize_future_routes",
             }
         )

@@ -3,6 +3,12 @@
 
 {% block object-tools-items %}
 <li>
+    <form action="{% url 'admin:delivery_deliveryroute_generate_routes' %}" method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="button">{% trans "Create Routes" %}</button>
+    </form>
+</li>
+<li>
     <form action="{% url 'admin:delivery_deliveryroute_optimize_routes' %}" method="post" style="display:inline;">
         {% csrf_token %}
         <button type="submit" class="button">{% trans "Optimize Routes" %}</button>
