@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from accounts.models import CustomerProfile
 from delivery.models import Driver
 from orders.models import Region
-from products.models import Product
+from products.models import Category, Product
 
 
 class Command(BaseCommand):
@@ -40,7 +40,10 @@ class Command(BaseCommand):
             ("Skim Milk 1L", "skim-milk-1l", 499, "dairy"),
             ("Yogurt 500ml", "yogurt-500ml", 399, "dairy"),
         ]
-        for name, slug, price_cents, category in products:
+        for name, slug, price_cents, category_slug in products:
+            category, _ = Category.objects.get_or_create(
+                slug=category_slug, defaults={"name": category_slug.title()}
+            )
             Product.objects.update_or_create(
                 slug=slug,
                 defaults={
