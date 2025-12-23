@@ -4,6 +4,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils import timezone
 from datetime import timedelta
+import re
 from django.utils.html import format_html
 
 from notifications.models import EmailNotification
@@ -49,9 +50,28 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "delivery_weekday", "min_orders")
+    list_display = ("name", "delivery_weekday", "min_orders")
     list_editable = ("delivery_weekday", "min_orders")
     list_filter = ("delivery_weekday",)
+    readonly_fields = ("code",)
+
+    def get_fields(self, request, obj=None):
+        fields = ["name", "delivery_weekday", "min_orders"]
+        if obj:
+            return ["code", *fields]
+        return fields
+
+    def save_model(self, request, obj, form, change):
+        if not obj.code:
+            obj.code = self._generate_code(obj.name)
+        super().save_model(request, obj, form, change)
+
+    @staticmethod
+    def _generate_code(name: str) -> str:
+        base = (name or "").strip()
+        if not base:
+            return ""
+        return re.sub(r"\s+", "_", base).lower()
 
 
 @admin.register(Order)

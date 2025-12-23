@@ -8,6 +8,88 @@ import { type OrderPayload, fetchRegions } from "../api/orders";
 import { createCheckout, fetchStripeConfig } from "../api/payments";
 import { useCart } from "../context/CartContext";
 
+const CHECKOUT_PREFILL_KEY = "md_checkout_prefill";
+const CHECKOUT_PREFILL_QUERY_KEY = "prefill";
+
+type CheckoutPrefill = Partial<CheckoutFormValues>;
+
+const encodePrefillString = (raw: string) => {
+  try {
+    return btoa(encodeURIComponent(raw));
+  } catch (error) {
+    console.error("Failed to encode checkout prefill", error);
+    return "";
+  }
+};
+
+const decodePrefillString = (encoded: string) => {
+  try {
+    return decodeURIComponent(atob(encoded));
+  } catch (error) {
+    console.error("Failed to decode checkout prefill", error);
+    return null;
+  }
+};
+
+const readPrefillFromStorage = (): CheckoutPrefill | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_PREFILL_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      return parsed as CheckoutPrefill;
+    }
+  } catch (error) {
+    console.error("Failed to parse checkout prefill", error);
+  }
+  return null;
+};
+
+const readPrefillSnapshot = (): string | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_PREFILL_KEY);
+    if (!raw) return null;
+    JSON.parse(raw);
+    return raw;
+  } catch (error) {
+    console.error("Failed to read checkout prefill snapshot", error);
+    return null;
+  }
+};
+
+const storePrefillToStorage = (prefill: CheckoutPrefill) => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(CHECKOUT_PREFILL_KEY, JSON.stringify(prefill));
+  } catch (error) {
+    console.error("Failed to store checkout prefill", error);
+  }
+};
+
+const decodePrefillFromQuery = (): CheckoutPrefill | null => {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get(CHECKOUT_PREFILL_QUERY_KEY);
+  if (!encoded) return null;
+  const decoded = decodePrefillString(encoded);
+  if (!decoded) return null;
+  try {
+    const parsed = JSON.parse(decoded);
+    if (parsed && typeof parsed === "object") {
+      params.delete(CHECKOUT_PREFILL_QUERY_KEY);
+      const url = new URL(window.location.href);
+      url.search = params.toString();
+      window.history.replaceState({}, "", url.toString());
+      return parsed as CheckoutPrefill;
+    }
+  } catch (error) {
+    console.error("Failed to parse checkout prefill", error);
+  }
+  return null;
+};
+
 function CheckoutPageInner() {
   const navigate = useNavigate();
   const stripe = useStripe();
@@ -18,6 +100,7 @@ function CheckoutPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [regions, setRegions] = useState<{ code: string; name: string }[]>([]);
   const [regionsError, setRegionsError] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState<CheckoutPrefill | null>(null);
   const taxCents = Math.round(subtotalCents * 0.05);
   const totalCents = subtotalCents + taxCents;
 
@@ -41,6 +124,19 @@ function CheckoutPageInner() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const fromQuery = decodePrefillFromQuery();
+    if (fromQuery) {
+      storePrefillToStorage(fromQuery);
+      setPrefill(fromQuery);
+      return;
+    }
+    const fromStorage = readPrefillFromStorage();
+    if (fromStorage) {
+      setPrefill(fromStorage);
+    }
   }, []);
 
   const handleSubmit = async (values: CheckoutFormValues) => {
@@ -67,6 +163,7 @@ function CheckoutPageInner() {
         {
           line1: values.address_line1,
           line2: values.address_line2,
+          buzz_code: values.buzz_code,
           city: values.city,
           postal_code: values.postal_code,
           notes: values.notes,
@@ -101,6 +198,9 @@ function CheckoutPageInner() {
         setError(result.error.message || "Payment failed. Please try again.");
       } else if (result.paymentIntent?.status === "succeeded") {
         clear();
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(CHECKOUT_PREFILL_KEY);
+        }
         navigate("/success", { state: { orderId: order_id } });
       } else {
         setError("Payment did not complete. Please try again.");
@@ -133,6 +233,7 @@ function CheckoutPageInner() {
           onSubmit={handleSubmit}
           submitting={submitting}
           regions={regions}
+          initialValues={prefill ?? undefined}
         />
       )}
       {regionsError && <p style={{ color: "#b91c1c" }}>{regionsError}</p>}
@@ -162,11 +263,18 @@ function CheckoutPage() {
 
     try {
       const cartSnapshot = localStorage.getItem("md_cart");
+      const prefillSnapshot = readPrefillSnapshot();
       const target = new URL(
         `${insecureHostFallback}${window.location.pathname}${window.location.search}${window.location.hash}`
       );
       if (cartSnapshot) {
         target.searchParams.set("cart", btoa(cartSnapshot));
+      }
+      if (prefillSnapshot) {
+        const encodedPrefill = encodePrefillString(prefillSnapshot);
+        if (encodedPrefill) {
+          target.searchParams.set(CHECKOUT_PREFILL_QUERY_KEY, encodedPrefill);
+        }
       }
       setStripeError("Redirecting you to our secure checkout…");
       window.location.replace(target.toString());

@@ -64,9 +64,9 @@ class MyRoutesView(APIView):
             .prefetch_related(
                 Prefetch(
                     "stops",
-                    queryset=RouteStop.objects.select_related("order").order_by(
-                        "sequence", "id"
-                    ),
+                    queryset=RouteStop.objects.select_related("order")
+                    .prefetch_related("order__items")
+                    .order_by("sequence", "id"),
                 )
             )
         )
@@ -100,9 +100,9 @@ class DriverTodayRoutesView(APIView):
             .prefetch_related(
                 Prefetch(
                     "stops",
-                    queryset=RouteStop.objects.select_related("order").order_by(
-                        "sequence", "id"
-                    ),
+                    queryset=RouteStop.objects.select_related("order")
+                    .prefetch_related("order__items")
+                    .order_by("sequence", "id"),
                 )
             )
             .order_by("region__code", "id")
@@ -165,7 +165,11 @@ class RouteStopsView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        stops = route.stops.select_related("order").order_by("sequence", "id")
+        stops = (
+            route.stops.select_related("order")
+            .prefetch_related("order__items")
+            .order_by("sequence", "id")
+        )
         serializer = RouteStopSerializer(stops, many=True)
         return Response(serializer.data)
 
@@ -251,9 +255,9 @@ class DriverRouteDetailView(APIView):
             .prefetch_related(
                 Prefetch(
                     "stops",
-                    queryset=RouteStop.objects.select_related("order").order_by(
-                        "sequence", "id"
-                    ),
+                    queryset=RouteStop.objects.select_related("order")
+                    .prefetch_related("order__items")
+                    .order_by("sequence", "id"),
                 )
             ),
             pk=route_id,

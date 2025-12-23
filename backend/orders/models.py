@@ -50,6 +50,7 @@ class Order(models.Model):
     phone = models.CharField(max_length=50)
     address_line1 = models.CharField(max_length=255, blank=True)
     address_line2 = models.CharField(max_length=255, blank=True)
+    buzz_code = models.CharField(max_length=50, blank=True)
     city = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
     latitude = models.FloatField(null=True, blank=True)

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CardElement } from "@stripe/react-stripe-js";
 
 import type { OrderType } from "../../types/orders";
@@ -11,6 +11,7 @@ export interface CheckoutFormValues {
   region_code: string;
   address_line1: string;
   address_line2: string;
+  buzz_code: string;
   city: string;
   postal_code: string;
   notes: string;
@@ -22,6 +23,7 @@ interface CheckoutFormProps {
   totalCents: number;
   submitting?: boolean;
   regions: { code: string; name: string }[];
+  initialValues?: Partial<CheckoutFormValues>;
   onSubmit: (values: CheckoutFormValues) => void | Promise<void>;
 }
 
@@ -31,6 +33,7 @@ function CheckoutForm({
   totalCents,
   submitting = false,
   regions,
+  initialValues,
   onSubmit,
 }: CheckoutFormProps) {
   const [values, setValues] = useState<CheckoutFormValues>({
@@ -41,11 +44,24 @@ function CheckoutForm({
     region_code: "",
     address_line1: "",
     address_line2: "",
+    buzz_code: "",
     city: "",
     postal_code: "",
     notes: "",
   });
   const [formError, setFormError] = useState<string | null>(null);
+  const prefillAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (!initialValues || prefillAppliedRef.current) return;
+    if (Object.keys(initialValues).length === 0) return;
+    setValues((prev) => ({
+      ...prev,
+      ...initialValues,
+      order_type: "delivery",
+    }));
+    prefillAppliedRef.current = true;
+  }, [initialValues]);
 
   useEffect(() => {
     if (!values.region_code && regions.length > 0) {
@@ -158,15 +174,27 @@ function CheckoutForm({
               style={fieldStyle}
             />
           </div>
-          <div>
-            <label style={{ display: "block", fontWeight: 600 }}>Address line 2</label>
-            <input
-              type="text"
-              value={values.address_line2}
-              onChange={(event) => handleChange("address_line2", event.target.value)}
-              style={fieldStyle}
-              placeholder="Apartment, suite, etc."
-            />
+          <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+            <div>
+              <label style={{ display: "block", fontWeight: 600 }}>Apartment / suite</label>
+              <input
+                type="text"
+                value={values.address_line2}
+                onChange={(event) => handleChange("address_line2", event.target.value)}
+                style={fieldStyle}
+                placeholder="Apartment, suite, etc."
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontWeight: 600 }}>Buzz code</label>
+              <input
+                type="text"
+                value={values.buzz_code}
+                onChange={(event) => handleChange("buzz_code", event.target.value)}
+                style={fieldStyle}
+                placeholder="Optional"
+              />
+            </div>
           </div>
           <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
             <div>

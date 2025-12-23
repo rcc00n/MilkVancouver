@@ -9,6 +9,7 @@ export interface OrderItemPayload {
 export interface AddressPayload {
   line1?: string;
   line2?: string;
+  buzz_code?: string;
   city?: string;
   postal_code?: string;
   notes?: string;

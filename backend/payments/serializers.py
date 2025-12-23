@@ -15,6 +15,7 @@ class OrderItemInputSerializer(serializers.Serializer):
 class AddressSerializer(serializers.Serializer):
     line1 = serializers.CharField(required=False, allow_blank=True, default="")
     line2 = serializers.CharField(required=False, allow_blank=True, default="")
+    buzz_code = serializers.CharField(required=False, allow_blank=True, default="")
     city = serializers.CharField(required=False, allow_blank=True, default="")
     postal_code = serializers.CharField(required=False, allow_blank=True, default="")
     notes = serializers.CharField(required=False, allow_blank=True, default="")

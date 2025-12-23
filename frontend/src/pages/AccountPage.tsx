@@ -6,6 +6,7 @@ import axios from "axios";
 import * as authApi from "../api/auth";
 import { fetchOrders } from "../api/orders";
 import AuthModal from "../components/auth/AuthModal";
+import type { CheckoutFormValues } from "../components/checkout/CheckoutForm";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -14,14 +15,20 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductsContext";
 import type { OrderDetail, OrderStatus } from "../types/orders";
 
 type TabKey = "personal" | "orders" | "security";
+
+const CHECKOUT_PREFILL_KEY = "md_checkout_prefill";
 
 function AccountPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { me, isAuthenticated, authLoading, refreshMe } = useAuth();
+  const { addItem, clear } = useCart();
+  const { products } = useProducts();
 
   const [activeTab, setActiveTab] = useState<TabKey>("personal");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -262,6 +269,10 @@ function AccountPage() {
 
   const currentOrders = orders.filter((order) => currentStatuses.includes(order.status));
   const pastOrders = orders.filter((order) => pastStatuses.includes(order.status));
+  const productMap = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
+  );
 
   const formatMoney = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -283,6 +294,48 @@ function AccountPage() {
 
   const toggleOrder = (id: number) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
+  };
+
+  const handleReorder = (order: OrderDetail) => {
+    clear();
+    order.items.forEach((item) => {
+      const product =
+        productMap.get(item.product_id) || {
+          id: item.product_id,
+          name: item.product_name,
+          slug: `product-${item.product_id}`,
+          description: "",
+          price_cents: item.unit_price_cents,
+          image_url: item.image_url ?? undefined,
+          main_image_url: item.image_url ?? undefined,
+          is_popular: false,
+          images: [],
+        };
+      addItem(product, item.quantity);
+    });
+
+    if (typeof window !== "undefined") {
+      const prefill: Partial<CheckoutFormValues> = {
+        order_type: "delivery",
+        full_name: order.full_name || "",
+        email: order.email || "",
+        phone: order.phone || "",
+        region_code: order.region || "",
+        address_line1: order.address_line1 || "",
+        address_line2: order.address_line2 || "",
+        buzz_code: order.buzz_code || "",
+        city: order.city || "",
+        postal_code: order.postal_code || "",
+        notes: order.notes || order.delivery_notes || "",
+      };
+      try {
+        sessionStorage.setItem(CHECKOUT_PREFILL_KEY, JSON.stringify(prefill));
+      } catch (error) {
+        console.error("Failed to store checkout prefill", error);
+      }
+    }
+
+    navigate("/checkout");
   };
 
   const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -662,33 +715,62 @@ function AccountPage() {
                         key={order.id}
                         className="rounded-lg border p-4 transition hover:border-primary/60"
                       >
-                        <button
-                          type="button"
-                          className="flex w-full items-start gap-3 text-left"
-                          onClick={() => toggleOrder(order.id)}
-                        >
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">Order #{order.id}</span>
-                              <Badge variant="secondary">{order.status.replace("_", " ")}</Badge>
+                        <div className="flex items-start justify-between gap-3">
+                          <button
+                            type="button"
+                            className="flex flex-1 items-start gap-3 text-left"
+                            onClick={() => toggleOrder(order.id)}
+                            aria-expanded={expandedOrderId === order.id}
+                            aria-controls={`order-details-${order.id}`}
+                          >
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">Order #{order.id}</span>
+                                <Badge variant="secondary">{order.status.replace("_", " ")}</Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
+                                <span>{formatMoney(order.total_cents)}</span>
+                                {order.expected_delivery_date ? (
+                                  <span>ETA {formatDate(order.expected_delivery_date, false)}</span>
+                                ) : order.estimated_delivery_at ? (
+                                  <span>ETA {formatDate(order.estimated_delivery_at)}</span>
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
-                              <span>{formatMoney(order.total_cents)}</span>
-                              {order.expected_delivery_date ? (
-                                <span>ETA {formatDate(order.expected_delivery_date, false)}</span>
-                              ) : order.estimated_delivery_at ? (
-                                <span>ETA {formatDate(order.estimated_delivery_at)}</span>
-                              ) : null}
-                            </div>
+                          </button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReorder(order)}
+                            >
+                              Reorder
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => toggleOrder(order.id)}
+                              aria-label={
+                                expandedOrderId === order.id ? "Collapse order" : "Expand order"
+                              }
+                              aria-expanded={expandedOrderId === order.id}
+                              aria-controls={`order-details-${order.id}`}
+                            >
+                              <ChevronRight
+                                className={`size-4 text-muted-foreground transition-transform ${
+                                  expandedOrderId === order.id ? "rotate-90" : ""
+                                }`}
+                              />
+                            </Button>
                           </div>
-                          <ChevronRight
-                            className={`size-4 text-muted-foreground transition-transform ${
-                              expandedOrderId === order.id ? "rotate-90" : ""
-                            }`}
-                          />
-                        </button>
+                        </div>
                         {expandedOrderId === order.id && (
-                          <div className="mt-3 space-y-3 border-t pt-3 text-sm">
+                          <div
+                            id={`order-details-${order.id}`}
+                            className="mt-3 space-y-3 border-t pt-3 text-sm"
+                          >
                             <div>
                               <div className="font-semibold">Items</div>
                               <ul className="mt-1 space-y-2">
@@ -756,33 +838,62 @@ function AccountPage() {
                         key={order.id}
                         className="rounded-lg border p-4 transition hover:border-primary/60"
                       >
-                        <button
-                          type="button"
-                          className="flex w-full items-start gap-3 text-left"
-                          onClick={() => toggleOrder(order.id)}
-                        >
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">Order #{order.id}</span>
-                              <Badge variant={order.status === "cancelled" ? "outline" : "secondary"}>
-                                {order.status.replace("_", " ")}
-                              </Badge>
+                        <div className="flex items-start justify-between gap-3">
+                          <button
+                            type="button"
+                            className="flex flex-1 items-start gap-3 text-left"
+                            onClick={() => toggleOrder(order.id)}
+                            aria-expanded={expandedOrderId === order.id}
+                            aria-controls={`order-details-${order.id}`}
+                          >
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">Order #{order.id}</span>
+                                <Badge variant={order.status === "cancelled" ? "outline" : "secondary"}>
+                                  {order.status.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
+                                <span>{formatMoney(order.total_cents)}</span>
+                                {order.delivered_at ? (
+                                  <span>Delivered {formatDate(order.delivered_at)}</span>
+                                ) : null}
+                              </div>
                             </div>
-                            <div className="text-sm text-muted-foreground flex flex-wrap gap-3">
-                              <span>{formatMoney(order.total_cents)}</span>
-                              {order.delivered_at ? (
-                                <span>Delivered {formatDate(order.delivered_at)}</span>
-                              ) : null}
-                            </div>
+                          </button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleReorder(order)}
+                            >
+                              Reorder
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => toggleOrder(order.id)}
+                              aria-label={
+                                expandedOrderId === order.id ? "Collapse order" : "Expand order"
+                              }
+                              aria-expanded={expandedOrderId === order.id}
+                              aria-controls={`order-details-${order.id}`}
+                            >
+                              <ChevronRight
+                                className={`size-4 text-muted-foreground transition-transform ${
+                                  expandedOrderId === order.id ? "rotate-90" : ""
+                                }`}
+                              />
+                            </Button>
                           </div>
-                          <ChevronRight
-                            className={`size-4 text-muted-foreground transition-transform ${
-                              expandedOrderId === order.id ? "rotate-90" : ""
-                            }`}
-                          />
-                        </button>
+                        </div>
                         {expandedOrderId === order.id && (
-                          <div className="mt-3 space-y-3 border-t pt-3 text-sm">
+                          <div
+                            id={`order-details-${order.id}`}
+                            className="mt-3 space-y-3 border-t pt-3 text-sm"
+                          >
                             <div>
                               <div className="font-semibold">Items</div>
                               <ul className="mt-1 space-y-1">

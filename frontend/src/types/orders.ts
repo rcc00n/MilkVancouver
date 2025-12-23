@@ -37,6 +37,7 @@ export type OrderDetail = {
   total_cents: number;
   address_line1: string;
   address_line2: string;
+  buzz_code: string;
   city: string;
   postal_code: string;
   notes: string;

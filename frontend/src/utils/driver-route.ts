@@ -3,6 +3,7 @@ import { DriverStop, RouteStop } from "../types/delivery";
 export function toDriverStop(stop: RouteStop): DriverStop {
   const order = stop.order;
   const addressParts = [order.address_line1, order.city, order.postal_code].filter(Boolean);
+  const items = Array.isArray(order.items) ? order.items : [];
 
   return {
     id: stop.id,
@@ -16,6 +17,9 @@ export function toDriverStop(stop: RouteStop): DriverStop {
     client_name: order.full_name,
     client_phone: order.phone,
     address: addressParts.join(", "),
+    address_line2: order.address_line2,
+    buzz_code: order.buzz_code,
+    items,
   };
 }
 

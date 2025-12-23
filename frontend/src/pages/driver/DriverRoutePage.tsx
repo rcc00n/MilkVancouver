@@ -235,6 +235,8 @@ function DriverRouteDetail({
   }, [stops]);
 
   const completedCount = useMemo(() => countCompletedStops(stops), [stops]);
+  const totalStops = stops.length;
+  const completionPercent = totalStops ? Math.round((completedCount / totalStops) * 100) : 0;
   const stopForConfirm = confirmStopId ? stops.find((stop) => stop.id === confirmStopId) : null;
   const isActionBusy = (stopId: number, action: Exclude<MutatingAction, null>) =>
     mutatingStopId === stopId && mutatingAction === action;
@@ -373,11 +375,24 @@ function DriverRouteDetail({
             {route?.region_code ? `· ${route.region_code}` : ""}
           </h1>
           <p className="text-sm text-slate-600">
-            {route?.date ? new Date(route.date).toLocaleDateString() : "Today"} • {stops.length}{" "}
+            {route?.date ? new Date(route.date).toLocaleDateString() : "Today"} • {totalStops}{" "}
             stops
           </p>
+          <div
+            className="mt-2 h-2 w-full max-w-sm overflow-hidden rounded-full bg-slate-200"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={totalStops}
+            aria-valuenow={completedCount}
+            aria-label="Stops completed"
+          >
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-[width]"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
           <p className="text-sm font-semibold text-slate-800">
-            {completedCount} of {stops.length} stops completed
+            {completedCount} of {totalStops} stops completed
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -436,7 +451,7 @@ function DriverRouteDetail({
       ) : null}
 
       <div className="space-y-3">
-        {filteredStops.map((stop) => {
+      {filteredStops.map((stop) => {
           const status = stop.status as RouteStopStatus;
           const deliveredTime = formatDeliveredTime(stop.delivered_at);
           const isPending = status === "pending";
@@ -455,6 +470,12 @@ function DriverRouteDetail({
                   </p>
                   <p className="text-base font-semibold text-slate-900">{stop.client_name}</p>
                   <p className="text-sm text-slate-600">{stop.address}</p>
+                  {stop.address_line2 && !stop.address.includes(stop.address_line2) ? (
+                    <p className="text-sm text-slate-600">Apt/Suite: {stop.address_line2}</p>
+                  ) : null}
+                  {stop.buzz_code ? (
+                    <p className="text-sm text-slate-600">Buzz code: {stop.buzz_code}</p>
+                  ) : null}
                   <p className="text-sm text-slate-600">Phone: {stop.client_phone}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -491,6 +512,22 @@ function DriverRouteDetail({
                   <StopStatusBadge status={status} />
                 </div>
               </div>
+
+              {stop.items?.length ? (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Items
+                  </p>
+                  <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                    {stop.items.map((item) => (
+                      <li key={item.id} className="flex items-center justify-between gap-3">
+                        <span>{item.product_name}</span>
+                        <span className="font-semibold">Qty {item.quantity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
 
               {stop.delivered_at ? (
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-slate-700">
@@ -550,7 +587,7 @@ function DriverRouteDetail({
                   ) : (
                     <>
                       <Camera className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Delivered (add photo)
+                      Delivered
                     </>
                   )}
                 </Button>
@@ -572,7 +609,7 @@ function DriverRouteDetail({
                   ) : (
                     <>
                       <AlertTriangle className="mr-2 h-4 w-4" aria-hidden="true" />
-                      Not delivered (add reason)
+                      Not delivered
                     </>
                   )}
                 </Button>

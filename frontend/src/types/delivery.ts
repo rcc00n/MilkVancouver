@@ -1,5 +1,11 @@
 export type RouteStopStatus = "pending" | "delivered" | "no_pickup";
 
+export type RouteStopItem = {
+  id: number;
+  product_name: string;
+  quantity: number;
+};
+
 export type DriverStop = {
   id: number;
   sequence: number;
@@ -12,6 +18,9 @@ export type DriverStop = {
   client_name: string;
   client_phone: string;
   address: string;
+  address_line2?: string | null;
+  buzz_code?: string | null;
+  items: RouteStopItem[];
 };
 
 export type DriverRoute = {
@@ -42,9 +51,12 @@ export type RouteStopOrder = {
   id: number;
   full_name: string;
   address_line1: string;
+  address_line2: string;
+  buzz_code: string;
   city: string;
   postal_code: string;
   phone: string;
+  items: RouteStopItem[];
 };
 
 export type RouteStop = {

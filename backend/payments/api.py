@@ -103,6 +103,7 @@ class CheckoutView(APIView):
             status=Order.Status.PENDING,
             address_line1=address.get("line1", "") or "",
             address_line2=address.get("line2", "") or "",
+            buzz_code=address.get("buzz_code", "") or "",
             city=address.get("city", "") or "",
             postal_code=address.get("postal_code", "") or "",
             delivery_notes=address.get("notes", "") or "",

@@ -1,19 +1,35 @@
 from rest_framework import serializers
 
 from delivery.models import DeliveryRoute, RouteStop
-from orders.models import Order
+from orders.models import Order, OrderItem
+
+
+class RouteStopOrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = [
+            "id",
+            "product_name",
+            "quantity",
+        ]
+        read_only_fields = fields
 
 
 class RouteStopOrderSerializer(serializers.ModelSerializer):
+    items = RouteStopOrderItemSerializer(many=True, read_only=True)
+
     class Meta:
         model = Order
         fields = [
             "id",
             "full_name",
             "address_line1",
+            "address_line2",
+            "buzz_code",
             "city",
             "postal_code",
             "phone",
+            "items",
         ]
         read_only_fields = fields
 
@@ -107,6 +123,9 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source="order.full_name", read_only=True)
     client_phone = serializers.CharField(source="order.phone", read_only=True)
     address = serializers.SerializerMethodField()
+    address_line2 = serializers.CharField(source="order.address_line2", read_only=True)
+    buzz_code = serializers.CharField(source="order.buzz_code", read_only=True)
+    items = RouteStopOrderItemSerializer(source="order.items", many=True, read_only=True)
     has_proof = serializers.SerializerMethodField()
     proof_photo_url = serializers.SerializerMethodField()
 
@@ -124,6 +143,9 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             "client_name",
             "client_phone",
             "address",
+            "address_line2",
+            "buzz_code",
+            "items",
         ]
         read_only_fields = [
             "id",
@@ -133,6 +155,9 @@ class DriverRouteStopSerializer(serializers.ModelSerializer):
             "client_name",
             "client_phone",
             "address",
+            "address_line2",
+            "buzz_code",
+            "items",
             "has_proof",
             "proof_photo_url",
         ]

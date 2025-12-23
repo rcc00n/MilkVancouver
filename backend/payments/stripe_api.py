@@ -205,6 +205,7 @@ def create_checkout(request):
         order_type=order_type,
         address_line1=address.get("line1", ""),
         address_line2=address.get("line2", ""),
+        buzz_code=address.get("buzz_code", ""),
         city=address.get("city", ""),
         postal_code=address.get("postal_code", ""),
         delivery_notes=delivery_notes,

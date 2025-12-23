@@ -20,6 +20,7 @@ class RegionSerializer(serializers.ModelSerializer):
 class AddressSerializer(serializers.Serializer):
     line1 = serializers.CharField(required=False, allow_blank=True)
     line2 = serializers.CharField(required=False, allow_blank=True)
+    buzz_code = serializers.CharField(required=False, allow_blank=True)
     city = serializers.CharField(required=False, allow_blank=True)
     postal_code = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
@@ -127,6 +128,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order = Order.objects.create(
             address_line1=address_data.get("line1", ""),
             address_line2=address_data.get("line2", ""),
+            buzz_code=address_data.get("buzz_code", ""),
             city=address_data.get("city", ""),
             postal_code=address_data.get("postal_code", ""),
             delivery_notes=delivery_notes or address_data.get("notes", ""),
@@ -177,6 +179,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "total_cents",
             "address_line1",
             "address_line2",
+            "buzz_code",
             "city",
             "postal_code",
             "notes",
