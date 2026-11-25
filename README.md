@@ -1,15 +1,23 @@
-<p align="center">
-  <img src="frontend/src/assets/logo.svg" alt="Vancouver Milk Co. / VanMilk" width="300">
-</p>
+# MilkRoute
 
-# Vancouver Milk Co.
+**From an order to a delivery route.**
 
-**From the storefront to the delivery route.**
+A React and Django commerce/logistics application with customer accounts, checkout,
+regional delivery planning and driver operations. **MilkRoute** is the public
+portfolio identity; the repository URL remains `MilkVancouver` for existing links.
+Historical source assets retain their original Vancouver Milk Co./VanMilk identity
+and rights. The application evolved from [MeatDirect](https://github.com/rcc00n/MeatDirect).
 
-A dairy-commerce application with a React storefront, Django APIs and operational
-tools for customer accounts, checkout and local delivery. This repository evolved
-from [MeatDirect](https://github.com/rcc00n/MeatDirect); that project lineage is
-retained while the interface and workflows use the Vancouver milk brand.
+## Review the engineering
+
+1. [Follow the routing case](docs/ENGINEERING_CASE_STUDY.md): paid orders become
+   ordered stops, an optional routing provider proposes a sequence, and drivers
+   record delivery state.
+2. [Inspect the deterministic routing regressions](backend/delivery/tests/test_google_route_optimization.py):
+   a synthetic four-stop route, provider reordering and fallback behavior.
+3. [Run the isolated PostgreSQL suite](ci/README.md#postgresql-business-regressions):
+   route generation, driver permissions/proof of delivery, checkout and account
+   contracts. External providers are mocked; no real store or customer data is needed.
 
 [Capabilities](#capabilities) · [Architecture](#architecture) ·
 [Run locally](#run-locally) · [Development guide](docs/DEVELOPMENT.md)

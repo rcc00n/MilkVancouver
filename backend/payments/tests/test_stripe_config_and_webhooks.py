@@ -35,7 +35,7 @@ class StripeWebhookTests(APITestCase):
             full_name="Test User",
             email="test@example.com",
             phone="1234567890",
-            order_type=Order.OrderType.PICKUP,
+            order_type=Order.OrderType.DELIVERY,
             status=Order.Status.PENDING,
         )
 

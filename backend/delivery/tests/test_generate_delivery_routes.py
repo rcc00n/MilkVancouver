@@ -110,7 +110,8 @@ class GenerateDeliveryRoutesTests(TestCase):
     def test_orders_with_wrong_status_or_type_ignored(self, mock_delay):
         region = create_region()
         pending_order = create_order(region, status=Order.Status.PENDING)
-        pickup_order = create_order(region, order_type=Order.OrderType.PICKUP, status=Order.Status.PAID)
+        # Historical rows can retain a retired order type; never route them.
+        pickup_order = create_order(region, order_type="pickup", status=Order.Status.PAID)
 
         generate_delivery_routes()
 
