@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShoppingCart, Filter } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from '../figma/ImageWithFallback';
 
 type Category = 'all' | 'yogurt' | 'milk' | 'protein' | 'smoothie' | 'kids';
 

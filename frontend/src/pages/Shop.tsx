@@ -105,7 +105,7 @@ function Shop() {
     navigate(`/products/${slug}`);
   };
 
-  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, slug: string) => {
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLElement>, slug: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleOpenProduct(slug);
@@ -198,18 +198,11 @@ function Shop() {
 
           <div className="flex-1">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {(isLoading ? Array.from({ length: 6 }) : filteredProducts).map((product, index) => {
-                const key = isLoading ? `placeholder-${index}` : product.id;
-                const categorySlug = isLoading ? null : product.category?.slug ?? null;
-                const color =
-                  categorySlug && categoryColorMap.get(categorySlug)
-                    ? categoryColorMap.get(categorySlug)!
-                    : getColorForCategory(index);
-
-                if (isLoading) {
+              {(isLoading ? Array.from({ length: 6 }, (): Product | null => null) : filteredProducts).map((product, index) => {
+                if (product === null) {
                   return (
                     <div
-                      key={key}
+                      key={`placeholder-${index}`}
                       className="bg-white rounded-3xl overflow-hidden shadow-lg animate-pulse h-[360px]"
                     >
                       <div className="h-48 bg-gray-100" />
@@ -221,6 +214,13 @@ function Shop() {
                     </div>
                   );
                 }
+
+                const key = product.id;
+                const categorySlug = product.category?.slug ?? null;
+                const color =
+                  categorySlug && categoryColorMap.get(categorySlug)
+                    ? categoryColorMap.get(categorySlug)!
+                    : getColorForCategory(index);
 
                 return (
                   <article
