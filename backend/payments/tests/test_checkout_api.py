@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 
 from accounts.models import CustomerProfile
 from orders.models import Order, OrderItem, Region
-from products.models import Product
+from products.models import Category, Product
 
 User = get_user_model()
 
@@ -23,7 +23,7 @@ class CreateCheckoutTests(APITestCase):
             description="",
             price_cents=500,
             main_image_url="",
-            category="dairy",
+            category=Category.objects.create(name="Dairy", slug="dairy"),
         )
         self.user = User.objects.create_user(
             username="john@example.com",
@@ -142,7 +142,7 @@ class CreateCheckoutTests(APITestCase):
         self.assertEqual(OrderItem.objects.count(), 0)
 
     @patch("payments.api.create_payment_intent")
-    def test_pickup_order_without_address(self, mock_create_intent):
+    def test_unsupported_pickup_order_does_not_create_order_or_intent(self, mock_create_intent):
         mock_create_intent.return_value = {
             "id": "pi_pickup",
             "client_secret": "cs_pickup",
@@ -155,10 +155,10 @@ class CreateCheckoutTests(APITestCase):
 
         response = self.client.post(url, payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        order = Order.objects.get(id=response.json()["order_id"])
-        self.assertEqual(order.order_type, Order.OrderType.PICKUP)
-        self.assertEqual(order.pickup_location, "Storefront")
-        self.assertEqual(order.address_line1, "")
-
-        mock_create_intent.assert_called_once()
+        # Pickup was retired from the supported checkout contract; no provider
+        # action or persisted order should result from a legacy request.
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("order_type", response.json())
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(OrderItem.objects.count(), 0)
+        mock_create_intent.assert_not_called()
