@@ -11,7 +11,7 @@ class RecordStripePaymentFromIntentTests(TestCase):
             full_name="Test User",
             email="test@example.com",
             phone="1234567890",
-            order_type=Order.OrderType.PICKUP,
+            order_type=Order.OrderType.DELIVERY,
             status=Order.Status.PENDING,
             subtotal_cents=1000,
             tax_cents=50,
